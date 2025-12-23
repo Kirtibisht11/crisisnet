@@ -22,7 +22,7 @@
   {
     "id": "vol_3",
     "name": "Karthik",
-    "skill": "logistics",
+    "skill": "logistic",
     "available": false,
     "location": {
       "lat": 13.078,
