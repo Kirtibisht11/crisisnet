@@ -1,0 +1,1 @@
+print("Hy, this is trust agent!")
