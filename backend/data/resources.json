@@ -1,0 +1,38 @@
+[
+  {
+    "id": "boat_1",
+    "type": "boat",
+    "available": true,
+    "location": {
+      "lat": 13.0827,
+      "lon": 80.2707
+    }
+  },
+  {
+    "id": "boat_2",
+    "type": "boat",
+    "available": true,
+    "location": {
+      "lat": 13.075,
+      "lon": 80.265
+    }
+  },
+  {
+    "id": "shelter_1",
+    "type": "shelter",
+    "available": true,
+    "location": {
+      "lat": 13.079,
+      "lon": 80.272
+    }
+  },
+  {
+    "id": "ambulance_1",
+    "type": "ambulance",
+    "available": true,
+    "location": {
+      "lat": 13.085,
+      "lon": 80.275
+    }
+  }
+]

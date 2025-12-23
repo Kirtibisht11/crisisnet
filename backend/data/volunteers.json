@@ -1,0 +1,32 @@
+[
+  {
+    "id": "vol_1",
+    "name": "Ravi",
+    "skill": "rescue",
+    "available": true,
+    "location": {
+      "lat": 13.081,
+      "lon": 80.268
+    }
+  },
+  {
+    "id": "vol_2",
+    "name": "Anita",
+    "skill": "first_aid",
+    "available": true,
+    "location": {
+      "lat": 13.084,
+      "lon": 80.271
+    }
+  },
+  {
+    "id": "vol_3",
+    "name": "Karthik",
+    "skill": "logistics",
+    "available": false,
+    "location": {
+      "lat": 13.078,
+      "lon": 80.266
+    }
+  }
+]
