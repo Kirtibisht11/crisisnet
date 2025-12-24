@@ -1,0 +1,98 @@
+[
+  {
+    "id": "msg_001",
+    "text": "Water level rising fast near Yamuna bridge, people trapped",
+    "lat": 28.6139,
+    "lon": 77.2090,
+    "timestamp": "2025-07-19T10:15:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_002",
+    "text": "Massive fire broke out in warehouse, heavy smoke everywhere",
+    "lat": 28.5355,
+    "lon": 77.3910,
+    "timestamp": "2025-07-19T10:17:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_003",
+    "text": "Is anyone else feeling the earthquake tremors?",
+    "lat": 28.7041,
+    "lon": 77.1025,
+    "timestamp": "2025-07-19T10:20:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_004",
+    "text": "Man collapsed near metro station, bleeding badly",
+    "lat": 28.6127,
+    "lon": 77.2773,
+    "timestamp": "2025-07-19T10:22:00Z",
+    "source": "sms"
+  },
+  {
+    "id": "msg_005",
+    "text": "Flood water entering houses in low lying area",
+    "lat": 28.6135,
+    "lon": 77.2088,
+    "timestamp": "2025-07-19T10:24:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_006",
+    "text": "Traffic jam near city center due to some event",
+    "lat": 28.7041,
+    "lon": 77.1025,
+    "timestamp": "2025-07-19T10:25:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_007",
+    "text": "Building collapsed after loud blast, people screaming",
+    "lat": 28.4595,
+    "lon": 77.0266,
+    "timestamp": "2025-07-19T10:28:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_008",
+    "text": "Need urgent medical help, unconscious person here",
+    "lat": 28.6129,
+    "lon": 77.2295,
+    "timestamp": "2025-07-19T10:30:00Z",
+    "source": "sms"
+  },
+  {
+    "id": "msg_009",
+    "text": "Heavy rain but everything seems normal",
+    "lat": 28.5355,
+    "lon": 77.3910,
+    "timestamp": "2025-07-19T10:32:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_010",
+    "text": "People stuck on rooftops due to flooding",
+    "lat": 28.6137,
+    "lon": 77.2092,
+    "timestamp": "2025-07-19T10:35:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_011",
+    "text": "Fire engines arriving at factory fire site",
+    "lat": 28.5356,
+    "lon": 77.3912,
+    "timestamp": "2025-07-19T10:36:00Z",
+    "source": "manual"
+  },
+  {
+    "id": "msg_012",
+    "text": "Just another normal day at work",
+    "lat": 28.7042,
+    "lon": 77.1026,
+    "timestamp": "2025-07-19T10:40:00Z",
+    "source": "twitter"
+  }
+]
