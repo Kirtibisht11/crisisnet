@@ -236,3 +236,19 @@ class TrustDatabase:
         """, (user_id, blocked_until, reason))
         conn.commit()
         conn.close()
+
+    # Add this method to TrustDatabase class in database.py
+
+    def get_reputation_history(self, user_id: str, limit: int = 10) -> list:
+        """Get user's reputation history"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM reputation_history 
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (user_id, limit))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
