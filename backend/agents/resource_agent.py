@@ -1,102 +1,114 @@
-# backend/agents/resource_agent.py
-
+from fastapi import APIRouter, HTTPException
+from typing import List, Dict, Optional
+from datetime import datetime
+from .resource.matcher import ResourceMatcher
+from .resource.geo_optimizer import GeoOptimizer
+from .resource.availability_manager import AvailabilityManager
+from .resource.priority_engine import PriorityEngine
+from .resource.skill_matcher import SkillMatcher
+from .resource.reassignment_engine import ReassignmentEngine
 import json
-from core.geo import haversine_distance
 
-# ---------------- LOAD DATA ---------------- #
+router = APIRouter(prefix="/resource", tags=["resource"])
 
-with open("backend/data/resources.json", "r") as f:
-    RESOURCES = json.load(f)
-
-with open("backend/data/volunteers.json", "r") as f:
-    VOLUNTEERS = json.load(f)
-
-
-# ---------------- HELPERS ---------------- #
-
-def find_nearest_available(items, alert_location, max_distance_km=10):
-    """
-    Find the nearest available item (resource or volunteer)
-    """
-    nearest = None
-    min_distance = float("inf")
-
-    for item in items:
-        if not item.get("available", False):
-            continue
-
-        dist = haversine_distance(
-            alert_location["lat"],
-            alert_location["lon"],
-            item["location"]["lat"],
-            item["location"]["lon"]
+class ResourceAgent:
+    def __init__(self):
+        self.matcher = ResourceMatcher()
+        self.geo_optimizer = GeoOptimizer()
+        self.availability_manager = AvailabilityManager()
+        self.priority_engine = PriorityEngine()
+        self.skill_matcher = SkillMatcher()
+        self.reassignment_engine = ReassignmentEngine()
+        self.load_resources()
+        
+    def load_resources(self):
+        try:
+            with open('data/resources.json', 'r') as f:
+                self.resources = json.load(f)
+            with open('data/volunteers.json', 'r') as f:
+                self.volunteers = json.load(f)
+        except FileNotFoundError:
+            self.resources = []
+            self.volunteers = []
+    
+    def save_resources(self):
+        with open('data/resources.json', 'w') as f:
+            json.dump(self.resources, f, indent=2)
+        with open('data/volunteers.json', 'w') as f:
+            json.dump(self.volunteers, f, indent=2)
+    
+    def allocate_resources(self, crisis: Dict) -> Dict:
+        crisis_priority = self.priority_engine.calculate_priority(crisis)
+        
+        available_resources = self.availability_manager.get_available(
+            self.resources, crisis['type']
         )
+        available_volunteers = self.availability_manager.get_available_volunteers(
+            self.volunteers, crisis['type']
+        )
+        
+        optimized_resources = self.geo_optimizer.optimize_allocation(
+            available_resources, crisis['location'], crisis_priority
+        )
+        
+        matched_volunteers = self.skill_matcher.match_skills(
+            available_volunteers, crisis['required_skills']
+        )
+        
+        allocation = self.matcher.create_allocation(
+            crisis, optimized_resources, matched_volunteers
+        )
+        
+        self.availability_manager.mark_allocated(
+            allocation['resources'] + allocation['volunteers']
+        )
+        self.save_resources()
+        
+        return allocation
+    
+    def handle_reassignment(self, higher_priority_crisis: Dict) -> Dict:
+        reassignment = self.reassignment_engine.reallocate(
+            higher_priority_crisis, self.resources, self.volunteers
+        )
+        self.save_resources()
+        return reassignment
+    
+    def release_resources(self, allocation_id: str):
+        self.availability_manager.release(allocation_id, self.resources, self.volunteers)
+        self.save_resources()
 
-        if dist < min_distance and dist <= max_distance_km:
-            min_distance = dist
-            nearest = item
+agent = ResourceAgent()
 
-    if nearest:
-        return nearest, round(min_distance, 2)
+@router.post("/allocate")
+async def allocate_resources(crisis: Dict):
+    try:
+        allocation = agent.allocate_resources(crisis)
+        return {"status": "success", "allocation": allocation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return None, None
+@router.post("/reassign")
+async def reassign_resources(crisis: Dict):
+    try:
+        reassignment = agent.handle_reassignment(crisis)
+        return {"status": "success", "reassignment": reassignment}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/release/{allocation_id}")
+async def release_resources(allocation_id: str):
+    try:
+        agent.release_resources(allocation_id)
+        return {"status": "success", "message": "Resources released"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ---------------- MAIN AGENT ---------------- #
-
-def run(verified_alert: dict):
-    """
-    Resource Agent
-    Input: verified alert from Trust Agent
-    Output: assigned resource + volunteer
-    """
-
-    location = verified_alert["location"]
-    event_type = verified_alert["event_type"]
-
-    # Choose relevant resources
-    if event_type == "flood":
-        eligible_resources = [
-            r for r in RESOURCES if r["type"] in ["boat", "shelter"]
-        ]
-    else:
-        eligible_resources = RESOURCES
-
-    # Assign resource
-    resource, resource_distance = find_nearest_available(
-        eligible_resources, location
-    )
-
-    # Assign volunteer
-    volunteer, volunteer_distance = find_nearest_available(
-        VOLUNTEERS, location
-    )
-
-    # Handle failure
-    if not resource and not volunteer:
-        return {
-            "status": "failed",
-            "reason": "No nearby resources or volunteers available"
-        }
-
-    # Mark as unavailable (demo realism)
-    if resource:
-        resource["available"] = False
-    if volunteer:
-        volunteer["available"] = False
-
+@router.get("/status")
+async def get_status():
+    available = len([r for r in agent.resources if r['available']])
+    total = len(agent.resources)
     return {
-        "status": "assigned",
-        "alert_id": verified_alert.get("alert_id"),
-        "event_type": event_type,
-        "resource": {
-            "id": resource["id"] if resource else None,
-            "type": resource["type"] if resource else None,
-            "distance_km": resource_distance
-        },
-        "volunteer": {
-            "id": volunteer["id"] if volunteer else None,
-            "skill": volunteer["skill"] if volunteer else None,
-            "distance_km": volunteer_distance
-        }
+        "available_resources": available,
+        "total_resources": total,
+        "utilization": round((1 - available/total) * 100, 2) if total > 0 else 0
     }
