@@ -1,4 +1,4 @@
-# utils/nlp.py
+# core/nlp.py
 
 CRISIS_KEYWORDS = {
     "flood": [
@@ -21,7 +21,6 @@ CRISIS_KEYWORDS = {
     ]
 }
 
-
 URGENT_TERMS = [
     "urgent", "help", "emergency",
     "trapped", "danger", "critical",
@@ -30,18 +29,14 @@ URGENT_TERMS = [
 
 
 def normalize_text(text: str) -> str:
-    """
-    Normalize text for keyword matching.
-    """
+    """Lowercase and clean text."""
     if not text:
         return ""
     return text.lower().strip()
 
 
 def extract_crisis_types(text: str):
-    """
-    Returns a list of detected crisis types based on keywords.
-    """
+    """Returns list of detected crisis categories."""
     detected = []
     normalized = normalize_text(text)
 
@@ -55,9 +50,7 @@ def extract_crisis_types(text: str):
 
 
 def urgency_score(text: str) -> int:
-    """
-    Higher score = more urgent situation.
-    """
+    """Returns urgency score based on emergency terms."""
     score = 0
     normalized = normalize_text(text)
 
@@ -66,9 +59,3 @@ def urgency_score(text: str) -> int:
             score += 1
 
     return score
-
-
-if __name__ == "__main__":
-    sample = "Water rising fast, people trapped near bridge"
-    print(extract_crisis_types(sample))
-    print(urgency_score(sample))

@@ -1,118 +1,67 @@
-# agents/detection.py
+# backend/agents/detection_agent.py
 
 import sys
 import os
-import json
-from collections import defaultdict
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-# Add parent directory to path
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, backend_dir)
+from backend.agents.detection.signal_ingestion import ingest_signals
+from backend.agents.detection.event_classifier import classify_event
+from backend.agents.detection.severity_estimator import estimate_severity
+from backend.agents.detection.confidence_estimator import estimate_confidence
+from backend.agents.detection.spike_detector import detect_spikes
 
-from core.nlp import extract_crisis_types, urgency_score
 
-
-def load_social_feed(path=None):
+def run_detection_pipeline():
     """
-    Loads social feed messages from JSON file.
+    Main Detection Agent pipeline.
+    Converts raw signals into structured alerts.
     """
-    if path is None:
-        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        path = os.path.join(backend_dir, "data", "social_feed.json")
-    with open(path, "r") as f:
-        return json.load(f)
 
+    # 1. Get raw signals (social media / SMS / manual)
+    signals = ingest_signals()
 
-def detect_from_message(message):
-    """
-    Converts a raw social message into an alert candidate.
-    Returns None if no crisis detected.
-    """
-    text = message.get("text", "")
-    crisis_types = extract_crisis_types(text)
+    alerts = []
 
-    if not crisis_types:
-        return None  # noise / non-crisis message
+    # 2. Process each signal
+    for signal in signals:
 
-    score = urgency_score(text)
+        # Classify disaster type
+        event_type = classify_event(signal)
+        if not event_type:
+            continue  # Ignore non-crisis messages
 
-    alert = {
-        "message_id": message["id"],
-        "crisis_type": crisis_types,
-        "urgency_score": score,
-        "location": {
-            "lat": message["lat"],
-            "lon": message["lon"]
-        },
-        "timestamp": message["timestamp"],
-        "source": message["source"]
+        # Estimate severity (how bad)
+        severity = estimate_severity(signal, event_type)
+
+        # Estimate confidence (how reliable)
+        confidence = estimate_confidence(signal, event_type)
+
+        # Build alert object
+        alert = {
+            "event_type": event_type,
+            "severity": severity,
+            "confidence": confidence,
+            "location": {
+                "lat": signal.get("lat"),
+                "lon": signal.get("lon")
+            },
+            "timestamp": signal["timestamp"],
+            "source": signal["source"],
+            "text": signal["text"]
+        }
+
+        alerts.append(alert)
+
+    # 3. Detect spikes (multiple reports from same area)
+    spikes = detect_spikes(alerts)
+
+    return {
+        "alerts": alerts,
+        "spikes": spikes
     }
 
-    return alert
 
-
-def run_detection():
-    """
-    Runs detection on entire social feed.
-    """
-    feed = load_social_feed()
-    detected_alerts = []
-
-    for msg in feed:
-        alert = detect_from_message(msg)
-        if alert:
-            detected_alerts.append(alert)
-
-    return detected_alerts
-
-
-def geo_bucket(lat, lon, precision=2):
-    """
-    Groups nearby locations by rounding coordinates.
-    precision=2 ≈ ~1km resolution
-    """
-    return (round(lat, precision), round(lon, precision))
-
-
-def detect_spikes(alerts, min_reports=2):
-    """
-    Detects clusters of alerts from nearby locations.
-    """
-    buckets = defaultdict(list)
-
-    for alert in alerts:
-        lat = alert["location"]["lat"]
-        lon = alert["location"]["lon"]
-        key = geo_bucket(lat, lon)
-        buckets[key].append(alert)
-
-    spikes = []
-
-    for location_key, grouped_alerts in buckets.items():
-        if len(grouped_alerts) >= min_reports:
-            spikes.append({
-                "location_bucket": {
-                    "lat": location_key[0],
-                    "lon": location_key[1]
-                },
-                "report_count": len(grouped_alerts),
-                "alerts": grouped_alerts
-            })
-
-    return spikes
-
-
+# Local testing
 if __name__ == "__main__":
-    alerts = run_detection()
-    print(f"[DETECTION] Total alerts detected: {len(alerts)}")
-
-    for alert in alerts:
-        print(alert)
-
-    spikes = detect_spikes(alerts)
-    print(f"\n[DETECTION] Spikes detected: {len(spikes)}")
-
-    for spike in spikes:
-        print("\n[SPIKE]")
-        print(f"Location bucket: {spike['location_bucket']}")
-        print(f"Reports: {spike['report_count']}")
+    output = run_detection_pipeline()
+    print(output)
