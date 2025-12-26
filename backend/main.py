@@ -1,7 +1,120 @@
-from fastapi import FastAPI
+"""
+CrisisNet - Real Disaster Alert System
+"""
 
-app = FastAPI()
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+# Import routers
+from api.registration import router as registration_router
+from api.crisis import router as crisis_router
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="CrisisNet - Disaster Alert System",
+    description="Real-time crisis alerts for citizens and volunteers",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(registration_router)
+app.include_router(crisis_router)
 
 @app.get("/")
 def root():
-    return {"message": "CrisisNet backend running"}
+    return {
+        "system": "CrisisNet Disaster Alert System",
+        "version": "1.0.0",
+        "description": "Real-time alerts for citizens and volunteers during disasters",
+        "endpoints": {
+            "register": "POST /users/register",
+            "detect_crisis": "POST /crisis/detect",
+            "user_stats": "GET /users/stats",
+            "active_crises": "GET /crisis/active"
+        },
+        "features": [
+            "User registration (citizens/volunteers/authorities)",
+            "Location-based crisis detection",
+            "Role-based alert messaging",
+            "Bulk WhatsApp notifications",
+            "Real-time coordination"
+        ]
+    }
+
+@app.get("/demo-setup")
+def demo_setup():
+    """Setup demo data"""
+    from api.registration import USERS_DB
+    
+    # Add demo users if empty
+    if not USERS_DB:
+        demo_users = [
+            {
+                'user_id': 'demo_citizen_1',
+                'phone': '+917500900626',  # Your number
+                'name': 'Demo Citizen',
+                'role': 'citizen',
+                'latitude': 28.6139,
+                'longitude': 77.2090,
+                'is_active': True
+            },
+            {
+                'user_id': 'demo_volunteer_1',
+                'phone': '+917500900626',
+                'name': 'Demo Volunteer',
+                'role': 'volunteer',
+                'latitude': 28.6140,
+                'longitude': 77.2091,
+                'is_active': True
+            },
+            {
+                'user_id': 'demo_authority_1',
+                'phone': '+917500900626',
+                'name': 'Demo Authority',
+                'role': 'authority',
+                'latitude': 28.6150,
+                'longitude': 77.2100,
+                'is_active': True
+            }
+        ]
+        
+        USERS_DB.extend(demo_users)
+        
+        return {
+            "message": "Demo data created",
+            "users_added": len(demo_users),
+            "test_phone": "+917500900626",
+            "note": "All demo users use your phone number for testing"
+        }
+    
+    return {"message": "Demo data already exists", "total_users": len(USERS_DB)}
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    logger.info("=" * 60)
+    logger.info("🚨 CRISISNET - DISASTER ALERT SYSTEM")
+    logger.info("=" * 60)
+    logger.info("📱 Messaging: WhatsApp via pywhatkit")
+    logger.info("🌍 Features: Location-based alerts")
+    logger.info("👥 Roles: Citizens, Volunteers, Authorities")
+    logger.info("🌐 API: http://localhost:8000/docs")
+    logger.info("🎮 Demo: http://localhost:8000/demo-setup")
+    logger.info("=" * 60)
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
