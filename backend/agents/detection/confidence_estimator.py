@@ -1,27 +1,32 @@
+"""
+Confidence Estimator
+Estimates confidence of detection based on clarity of signal.
+"""
+
 def estimate_confidence(signal, event_type):
     """
-    Estimates confidence score for a detected disaster signal.
+    Estimates confidence score (0–1).
 
     Args:
-        signal (dict): Raw disaster signal
-        event_type (str): Classified disaster type
+        signal (dict)
+        event_type (str)
 
     Returns:
-        float: Confidence score (0.0 to 1.0)
+        float
     """
 
-    confidence = 0.5  # base confidence
+    text = signal.get("text", "")
+    source = signal.get("source", "")
 
-    # Source-based confidence
-    if signal.get("source") == "sms":
-        confidence += 0.2
-    elif signal.get("source") == "manual":
-        confidence += 0.3
+    score = 0.4  # base confidence
 
-    # Text detail confidence
-    text_length = len(signal.get("text", ""))
-    if text_length > 40:
-        confidence += 0.1
+    if len(text) > 30:
+        score += 0.2
 
-    # Cap confidence between 0 and 1
-    return round(min(confidence, 1.0), 2)
+    if source in ["sms", "manual"]:
+        score += 0.2  # more trustworthy
+
+    if event_type:
+        score += 0.2
+
+    return round(min(score, 1.0), 2)

@@ -1,8 +1,11 @@
-# backend/agents/detection_agent.py
-
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+"""
+Detection Agent Orchestrator
+Runs the full detection pipeline:
+- Ingests raw signals
+- Classifies crisis type
+- Estimates severity & confidence
+- Detects spikes
+"""
 
 from backend.agents.detection.signal_ingestion import ingest_signals
 from backend.agents.detection.event_classifier import classify_event
@@ -12,56 +15,45 @@ from backend.agents.detection.spike_detector import detect_spikes
 
 
 def run_detection_pipeline():
-    """
-    Main Detection Agent pipeline.
-    Converts raw signals into structured alerts.
-    """
+    """Main entry point for Detection Agent."""
 
-    # 1. Get raw signals (social media / SMS / manual)
-    signals = ingest_signals()
+    try:
+        signals = ingest_signals()
+    except Exception as e:
+        print(f"[Detection] Failed to ingest signals: {e}")
+        return {"alerts": [], "spikes": []}
 
     alerts = []
 
-    # 2. Process each signal
     for signal in signals:
+        try:
+            event_type = classify_event(signal)
+            if not event_type:
+                continue  # Skip non-crisis messages
 
-        # Classify disaster type
-        event_type = classify_event(signal)
-        if not event_type:
-            continue  # Ignore non-crisis messages
+            severity = estimate_severity(signal, event_type)
+            confidence = estimate_confidence(signal, event_type)
 
-        # Estimate severity (how bad)
-        severity = estimate_severity(signal, event_type)
+            alerts.append({
+                "event_type": event_type,
+                "severity": severity,
+                "confidence": confidence,
+                "location": signal.get("location"),
+                "timestamp": signal.get("timestamp"),
+                "source": signal.get("source"),
+                "text": signal.get("text")
+            })
 
-        # Estimate confidence (how reliable)
-        confidence = estimate_confidence(signal, event_type)
+        except Exception as e:
+            # Skip any problematic signal but don't crash system
+            print(f"[Detection] Error processing signal {signal.get('id')}: {e}")
 
-        # Build alert object
-        alert = {
-            "event_type": event_type,
-            "severity": severity,
-            "confidence": confidence,
-            "location": {
-                "lat": signal.get("lat"),
-                "lon": signal.get("lon")
-            },
-            "timestamp": signal["timestamp"],
-            "source": signal["source"],
-            "text": signal["text"]
-        }
+    try:
+        spikes = detect_spikes(alerts)
+    except Exception as e:
+        print(f"[Detection] Spike detection failed: {e}")
+        spikes = []
 
-        alerts.append(alert)
-
-    # 3. Detect spikes (multiple reports from same area)
-    spikes = detect_spikes(alerts)
-
-    return {
-        "alerts": alerts,
-        "spikes": spikes
-    }
+    return {"alerts": alerts, "spikes": spikes}
 
 
-# Local testing
-if __name__ == "__main__":
-    output = run_detection_pipeline()
-    print(output)

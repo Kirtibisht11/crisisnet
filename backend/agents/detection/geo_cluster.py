@@ -1,25 +1,31 @@
+"""
+Geo Clustering Utility
+Groups nearby alerts using simple rounding logic.
+"""
+
 def cluster_by_location(alerts, precision=2):
     """
-    Groups alerts by approximate location using rounded coordinates.
+    Groups alerts by rounded latitude and longitude.
 
     Args:
-        alerts (list): List of alert dictionaries
-        precision (int): Decimal precision for grouping
+        alerts (list): list of alert dicts
 
     Returns:
-        dict: location_key → list of alerts
+        dict: (lat, lon) -> list of alerts
     """
 
     clusters = {}
 
     for alert in alerts:
-        lat = round(alert["location"]["lat"], precision)
-        lon = round(alert["location"]["lon"], precision)
-        key = f"{lat}_{lon}"
+        loc = alert.get("location")
+        if not loc:
+            continue
 
-        if key not in clusters:
-            clusters[key] = []
+        try:
+            key = (round(float(loc["lat"]), precision), round(float(loc["lon"]), precision))
+        except Exception:
+            continue
 
-        clusters[key].append(alert)
+        clusters.setdefault(key, []).append(alert)
 
     return clusters
