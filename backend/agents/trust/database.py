@@ -23,8 +23,7 @@ class TrustDatabase:
         """Initialize all tables"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
-        # User reputation
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_reputation (
                 user_id TEXT PRIMARY KEY,
@@ -36,8 +35,7 @@ class TrustDatabase:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Reputation history
+ 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS reputation_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,8 +46,7 @@ class TrustDatabase:
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Alert history
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS alert_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,8 +62,7 @@ class TrustDatabase:
                 trust_score REAL
             )
         """)
-        
-        # Rate limiting
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS rate_limits (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,8 +71,7 @@ class TrustDatabase:
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Blocked users
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS blocked_users (
                 user_id TEXT PRIMARY KEY,
@@ -86,7 +81,6 @@ class TrustDatabase:
             )
         """)
         
-        # Verification results
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS verification_results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,16 +91,14 @@ class TrustDatabase:
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Indexes
+
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_alert_timestamp ON alert_history(timestamp)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_rate_user_time ON rate_limits(user_id, timestamp)")
         
         conn.commit()
         conn.close()
-        print("✅ Database initialized")
-    
-    # User Reputation Methods
+        print("Database initialized")
+ 
     def get_user_reputation(self, user_id: str) -> Optional[Dict]:
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -151,8 +143,7 @@ class TrustDatabase:
         
         conn.commit()
         conn.close()
-    
-    # Alert Methods
+
     def save_alert(self, alert_data: Dict) -> int:
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -191,8 +182,7 @@ class TrustDatabase:
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]
-    
-    # Rate Limiting
+  
     def record_activity(self, user_id: str):
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -236,8 +226,6 @@ class TrustDatabase:
         """, (user_id, blocked_until, reason))
         conn.commit()
         conn.close()
-
-    # Add this method to TrustDatabase class in database.py
 
     def get_reputation_history(self, user_id: str, limit: int = 10) -> list:
         """Get user's reputation history"""

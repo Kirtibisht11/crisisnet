@@ -28,13 +28,11 @@ class ReputationManager:
         current_score = self.get_reputation_score(user_id)
         
         if was_accurate:
-            # Gradual increase for accurate reports
             new_score = min(
                 self.config['max_score'],
                 current_score + (1 - current_score) * 0.15
             )
         else:
-            # Steeper penalty for false reports
             new_score = max(
                 self.config['min_score'],
                 current_score * self.config['decay_factor'] * 0.7
@@ -46,8 +44,7 @@ class ReputationManager:
     def calculate_trust_contribution(self, user_id: str) -> float:
         """Calculate how much reputation contributes to trust"""
         reputation = self.get_reputation_score(user_id)
-        
-        # Non-linear scaling
+
         if reputation >= 0.8:
             return 1.0
         elif reputation >= 0.6:
