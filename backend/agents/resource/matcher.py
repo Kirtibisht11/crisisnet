@@ -2,68 +2,79 @@ from typing import List, Dict
 from datetime import datetime
 import uuid
 
+
 class ResourceMatcher:
+    """
+    Round-1 MVP:
+    - Bundles matched resources and volunteers into a single allocation
+    - Keeps allocation logic simple and demo-safe
+    """
+
     def __init__(self):
         self.allocation_history = []
-    
-    def create_allocation(self, crisis: Dict, resources: List[Dict], volunteers: List[Dict]) -> Dict:
+
+    def create_allocation(
+        self,
+        crisis: Dict,
+        resources: List[Dict],
+        volunteers: List[Dict]
+    ) -> Dict:
         allocation_id = str(uuid.uuid4())
-        
+
         allocation = {
             "allocation_id": allocation_id,
-            "crisis_id": crisis.get('id', str(uuid.uuid4())),
-            "crisis_type": crisis['type'],
-            "location": crisis['location'],
-            "timestamp": datetime.now().isoformat(),
+            "crisis_id": crisis.get("id", allocation_id),
+            "crisis_type": crisis.get("type"),
+            "location": crisis.get("location"),
+            "timestamp": datetime.utcnow().isoformat(),
             "resources": self._format_resources(resources),
             "volunteers": self._format_volunteers(volunteers),
-            "eta_minutes": self._calculate_eta(resources, volunteers, crisis['location']),
+            "eta_minutes": self._calculate_overall_eta(resources),
             "status": "allocated"
         }
-        
+
         self.allocation_history.append(allocation)
         return allocation
-    
+
+    # ---------- FORMATTERS ----------
+
     def _format_resources(self, resources: List[Dict]) -> List[Dict]:
-        return [{
-            "id": r['id'],
-            "type": r['type'],
-            "distance_km": r.get('distance', 0),
-            "eta_minutes": r.get('eta_minutes', 0)
-        } for r in resources]
-    
+        return [
+            {
+                "id": r.get("id"),
+                "type": r.get("type"),
+                "distance_km": r.get("distance_km", 0),
+                "eta_minutes": r.get("eta_minutes", 0)
+            }
+            for r in resources
+        ]
+
     def _format_volunteers(self, volunteers: List[Dict]) -> List[Dict]:
-        return [{
-            "id": v['id'],
-            "skills": v['skills'],
-            "distance_km": v.get('distance', 0),
-            "match_score": v.get('match_score', 0)
-        } for v in volunteers]
-    
-    def _calculate_eta(self, resources: List[Dict], volunteers: List[Dict], location: Dict) -> int:
-        if not resources and not volunteers:
+        return [
+            {
+                "id": v.get("id"),
+                "skills": v.get("skills", [])
+            }
+            for v in volunteers
+        ]
+
+    # ---------- HELPERS ----------
+
+    def _calculate_overall_eta(self, resources: List[Dict]) -> int:
+        """
+        Round-1 rule:
+        Overall ETA is based on fastest arriving resource.
+        Volunteers are assumed to coordinate locally.
+        """
+        if not resources:
             return 999
-        
-        all_etas = []
-        
-        for r in resources:
-            all_etas.append(r.get('eta_minutes', 0))
-        
-        for v in volunteers:
-            all_etas.append(v.get('eta_minutes', 0))
-        
-        return min(all_etas) if all_etas else 999
-    
-    def get_allocation_by_id(self, allocation_id: str) -> Dict:
+
+        return min(r.get("eta_minutes", 999) for r in resources)
+
+    # ---------- OPTIONAL (ROUND-2) ----------
+
+    def get_allocation_by_id(self, allocation_id: str) -> Dict | None:
         for allocation in self.allocation_history:
-            if allocation['allocation_id'] == allocation_id:
+            if allocation["allocation_id"] == allocation_id:
                 return allocation
         return None
-    
-    def calculate_response_efficiency(self, allocation: Dict) -> float:
-        resource_count = len(allocation['resources'])
-        volunteer_count = len(allocation['volunteers'])
-        eta = allocation['eta_minutes']
-        
-        efficiency_score = (resource_count + volunteer_count * 0.8) / (eta / 10 + 1)
-        return round(efficiency_score, 2)
