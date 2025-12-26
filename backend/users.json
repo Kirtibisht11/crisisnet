@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Lavika",
+    "role": "citizen",
+    "chat_id": 0
+  },
+  {
+    "name": "Teammate",
+    "role": "volunteer",
+    "chat_id": 0
+  }
+]
