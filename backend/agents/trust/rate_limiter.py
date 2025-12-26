@@ -1,18 +1,25 @@
 import json
 import os
 from datetime import datetime, timedelta
-from .database import TrustDatabase
 
 class RateLimiter:
-    """Prevents spam by limiting reports per user"""
-    
-    def __init__(self):
+ 
+    def __init__(self, data_handler=None):
         config_path = os.path.join(os.path.dirname(__file__), 'trust_thresholds.json')
         with open(config_path, 'r') as f:
             config = json.load(f)
         
         self.limits = config['rate_limits']
-        self.db = TrustDatabase()
+        
+        if data_handler is None:
+            try:
+                from .json_data_handler import JsonDataHandler
+                self.db = JsonDataHandler()
+            except:
+                from .database import TrustDatabase
+                self.db = TrustDatabase()
+        else:
+            self.db = data_handler
     
     def check_rate_limit(self, user_id: str) -> tuple:
         """Check if user can submit report"""

@@ -1,21 +1,27 @@
 import json
 import os
 import math
-from .database import TrustDatabase
 
 class CrossVerifier:
-    """Verifies alerts using multiple sources"""
-    
-    def __init__(self):
+ 
+    def __init__(self, data_handler=None):
         config_path = os.path.join(os.path.dirname(__file__), 'trust_thresholds.json')
         with open(config_path, 'r') as f:
             config = json.load(f)
         
         self.config = config['cross_verification']
-        self.db = TrustDatabase()
+        
+        if data_handler is None:
+            try:
+                from .json_data_handler import JsonDataHandler
+                self.db = JsonDataHandler()
+            except:
+                from .database import TrustDatabase
+                self.db = TrustDatabase()
+        else:
+            self.db = data_handler
     
     def verify_alert(self, new_alert: dict) -> tuple:
-        """Cross-check alert against existing reports"""
         matching_alerts = self.db.find_similar_alerts(
             crisis_type=new_alert.get('crisis_type'),
             location=new_alert.get('location'),
@@ -49,7 +55,6 @@ class CrossVerifier:
         return verification_score, unique_users, details
     
     def add_alert(self, alert: dict) -> int:
-        """Store alert for future cross-verification"""
         import hashlib
         
         content = f"{alert.get('crisis_type', '')}|{alert.get('location', '')}|{alert.get('message', '')}"
@@ -68,7 +73,6 @@ class CrossVerifier:
         return self.db.save_alert(alert_data)
     
     def _is_nearby(self, lat1: float, lon1: float, lat2: float, lon2: float) -> bool:
-        """Check if coordinates are within radius"""
         if None in (lat1, lon1, lat2, lon2):
             return True
         
@@ -76,7 +80,6 @@ class CrossVerifier:
         return distance <= self.config['location_radius_km']
     
     def _haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculate distance between points in km"""
         R = 6371  
         
         lat1_rad = math.radians(lat1)
@@ -92,7 +95,6 @@ class CrossVerifier:
         return R * c
     
     def get_verification_stats(self) -> dict:
-        """Get verification statistics"""
         return {
             'time_window_minutes': self.config['time_window_minutes'],
             'location_radius_km': self.config['location_radius_km'],

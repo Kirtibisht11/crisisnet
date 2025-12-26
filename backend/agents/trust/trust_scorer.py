@@ -2,8 +2,7 @@ import json
 import os
 
 class TrustScorer:
-    """Combines all trust signals into final score"""
-    
+
     def __init__(self):
         config_path = os.path.join(os.path.dirname(__file__), 'trust_thresholds.json')
         with open(config_path, 'r') as f:

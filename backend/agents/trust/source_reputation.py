@@ -1,17 +1,24 @@
 import json
 import os
-from .database import TrustDatabase
 
 class ReputationManager:
-    """Manages user trust scores"""
-    
-    def __init__(self):
+ 
+    def __init__(self, data_handler=None):
         config_path = os.path.join(os.path.dirname(__file__), 'trust_thresholds.json')
         with open(config_path, 'r') as f:
             config = json.load(f)
         
         self.config = config['reputation']
-        self.db = TrustDatabase()
+
+        if data_handler is None:
+            try:
+                from .json_data_handler import JsonDataHandler
+                self.db = JsonDataHandler()
+            except:
+                from .database import TrustDatabase
+                self.db = TrustDatabase()
+        else:
+            self.db = data_handler
     
     def get_reputation_score(self, user_id: str) -> float:
         """Get user's current reputation"""
@@ -48,12 +55,12 @@ class ReputationManager:
         if reputation >= 0.8:
             return 1.0
         elif reputation >= 0.6:
-            return 0.85
+            return 0.9
         elif reputation >= 0.4:
-            return 0.6
+            return 0.75
         else:
-            return 0.3
-    
+            return 0.6  
+        
     def get_user_history(self, user_id: str, limit: int = 10) -> list:
         """Get recent reputation history for a user"""
         history = self.db.get_reputation_history(user_id, limit)

@@ -3,7 +3,6 @@ from typing import List, Dict
 import hashlib
 
 class DuplicateDetector:
-    """Detects duplicate/repeated crisis reports"""
     
     def __init__(self):
         self.recent_reports: List[Dict] = []
