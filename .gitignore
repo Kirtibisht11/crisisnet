@@ -1,23 +1,22 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
+# Virtual environment
 venv/
-.env/
-.env.*
+.env
 
+# Node / frontend
+node_modules/
+
+# OS files
 .DS_Store
-Thumbs.db
 
-.vscode/
-.idea/
-
-*.db
-*.sqlite3
-
+# Logs / temp
 *.log
 
-node_modules
-dist
-.env
+# IDE
+.vscode/
+.idea/
