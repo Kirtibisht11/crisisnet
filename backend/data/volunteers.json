@@ -1,32 +1,35 @@
 [
   {
-    "id": "vol_1",
+    "id": "vol_001",
     "name": "Ravi",
-    "skill": "rescue",
+    "skills": ["rescue"],
     "available": true,
-    "location": {
-      "lat": 13.081,
-      "lon": 80.268
-    }
+    "location": { "lat": 13.081, "lon": 80.268 },
+    "allocated_to": null,
+    "allocation_priority": 0,
+    "allocated_at": null,
+    "registered_at": "2024-12-26T07:45:00"
   },
   {
-    "id": "vol_2",
+    "id": "vol_002",
     "name": "Anita",
-    "skill": "first_aid",
+    "skills": ["first_aid"],
     "available": true,
-    "location": {
-      "lat": 13.084,
-      "lon": 80.271
-    }
+    "location": { "lat": 13.084, "lon": 80.271 },
+    "allocated_to": null,
+    "allocation_priority": 0,
+    "allocated_at": null,
+    "registered_at": "2024-12-26T08:10:00"
   },
   {
-    "id": "vol_3",
+    "id": "vol_003",
     "name": "Kartik",
-    "skill": "logistic",
+    "skills": ["logistics"],
     "available": false,
-    "location": {
-      "lat": 13.078,
-      "lon": 80.266
-    }
+    "location": { "lat": 13.078, "lon": 80.266 },
+    "allocated_to": "crisis_001",
+    "allocation_priority": 6,
+    "allocated_at": "2024-12-26T08:55:00",
+    "registered_at": "2024-12-26T07:30:00"
   }
 ]

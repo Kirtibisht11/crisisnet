@@ -1,15 +1,15 @@
 import React from "react";
-import ConfidenceBadge from "./ConfidenceBadge";
+import ConfidenceBadge from "./confidenceBadge";
 
 const AlertCard = ({ alert }) => {
   return (
     <div style={styles.card}>
       <h3 style={styles.title}>🚨 {alert.event_type} Alert</h3>
 
-      <p><strong>📍 Location:</strong> {alert.location}</p>
-      <p><strong>⏰ Time:</strong> {alert.timestamp}</p>
+      <p><strong> Location:</strong> {alert.location}</p>
+      <p><strong>Time:</strong> {alert.timestamp}</p>
       <p>
-        <strong>🔥 Severity:</strong>{" "}
+        <strong>Severity:</strong>{" "}
         <span style={severityStyle(alert.severity)}>
           {alert.severity}
         </span>

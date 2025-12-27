@@ -1,60 +1,35 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+"""
+Event Classifier
+Determines crisis type from message content.
+"""
 
 from backend.agents.detection.keyword_engine import keyword_match
 
-
-KEYWORD_MAP = {
-    "flood": [
-        "flood",
-        "water rising",
-        "submerged",
-        "people stuck",
-        "overflow"
-    ],
-    "fire": [
-        "fire",
-        "smoke",
-        "burning",
-        "blast",
-        "explosion"
-    ],
-    "medical": [
-        "injured",
-        "unconscious",
-        "bleeding",
-        "medical help"
-    ],
-    "earthquake": [
-        "earthquake",
-        "tremor",
-        "shaking"
-    ],
-    "collapse": [
-        "collapsed",
-        "building fell",
-        "structure fell"
-    ]
+# Crisis keywords
+CRISIS_KEYWORDS = {
+    "flood": ["flood", "water rising", "submerged"],
+    "fire": ["fire", "smoke", "burning"],
+    "earthquake": ["earthquake", "tremor", "shaking"],
+    "medical": ["injured", "unconscious", "bleeding", "ambulance"],
+    "collapse": ["collapsed", "building fell", "structure fell"],
+    "landslide": ["landslide", "rocks falling", "mud"]
 }
 
 
 def classify_event(signal):
     """
-    Classifies disaster type based on message text.
+    Classifies signal into a crisis type.
 
     Args:
-        signal (dict): Raw signal data
+        signal (dict): raw signal
 
     Returns:
-        str or None: Disaster type
+        str or None
     """
 
-    text = signal.get("text", "")
-    matches = keyword_match(text, KEYWORD_MAP)
-
-    if not matches:
+    text = signal.get("text")
+    if not text:
         return None
 
-    # Return the most relevant disaster type
-    return matches[0]
+    matches = keyword_match(text, CRISIS_KEYWORDS)
+    return matches[0] if matches else None

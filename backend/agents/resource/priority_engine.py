@@ -1,119 +1,125 @@
-from typing import Dict
+from typing import Dict, List
 from datetime import datetime
 
+
 class PriorityEngine:
-    SEVERITY_WEIGHTS = {
-        'critical': 10,
-        'high': 7,
-        'medium': 5,
-        'low': 3
-    }
-    
+    """
+    Round-1 MVP:
+    - Calculates a priority score (1–10) for a crisis
+    - Uses simple, explainable factors
+    """
+
     CRISIS_TYPE_SEVERITY = {
-        'fire': 9,
-        'flood': 8,
-        'medical_emergency': 10,
-        'earthquake': 9,
-        'accident': 7,
-        'collapse': 9,
-        'chemical_spill': 8,
-        'explosion': 10,
-        'default': 5
+        "fire": 9,
+        "flood": 8,
+        "medical_emergency": 10,
+        "earthquake": 9,
+        "accident": 7,
+        "collapse": 9,
+        "chemical_spill": 8,
+        "explosion": 10
     }
-    
+
+    # ---------- CORE PRIORITY ----------
+
     def calculate_priority(self, crisis: Dict) -> int:
-        base_severity = self._get_type_severity(crisis.get('type', 'default'))
-        
-        time_factor = self._calculate_time_urgency(crisis.get('timestamp'))
-        
-        population_factor = self._calculate_population_factor(
-            crisis.get('affected_population', 0)
+        type_severity = self._type_severity(crisis.get("type"))
+        time_urgency = self._time_urgency(crisis.get("timestamp"))
+        population_impact = self._population_impact(crisis.get("affected_population", 0))
+        vulnerability = self._vulnerability_score(crisis.get("vulnerable_groups", []))
+        trust = self._trust_factor(crisis.get("trust_score", 5))
+
+        # Weighted but simple formula
+        priority_score = (
+            type_severity * 0.4 +
+            time_urgency * 0.2 +
+            population_impact * 0.2 +
+            vulnerability * 0.1 +
+            trust * 0.1
         )
-        
-        vulnerability_factor = self._calculate_vulnerability_factor(crisis)
-        
-        trust_factor = crisis.get('trust_score', 5) / 10
-        
-        priority = (
-            base_severity * 0.35 +
-            time_factor * 0.15 +
-            population_factor * 0.25 +
-            vulnerability_factor * 0.15 +
-            (trust_factor * base_severity) * 0.10
-        )
-        
-        return min(10, max(1, int(priority)))
-    
-    def _get_type_severity(self, crisis_type: str) -> int:
-        return self.CRISIS_TYPE_SEVERITY.get(crisis_type, self.CRISIS_TYPE_SEVERITY['default'])
-    
-    def _calculate_time_urgency(self, timestamp: str) -> float:
+
+        return max(1, min(10, round(priority_score)))
+
+    # ---------- FACTORS ----------
+
+    def _type_severity(self, crisis_type: str | None) -> float:
+        return self.CRISIS_TYPE_SEVERITY.get(crisis_type, 5)
+
+    def _time_urgency(self, timestamp: str | None) -> float:
         if not timestamp:
             return 5.0
-        
+
         try:
             crisis_time = datetime.fromisoformat(timestamp)
-            now = datetime.now()
-            minutes_elapsed = (now - crisis_time).total_seconds() / 60
-            
-            if minutes_elapsed < 5:
+            minutes = (datetime.utcnow() - crisis_time).total_seconds() / 60
+
+            if minutes < 5:
                 return 10.0
-            elif minutes_elapsed < 15:
+            if minutes < 15:
                 return 8.0
-            elif minutes_elapsed < 30:
+            if minutes < 30:
                 return 6.0
-            elif minutes_elapsed < 60:
+            if minutes < 60:
                 return 4.0
-            else:
-                return 2.0
-        except:
+            return 2.0
+        except Exception:
             return 5.0
-    
-    def _calculate_population_factor(self, affected_count: int) -> float:
-        if affected_count >= 100:
+
+    def _population_impact(self, count: int) -> float:
+        if count >= 100:
             return 10.0
-        elif affected_count >= 50:
+        if count >= 50:
             return 8.0
-        elif affected_count >= 20:
+        if count >= 20:
             return 6.0
-        elif affected_count >= 10:
+        if count >= 10:
             return 5.0
-        elif affected_count >= 5:
+        if count >= 5:
             return 4.0
-        else:
-            return 3.0
-    
-    def _calculate_vulnerability_factor(self, crisis: Dict) -> float:
-        vulnerable_indicators = crisis.get('vulnerable_groups', [])
-        
+        return 3.0
+
+    def _vulnerability_score(self, groups: List[str]) -> float:
         score = 5.0
-        
-        if 'children' in vulnerable_indicators:
+
+        if "children" in groups:
             score += 2.0
-        if 'elderly' in vulnerable_indicators:
+        if "elderly" in groups:
             score += 1.5
-        if 'disabled' in vulnerable_indicators:
+        if "disabled" in groups:
             score += 1.5
-        if 'pregnant' in vulnerable_indicators:
+        if "pregnant" in groups:
             score += 2.0
-        
+
         return min(10.0, score)
-    
+
+    def _trust_factor(self, trust_score: int) -> float:
+        # Normalize trust score to 0–10 range
+        return max(1.0, min(10.0, trust_score))
+
+    # ---------- HELPERS ----------
+
     def compare_priorities(self, crisis1: Dict, crisis2: Dict) -> Dict:
-        priority1 = self.calculate_priority(crisis1)
-        priority2 = self.calculate_priority(crisis2)
-        
+        p1 = self.calculate_priority(crisis1)
+        p2 = self.calculate_priority(crisis2)
+
         return {
-            "crisis1_priority": priority1,
-            "crisis2_priority": priority2,
-            "should_reallocate": priority2 > priority1,
-            "priority_difference": abs(priority2 - priority1)
+            "crisis1_priority": p1,
+            "crisis2_priority": p2,
+            "should_reallocate": p2 > p1,
+            "priority_difference": abs(p2 - p1)
         }
-    
-    def batch_prioritize(self, crises: list) -> list:
+
+    def batch_prioritize(self, crises: List[Dict]) -> List[Dict]:
         prioritized = []
+
         for crisis in crises:
-            crisis['calculated_priority'] = self.calculate_priority(crisis)
-            prioritized.append(crisis)
-        
-        return sorted(prioritized, key=lambda x: x['calculated_priority'], reverse=True)
+            prioritized.append({
+                **crisis,
+                "calculated_priority": self.calculate_priority(crisis)
+            })
+
+        return sorted(
+            prioritized,
+            key=lambda x: x["calculated_priority"],
+            reverse=True
+        )

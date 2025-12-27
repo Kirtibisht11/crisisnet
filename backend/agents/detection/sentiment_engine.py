@@ -1,33 +1,30 @@
-# backend/agents/detection/sentiment_engine.py
+"""
+Urgency / Sentiment Engine
+Scores urgency of a crisis message based on keywords.
+"""
 
 URGENT_TERMS = [
-    "urgent",
-    "help",
-    "emergency",
-    "trapped",
-    "danger",
-    "critical",
-    "bleeding",
-    "unconscious"
+    "urgent", "help", "emergency", "trapped",
+    "danger", "critical", "bleeding", "unconscious"
 ]
 
 
 def sentiment_score(text):
     """
-    Calculates urgency score based on presence of critical terms.
+    Calculates urgency score.
 
     Args:
-        text (str): Message text
+        text (str): message text
 
     Returns:
-        int: Urgency score (higher = more urgent)
+        int: urgency score
     """
 
-    if not text:
+    if not text or not isinstance(text, str):
         return 0
 
-    text = text.lower()
     score = 0
+    text = text.lower()
 
     for term in URGENT_TERMS:
         if term in text:
