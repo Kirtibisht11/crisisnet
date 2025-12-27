@@ -1,0 +1,433 @@
+{
+  "alerts": [
+    {
+      "alert_id": "A001",
+      "user_id": "ravi_kumar_mumbai",
+      "crisis_type": "flood",
+      "location": "Linking Road, Bandra, Mumbai",
+      "lat": 19.0596,
+      "lon": 72.8295,
+      "message": "Severe flooding on Linking Road! Water level rising rapidly. Traffic completely stuck!",
+      "has_image": true,
+      "trust_score": 0.575,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.85,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.255,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T14:05:00Z",
+      "verified_at": "2024-12-26T14:05:03Z"
+    },
+    {
+      "alert_id": "A002",
+      "user_id": "priya_shah_93",
+      "crisis_type": "flood",
+      "location": "Linking Road, Bandra, Mumbai",
+      "lat": 19.0600,
+      "lon": 72.8300,
+      "message": "Can confirm serious flooding near Bandra station. Situation getting worse!",
+      "has_image": true,
+      "trust_score": 0.627,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.78,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.220,
+        "source_reputation": 0.234,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T14:12:00Z",
+      "verified_at": "2024-12-26T14:12:02Z"
+    },
+    {
+      "alert_id": "A003",
+      "user_id": "amit_electronics_bandra",
+      "crisis_type": "flood",
+      "location": "Linking Road, Bandra, Mumbai",
+      "lat": 19.0605,
+      "lon": 72.8305,
+      "message": "URGENT! Shop flooded, water coming inside. Need immediate help!",
+      "has_image": false,
+      "trust_score": 0.682,
+      "decision": "VERIFIED",
+      "status": "Auto-verified - High confidence",
+      "reputation": 0.50,
+      "cross_verification": {
+        "score": 0.70,
+        "sources": 2,
+        "details": "Confirmed by 2 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.280,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.020
+      },
+      "timestamp": "2024-12-26T14:18:00Z",
+      "verified_at": "2024-12-26T14:18:01Z"
+    },
+    {
+      "alert_id": "A004",
+      "user_id": "delhi_user_001",
+      "crisis_type": "flood",
+      "location": "Connaught Place, Delhi",
+      "lat": 28.6304,
+      "lon": 77.2177,
+      "message": "Heavy waterlogging in CP area. Roads impassable.",
+      "has_image": true,
+      "trust_score": 0.488,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.50,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T14:25:00Z",
+      "verified_at": "2024-12-26T14:25:02Z"
+    },
+    {
+      "alert_id": "A005",
+      "user_id": "bangalore_user_001",
+      "crisis_type": "flood",
+      "location": "MG Road, Bangalore",
+      "lat": 12.9716,
+      "lon": 77.5946,
+      "message": "Roads waterlogged, traffic diverted",
+      "has_image": true,
+      "trust_score": 0.488,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.50,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T14:30:00Z",
+      "verified_at": "2024-12-26T14:30:01Z"
+    },
+    {
+      "alert_id": "A006",
+      "user_id": "fire_witness_mumbai",
+      "crisis_type": "fire",
+      "location": "Andheri East, Mumbai",
+      "lat": 19.1136,
+      "lon": 72.8697,
+      "message": "Major fire in commercial building! Smoke visible from distance",
+      "has_image": true,
+      "trust_score": 0.592,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.65,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.225,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.100
+      },
+      "timestamp": "2024-12-26T15:00:00Z",
+      "verified_at": "2024-12-26T15:00:02Z"
+    },
+    {
+      "alert_id": "A007",
+      "user_id": "andheri_resident_02",
+      "crisis_type": "fire",
+      "location": "Andheri East, Mumbai",
+      "lat": 19.1140,
+      "lon": 72.8700,
+      "message": "Can confirm fire emergency. Fire trucks on scene.",
+      "has_image": true,
+      "trust_score": 0.697,
+      "decision": "VERIFIED",
+      "status": "Auto-verified - High confidence",
+      "reputation": 0.72,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.220,
+        "source_reputation": 0.230,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.100
+      },
+      "timestamp": "2024-12-26T15:07:00Z",
+      "verified_at": "2024-12-26T15:07:01Z"
+    },
+    {
+      "alert_id": "A008",
+      "user_id": "medical_alert_user",
+      "crisis_type": "medical",
+      "location": "Powai, Mumbai",
+      "lat": 19.1197,
+      "lon": 72.9060,
+      "message": "Medical emergency - person collapsed on street. Need ambulance urgently!",
+      "has_image": false,
+      "trust_score": 0.510,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.60,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.210,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.020
+      },
+      "timestamp": "2024-12-26T15:30:00Z",
+      "verified_at": "2024-12-26T15:30:02Z"
+    },
+    {
+      "alert_id": "A009",
+      "user_id": "new_user_001",
+      "crisis_type": "earthquake",
+      "location": "Random Location",
+      "lat": null,
+      "lon": null,
+      "message": "I think I felt some shaking, not sure",
+      "has_image": false,
+      "trust_score": 0.338,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.50,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.000
+      },
+      "timestamp": "2024-12-26T16:00:00Z",
+      "verified_at": "2024-12-26T16:00:01Z"
+    },
+    {
+      "alert_id": "A010",
+      "user_id": "traffic_monitor_del",
+      "crisis_type": "accident",
+      "location": "NH-48, Gurgaon",
+      "lat": 28.4595,
+      "lon": 77.0266,
+      "message": "Major accident on highway. Multiple vehicles involved. Traffic blocked.",
+      "has_image": true,
+      "trust_score": 0.538,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.68,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.220,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T16:30:00Z",
+      "verified_at": "2024-12-26T16:30:02Z"
+    },
+    {
+      "alert_id": "A011",
+      "user_id": "commuter_gurgaon",
+      "crisis_type": "accident",
+      "location": "NH-48, Gurgaon",
+      "lat": 28.4600,
+      "lon": 77.0270,
+      "message": "Can confirm accident. Ambulances arrived. Traffic jam forming.",
+      "has_image": false,
+      "trust_score": 0.615,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.55,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.220,
+        "source_reputation": 0.195,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.020
+      },
+      "timestamp": "2024-12-26T16:38:00Z",
+      "verified_at": "2024-12-26T16:38:01Z"
+    },
+    {
+      "alert_id": "A012",
+      "user_id": "spam_bot_999",
+      "crisis_type": "flood",
+      "location": "Fake Location 1",
+      "lat": null,
+      "lon": null,
+      "message": "BREAKING NEWS CLICK HERE",
+      "has_image": false,
+      "trust_score": 0.088,
+      "decision": "REJECTED",
+      "status": "Rejected - Trust score too low",
+      "reputation": 0.15,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.038,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.700,
+        "bonus_signals": 0.000
+      },
+      "timestamp": "2024-12-26T17:00:00Z",
+      "verified_at": "2024-12-26T17:00:01Z"
+    },
+    {
+      "alert_id": "A013",
+      "user_id": "trusted_reporter_mum",
+      "crisis_type": "storm",
+      "location": "Marine Drive, Mumbai",
+      "lat": 18.9432,
+      "lon": 72.8236,
+      "message": "Heavy storm approaching. High waves at Marine Drive. Public advised to stay away.",
+      "has_image": true,
+      "trust_score": 0.705,
+      "decision": "VERIFIED",
+      "status": "Auto-verified - High confidence",
+      "reputation": 0.92,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.250,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.100
+      },
+      "timestamp": "2024-12-26T17:30:00Z",
+      "verified_at": "2024-12-26T17:30:01Z"
+    },
+    {
+      "alert_id": "A014",
+      "user_id": "chennai_resident_05",
+      "crisis_type": "flood",
+      "location": "Anna Nagar, Chennai",
+      "lat": 13.0878,
+      "lon": 80.2088,
+      "message": "Street flooding reported. Water entering ground floor shops.",
+      "has_image": true,
+      "trust_score": 0.515,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.58,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.205,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.080
+      },
+      "timestamp": "2024-12-26T18:00:00Z",
+      "verified_at": "2024-12-26T18:00:02Z"
+    },
+    {
+      "alert_id": "A015",
+      "user_id": "pune_alert_system",
+      "crisis_type": "fire",
+      "location": "Koregaon Park, Pune",
+      "lat": 18.5362,
+      "lon": 73.8958,
+      "message": "Fire outbreak in residential area. Evacuations in progress.",
+      "has_image": false,
+      "trust_score": 0.545,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.70,
+      "cross_verification": {
+        "score": 0.50,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.200,
+        "source_reputation": 0.225,
+        "duplicate_adjustment": 0.000,
+        "rate_limit_penalty": 0.000,
+        "bonus_signals": 0.020
+      },
+      "timestamp": "2024-12-26T18:30:00Z",
+      "verified_at": "2024-12-26T18:30:01Z"
+    }
+  ],
+  "total_count": 15,
+  "last_updated": "2024-12-26T18:30:01Z",
+  "statistics": {
+    "verified": 3,
+    "review": 10,
+    "uncertain": 1,
+    "rejected": 1,
+    "avg_trust_score": 0.532
+  }
+}

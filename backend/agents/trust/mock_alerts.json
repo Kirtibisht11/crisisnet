@@ -1,0 +1,204 @@
+{
+  "description": "Mock crisis alerts for Trust Agent demonstration",
+  "generated_for": "CrisisNet Hackathon - Round 1",
+  
+  "scenarios": {
+    "scenario_1_high_confidence": {
+      "description": "Multiple independent sources confirm flood",
+      "alerts": [
+        {
+          "alert_id": "A001",
+          "user_id": "ravi_kumar_mumbai",
+          "crisis_type": "flood",
+          "location": "Linking Road, Bandra, Mumbai",
+          "lat": 19.0596,
+          "lon": 72.8295,
+          "message": "Severe flooding on Linking Road! Water level rising rapidly. Traffic completely stuck!",
+          "has_image": true,
+          "timestamp": "2024-07-15T14:05:00Z",
+          "expected_result": "REVIEW (first report, neutral confidence)"
+        },
+        {
+          "alert_id": "A002",
+          "user_id": "priya_shah_93",
+          "crisis_type": "flood",
+          "location": "Linking Road, Bandra, Mumbai",
+          "lat": 19.0600,
+          "lon": 72.8300,
+          "message": "Can confirm serious flooding near Bandra station. Situation getting worse!",
+          "has_image": true,
+          "timestamp": "2024-07-15T14:12:00Z",
+          "expected_result": "REVIEW (2 sources, medium confidence)"
+        },
+        {
+          "alert_id": "A003",
+          "user_id": "amit_electronics_bandra",
+          "crisis_type": "flood",
+          "location": "Linking Road, Bandra, Mumbai",
+          "lat": 19.0605,
+          "lon": 72.8305,
+          "message": "URGENT! Shop flooded, water coming inside. Need immediate help!",
+          "has_image": false,
+          "timestamp": "2024-07-15T14:18:00Z",
+          "expected_result": "VERIFIED (3 sources, high confidence)"
+        }
+      ]
+    },
+    
+    "scenario_2_duplicate_spam": {
+      "description": "Same user tries to spam with duplicate reports",
+      "alerts": [
+        {
+          "alert_id": "A004",
+          "user_id": "ravi_kumar_mumbai",
+          "crisis_type": "flood",
+          "location": "Linking Road, Bandra, Mumbai",
+          "lat": 19.0596,
+          "lon": 72.8295,
+          "message": "Still flooding here, water not receding",
+          "has_image": false,
+          "timestamp": "2024-07-15T14:25:00Z",
+          "expected_result": "REJECTED (duplicate from same user)"
+        }
+      ]
+    },
+    
+    "scenario_3_rate_limiting": {
+      "description": "Spam bot tries to flood system with alerts",
+      "alerts": [
+        {
+          "alert_id": "A005",
+          "user_id": "spam_bot_999",
+          "crisis_type": "fire",
+          "location": "Location 1",
+          "message": "FIRE ALERT CLICK HERE FOR NEWS",
+          "has_image": false,
+          "timestamp": "2024-07-15T14:30:00Z"
+        },
+        {
+          "alert_id": "A006",
+          "user_id": "spam_bot_999",
+          "crisis_type": "earthquake",
+          "location": "Location 2",
+          "message": "EARTHQUAKE BREAKING NEWS",
+          "has_image": false,
+          "timestamp": "2024-07-15T14:30:10Z"
+        },
+        {
+          "alert_id": "A007",
+          "user_id": "spam_bot_999",
+          "crisis_type": "flood",
+          "location": "Location 3",
+          "message": "FLOOD WARNING",
+          "has_image": false,
+          "timestamp": "2024-07-15T14:30:20Z",
+          "note": "After 5 reports, user should be rate-limited"
+        }
+      ]
+    },
+    
+    "scenario_4_low_confidence": {
+      "description": "Uncertain report from new user, no confirmation",
+      "alerts": [
+        {
+          "alert_id": "A008",
+          "user_id": "new_user_001",
+          "crisis_type": "earthquake",
+          "location": "Random Location",
+          "message": "I think I felt some shaking, not sure",
+          "has_image": false,
+          "timestamp": "2024-07-15T15:00:00Z",
+          "expected_result": "UNCERTAIN or REJECTED (low confidence)"
+        }
+      ]
+    },
+    
+    "scenario_5_different_locations": {
+      "description": "Same crisis type but different locations (no cross-verification)",
+      "alerts": [
+        {
+          "alert_id": "A009",
+          "user_id": "delhi_user_001",
+          "crisis_type": "flood",
+          "location": "Connaught Place, Delhi",
+          "lat": 28.6304,
+          "lon": 77.2177,
+          "message": "Flooding in CP area",
+          "has_image": true,
+          "timestamp": "2024-07-15T14:10:00Z"
+        },
+        {
+          "alert_id": "A010",
+          "user_id": "bangalore_user_001",
+          "crisis_type": "flood",
+          "location": "MG Road, Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "message": "Roads waterlogged",
+          "has_image": true,
+          "timestamp": "2024-07-15T14:15:00Z",
+          "note": "Different cities - should NOT cross-verify"
+        }
+      ]
+    }
+  },
+  
+  "user_profiles": {
+    "trusted_users": [
+      {
+        "user_id": "ravi_kumar_mumbai",
+        "reputation": 0.85,
+        "total_reports": 20,
+        "accurate_reports": 18,
+        "false_reports": 2,
+        "member_since": "2023-01-15"
+      },
+      {
+        "user_id": "priya_shah_93",
+        "reputation": 0.78,
+        "total_reports": 15,
+        "accurate_reports": 13,
+        "false_reports": 2,
+        "member_since": "2023-06-20"
+      }
+    ],
+    "new_users": [
+      {
+        "user_id": "amit_electronics_bandra",
+        "reputation": 0.5,
+        "total_reports": 0,
+        "accurate_reports": 0,
+        "false_reports": 0,
+        "member_since": "2024-07-15",
+        "note": "First report, neutral reputation"
+      },
+      {
+        "user_id": "new_user_001",
+        "reputation": 0.5,
+        "total_reports": 0,
+        "accurate_reports": 0,
+        "false_reports": 0,
+        "member_since": "2024-07-15"
+      }
+    ],
+    "suspicious_users": [
+      {
+        "user_id": "spam_bot_999",
+        "reputation": 0.15,
+        "total_reports": 10,
+        "accurate_reports": 0,
+        "false_reports": 10,
+        "member_since": "2024-07-14",
+        "note": "Known spam bot, low reputation"
+      }
+    ]
+  },
+  
+  "test_expectations": {
+    "scenario_1": "Trust score should increase from ~0.48 → ~0.52 → ~0.71 as more sources confirm",
+    "scenario_2": "Duplicate should be REJECTED with high penalty",
+    "scenario_3": "Rate limiter should block after 5 reports in short time",
+    "scenario_4": "Low confidence alert should get UNCERTAIN or REJECTED decision",
+    "scenario_5": "Different locations should NOT cross-verify each other"
+  }
+}
