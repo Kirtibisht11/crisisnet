@@ -8,7 +8,7 @@ from datetime import datetime
 BOT_TOKEN = "8559367774:AAGGQdAD1NfZnMV61olD_lvt2nFtQX47lmk"
 
 # ============================================================
-# 👥 DEMO USERS (HARDCODED FOR HACKATHON)
+# 👥 DEMO USERS
 # ============================================================
 
 # 👉 (VOLUNTEER)

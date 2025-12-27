@@ -1,15 +1,34 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import AuthorityDashboard from "./pages/authority"
+/**
+ * App.jsx
+ * -------
+ * Root routing configuration.
+ *
+ * Handles routing for different user roles
+ * (Citizen / NGO / Authority) under one app.
+ *
+ * Access control can later be enforced
+ * using protected routes or role-based guards.
+ */
 
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
+import Citizen from "./pages/citizen";
+import NGO from "./pages/ngo";
+import AuthorityDashboard from "./pages/authority";
+
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Citizen Landing */}
+        <Route path="/" element={<Citizen />} />
+
+        {/* NGO Dashboard */}
+        <Route path="/ngo" element={<NGO />} />
+
+        {/* Authority Dashboard */}
         <Route path="/authority" element={<AuthorityDashboard />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
-
-export default App
