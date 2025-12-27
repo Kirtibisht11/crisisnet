@@ -1,0 +1,58 @@
+DECISION_VERIFIED = "VERIFIED"
+DECISION_REVIEW = "REVIEW"
+DECISION_UNCERTAIN = "UNCERTAIN"
+DECISION_REJECTED = "REJECTED"
+
+STATUS_AUTO_VERIFIED = "Auto-verified - High confidence"
+STATUS_NEEDS_REVIEW = "Needs human review"
+STATUS_LOW_CONFIDENCE = "Low confidence"
+STATUS_REJECTED = "Rejected - Trust score too low"
+STATUS_DUPLICATE = "Duplicate detected"
+STATUS_RATE_LIMITED = "Rate limit exceeded"
+
+CRISIS_TYPES = [
+    "flood",
+    "fire",
+    "earthquake",
+    "accident",
+    "medical",
+    "violence",
+    "storm",
+    "landslide",
+    "other"
+]
+
+URGENT_CRISIS_TYPES = ["fire", "medical", "violence", "earthquake"]
+
+REP_EXCELLENT = 0.8  
+REP_GOOD = 0.6       
+REP_FAIR = 0.4       
+REP_POOR = 0.2       
+REP_VERY_POOR = 0.1  
+
+MIN_SOURCES_REQUIRED = 2
+TIME_WINDOW_MINUTES = 30
+LOCATION_RADIUS_KM = 5
+
+MAX_REPORTS_PER_HOUR = 5
+MAX_REPORTS_PER_DAY = 15
+COOLDOWN_MINUTES = 10
+
+WEIGHT_CROSS_VERIFICATION = 0.40
+WEIGHT_SOURCE_REPUTATION = 0.25
+WEIGHT_DUPLICATE_CHECK = 0.20
+WEIGHT_RATE_LIMIT = 0.15
+
+BONUS_HAS_IMAGE = 0.05
+BONUS_HAS_LOCATION = 0.03
+BONUS_URGENT_KEYWORDS = 0.02
+
+USER_TYPE_TRUSTED = "Trusted"
+USER_TYPE_VERIFIED = "Verified"
+USER_TYPE_NEW = "New User"
+USER_TYPE_SUSPICIOUS = "Suspicious"
+
+PRIORITY_CRITICAL = 1
+PRIORITY_HIGH = 2
+PRIORITY_MEDIUM = 3
+PRIORITY_LOW = 4
