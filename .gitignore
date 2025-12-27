@@ -1,22 +1,28 @@
-# Python
+# ===== Python =====
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Virtual environment
+# Virtual environments
 venv/
 .env
+.env.*
 
-# Node / frontend
+# ===== Node / Frontend =====
 node_modules/
+dist/
 
-# OS files
+# ===== OS files =====
 .DS_Store
+Thumbs.db
 
-# Logs / temp
+# ===== Logs =====
 *.log
 
-# IDE
+# ===== IDE / Editor =====
 .vscode/
 .idea/
