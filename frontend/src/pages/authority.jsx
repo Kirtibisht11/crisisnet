@@ -262,7 +262,6 @@ const AuthorityDashboard = () => {
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
                   <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                    <span>{formatCrisisType(selectedAlert.crisis_type).emoji}</span>
                     Alert Details
                   </h2>
                   <button
@@ -281,7 +280,6 @@ const AuthorityDashboard = () => {
                         {formatCrisisType(selectedAlert.crisis_type).label}
                       </h3>
                       <p className="text-gray-600 flex items-center gap-2 mt-1">
-                        {selectedAlert.location}
                       </p>
                       {selectedAlert.lat && selectedAlert.lon && (
                         <p className="text-sm text-gray-500 mt-1">
@@ -331,7 +329,7 @@ const AuthorityDashboard = () => {
                 {selectedAlert.reputation != null && (
                   <div className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
                     <h4 className="font-bold text-purple-800 mb-3 text-lg flex items-center gap-2">
-                      Reporter Profile
+                     Reporter Profile
                     </h4>
                     <div className="flex items-center gap-4">
                       <div className="text-4xl">{formatReputation(selectedAlert.reputation).stars}</div>
@@ -351,7 +349,7 @@ const AuthorityDashboard = () => {
                 {selectedAlert.cross_verification && (
                   <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200">
                     <h4 className="font-bold text-blue-800 mb-3 text-lg flex items-center gap-2">
-                      Cross-Verification
+                     Cross-Verification
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
