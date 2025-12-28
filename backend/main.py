@@ -1,13 +1,9 @@
-"""
-CrisisNet - Real Disaster Alert System
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # Import routers
-from api.registration import router as registration_router
+from api.users import router as users_router
 from api.crisis import router as crisis_router
 from api.trust_routes import router as trust_router
 from api.alert_routes import router as alert_router
