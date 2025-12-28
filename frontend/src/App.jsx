@@ -15,6 +15,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Citizen from "./pages/citizen";
 import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
+import Login from "./pages/login";
+import SignupVolunteer from "./pages/signup_volunteer";
+import VolunteerPage from "./pages/volunteer";
 
 export default function App() {
   return (
@@ -28,6 +31,10 @@ export default function App() {
 
         {/* Authority Dashboard */}
         <Route path="/authority" element={<AuthorityDashboard />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup_volunteer" element={<SignupVolunteer />} />
+        <Route path="/volunteer" element={<VolunteerPage />} />
       </Routes>
     </BrowserRouter>
   );

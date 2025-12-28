@@ -6,7 +6,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.trust_agent import TrustAgent
+from ..agents.trust_agent import TrustAgent
 
 router = APIRouter(prefix="/api/trust", tags=["Trust Agent"])
 

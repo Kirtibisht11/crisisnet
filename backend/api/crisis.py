@@ -1,206 +1,112 @@
 """
-Crisis Detection and Alert API
+Crisis Detection and Alert API (JSON users)
 """
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
+import json
+import os
+import uuid
 
-from database.models import Crisis, add_crisis, get_all_crises, get_active_crises, get_all_users
-from services.location_service import location_service
-from agents.communication_agent import communication_agent
-from services.whatsapp_service import whatsapp_service
+from ..services.location_service import location_service
+# from ..agents.communication_agent import communication_agent
+
 
 router = APIRouter(prefix="/crisis", tags=["crisis"])
 
-class CrisisCreate(BaseModel):
-    crisis_type: str  # earthquake, flood, fire, etc.
-    severity: str    # low, medium, high, critical
-    latitude: float
-    longitude: float
-    radius_km: float = 5.0
-    location_name: Optional[str] = None
+USERS_FILE = "users.json"
+CRISIS_FILE = "crises.json"
 
-class CrisisResponse(BaseModel):
-    crisis_id: str
+
+# ---------- Helpers ----------
+
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return []
+    with open(USERS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)["users"]
+
+
+def load_crises():
+    if not os.path.exists(CRISIS_FILE):
+        return []
+    with open(CRISIS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)["crises"]
+
+
+def save_crisis(crisis):
+    data = {"crises": load_crises()}
+    data["crises"].append(crisis)
+    with open(CRISIS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+# ---------- Models ----------
+
+class CrisisCreate(BaseModel):
     crisis_type: str
     severity: str
     latitude: float
     longitude: float
-    radius_km: float
-    location_name: str
-    detected_at: str
-    status: str
+    radius_km: float = 5.0
+    location_name: Optional[str] = "Unknown"
 
-@router.post("/detect", response_model=CrisisResponse)
-def detect_crisis(crisis_data: CrisisCreate, background_tasks: BackgroundTasks):
-    """Detect a new crisis and trigger alerts"""
-    
-    # Validate crisis type
-    valid_types = ['earthquake', 'flood', 'fire', 'tsunami', 'cyclone', 
-                   'medical', 'terrorist', 'industrial', 'other']
-    if crisis_data.crisis_type not in valid_types:
-        raise HTTPException(400, f"Crisis type must be one of: {', '.join(valid_types)}")
-    
-    # Validate severity
-    valid_severities = ['low', 'medium', 'high', 'critical']
-    if crisis_data.severity not in valid_severities:
-        raise HTTPException(400, f"Severity must be one of: {', '.join(valid_severities)}")
-    
-    # Create crisis
-    crisis = Crisis(
-        crisis_type=crisis_data.crisis_type,
-        severity=crisis_data.severity,
-        latitude=crisis_data.latitude,
-        longitude=crisis_data.longitude,
-        radius_km=crisis_data.radius_km
-    )
-    
-    # Set location name if provided
-    if crisis_data.location_name:
-        crisis.location_name = crisis_data.location_name
-    
-    # Add to database
-    crisis_dict = add_crisis(crisis)
-    
-    # Trigger alerts in background
-    background_tasks.add_task(process_and_send_alerts, crisis_dict)
-    
-    return crisis_dict
 
-@router.get("/", response_model=List[CrisisResponse])
-def list_crises(active_only: bool = False):
-    """List all crises or active crises only"""
-    if active_only:
-        return get_active_crises()
-    return get_all_crises()
+# ---------- Routes ----------
 
-@router.get("/stats")
-def crisis_statistics():
-    """Get crisis statistics"""
-    all_crises = get_all_crises()
-    active = get_active_crises()
-    
-    # Count by type
-    by_type = {}
-    for crisis in all_crises:
-        ctype = crisis['crisis_type']
-        by_type[ctype] = by_type.get(ctype, 0) + 1
-    
-    # Count by severity
-    by_severity = {}
-    for crisis in all_crises:
-        severity = crisis['severity']
-        by_severity[severity] = by_severity.get(severity, 0) + 1
-    
-    return {
-        "total_crises": len(all_crises),
-        "active_crises": len(active),
-        "by_type": by_type,
-        "by_severity": by_severity,
-        "last_24_hours": len([c for c in all_crises 
-                              if datetime.fromisoformat(c['detected_at'].replace('Z', '+00:00')) 
-                              > datetime.now().replace(hour=0, minute=0, second=0)])
+@router.post("/detect")
+def detect_crisis(crisis: CrisisCreate, background_tasks: BackgroundTasks):
+
+    crisis_data = {
+        "crisis_id": f"c_{uuid.uuid4().hex[:8]}",
+        "crisis_type": crisis.crisis_type,
+        "severity": crisis.severity,
+        "latitude": crisis.latitude,
+        "longitude": crisis.longitude,
+        "radius_km": crisis.radius_km,
+        "location_name": crisis.location_name,
+        "detected_at": datetime.utcnow().isoformat() + "Z",
+        "status": "active"
     }
 
-@router.post("/demo-alert")
-def trigger_demo_alert(background_tasks: BackgroundTasks):
-    """Trigger a demo crisis alert"""
-    
-    # Demo crisis in Delhi
-    demo_crisis = {
-        "crisis_type": "earthquake",
-        "severity": "high",
-        "latitude": 28.6139,
-        "longitude": 77.2090,
-        "radius_km": 3.0,
-        "location_name": "Demo Zone - Hackathon"
-    }
-    
-    # Process as normal crisis
-    crisis_create = CrisisCreate(**demo_crisis)
-    crisis_response = detect_crisis(crisis_create, background_tasks)
-    
-    return {
-        "message": "Demo crisis alert triggered",
-        "crisis": crisis_response,
-        "note": "WhatsApp alerts being sent to registered users"
-    }
+    save_crisis(crisis_data)
 
-def process_and_send_alerts(crisis_data: dict):
-    """Background task to process and send alerts"""
-    
-    print(f"\n🚨 PROCESSING ALERTS FOR CRISIS: {crisis_data['crisis_id']}")
-    print("=" * 60)
-    
-    # Step 1: Get all users from database
-    all_users = get_all_users()
-    
-    # Step 2: Find affected citizens
+    background_tasks.add_task(process_and_send_alerts, crisis_data)
+
+    return crisis_data
+
+
+# ---------- Background Logic ----------
+
+def process_and_send_alerts(crisis):
+
+    users = load_users()
+
     affected_citizens = location_service.find_users_in_radius(
-        crisis_data['latitude'], 
-        crisis_data['longitude'],
-        crisis_data['radius_km'],
-        [u for u in all_users if u['role'] == 'citizen']
+        crisis["latitude"],
+        crisis["longitude"],
+        crisis["radius_km"],
+        [u for u in users if u["role"] == "citizen"]
     )
-    
-    # Step 3: Find nearby volunteers
-    nearby_volunteers = location_service.find_nearby_volunteers(
-        crisis_data['latitude'],
-        crisis_data['longitude'],
-        [u for u in all_users if u['role'] == 'volunteer'],
-        max_distance=10.0  # Within 10km
-    )[:5]  # Top 5 closest volunteers
-    
-    # Step 4: Get all authorities
-    authorities = [u for u in all_users if u['role'] == 'authority']
-    
-    # Step 5: Prepare data for communication agent
-    agent_input = {
-        "crisis_id": crisis_data['crisis_id'],
-        "crisis_type": crisis_data['crisis_type'],
-        "severity": crisis_data['severity'],
-        "location": crisis_data['location_name'],
-        "latitude": crisis_data['latitude'],
-        "longitude": crisis_data['longitude'],
-        "radius_km": crisis_data['radius_km'],
-        "timestamp": crisis_data['detected_at'],
-        "affected_users": affected_citizens,
-        "available_volunteers": nearby_volunteers
-    }
-    
-    # Step 6: Process through communication agent
-    agent_result = communication_agent.process_crisis(agent_input)
-    
-    print(f"👥 Affected Citizens: {len(affected_citizens)}")
-    print(f"🦺 Assigned Volunteers: {len(nearby_volunteers)}")
-    print(f"👮 Notified Authorities: {len(authorities)}")
-    print(f"📝 Templates Created: {len(agent_result['delivery_payload']['templates'])}")
-    
-    # Step 7: Send WhatsApp alerts
-    send_whatsapp_alerts(agent_result['delivery_payload'])
-    
-    print("=" * 60)
-    print("✅ ALERT PROCESSING COMPLETE")
 
-def send_whatsapp_alerts(delivery_payload: dict):
-    """Send alerts via WhatsApp"""
+    volunteers = location_service.find_nearby_volunteers(
+        crisis["latitude"],
+        crisis["longitude"],
+        [u for u in users if u["role"] == "volunteer"],
+        max_distance=10
+    )[:5]
+
+    authorities = [u for u in users if u["role"] == "authority"]
+
+    agent_input = {
+        "crisis": crisis,
+        "affected_users": affected_citizens,
+        "available_volunteers": volunteers,
+        "authorities": authorities
+    }
+
+    # payload = communication_agent.process_crisis(agent_input)
     
-    templates = delivery_payload['templates']
-    recipients = delivery_payload['recipients']
-    
-    # Send to citizens
-    if recipients['citizens']:
-        print(f"\n📱 Sending to {len(recipients['citizens'])} citizens...")
-        whatsapp_service.send_bulk(recipients['citizens'], templates['citizen'])
-    
-    # Send to volunteers
-    if recipients['volunteers']:
-        print(f"\n🦺 Sending to {len(recipients['volunteers'])} volunteers...")
-        whatsapp_service.send_bulk(recipients['volunteers'], templates['volunteer'])
-    
-    # Send to authorities
-    if recipients['authorities']:
-        print(f"\n👮 Sending to {len(recipients['authorities'])} authorities...")
-        whatsapp_service.send_bulk(recipients['authorities'], templates['authority'])
+    return {"status": "ok"}
