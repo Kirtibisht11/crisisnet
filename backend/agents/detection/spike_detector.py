@@ -1,46 +1,51 @@
+"""
+Spike Detector
+Finds clusters of alerts from the same area.
+"""
+
 from collections import defaultdict
 
 
 def geo_bucket(lat, lon, precision=2):
-    """
-    Groups nearby locations by rounding coordinates.
-    precision=2 ≈ same neighborhood / locality
-    """
-    return round(lat, precision), round(lon, precision)
+    """Rounds coordinates to group nearby alerts."""
+    try:
+        return round(float(lat), precision), round(float(lon), precision)
+    except Exception:
+        return None
 
 
 def detect_spikes(alerts, threshold=2):
     """
-    Detects spikes where multiple alerts originate from
-    approximately the same location.
+    Detects spikes in alerts list.
 
     Args:
-        alerts (list): List of alert dictionaries
-        threshold (int): Minimum number of reports to be a spike
+        alerts (list): list of alert dicts
+        threshold (int): minimum count for spike
 
     Returns:
-        list: Detected spike objects
+        list: spike objects
     """
 
     buckets = defaultdict(list)
 
     for alert in alerts:
-        lat = alert["location"]["lat"]
-        lon = alert["location"]["lon"]
-        key = geo_bucket(lat, lon)
+        loc = alert.get("location")
+        if not loc:
+            continue
+
+        key = geo_bucket(loc.get("lat"), loc.get("lon"))
+        if not key:
+            continue
+
         buckets[key].append(alert)
 
     spikes = []
-
-    for location_key, grouped_alerts in buckets.items():
-        if len(grouped_alerts) >= threshold:
+    for key, grouped in buckets.items():
+        if len(grouped) >= threshold:
             spikes.append({
-                "location": {
-                    "lat": location_key[0],
-                    "lon": location_key[1]
-                },
-                "report_count": len(grouped_alerts),
-                "alerts": grouped_alerts
+                "location": {"lat": key[0], "lon": key[1]},
+                "count": len(grouped),
+                "alerts": grouped
             })
 
     return spikes

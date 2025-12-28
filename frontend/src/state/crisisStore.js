@@ -26,7 +26,13 @@ const useCrisisStore = create(
           allocations: state.allocations.filter(a => a.crisis_id !== crisisId)
         })),
         
-        setResources: (resources) => set({ resources }),
+        setResources: (resources) =>
+          set({
+            resources: resources.map(r => ({
+              ...r,
+              available: r.available !== undefined ? r.available : true
+            }))
+          }),
         
         updateResource: (resourceId, updates) => set((state) => ({
           resources: state.resources.map(r => 
@@ -34,7 +40,13 @@ const useCrisisStore = create(
           )
         })),
         
-        setVolunteers: (volunteers) => set({ volunteers }),
+        setVolunteers: (volunteers) =>
+          set({
+            volunteers: volunteers.map(v => ({
+              ...v,
+              available: v.available !== undefined ? v.available : true
+            }))
+          }),
         
         updateVolunteer: (volunteerId, updates) => set((state) => ({
           volunteers: state.volunteers.map(v => 
@@ -44,13 +56,16 @@ const useCrisisStore = create(
         
         addAllocation: (allocation) => {
           set((state) => {
+            const allocResources = allocation.resources || [];
+            const allocVolunteers = allocation.volunteers || [];
+
             const newResources = state.resources.map(r => {
-              const isAllocated = allocation.resources.some(ar => ar.id === r.id);
+              const isAllocated = allocResources.some(ar => ar.id === r.id);
               return isAllocated ? { ...r, available: false } : r;
             });
             
             const newVolunteers = state.volunteers.map(v => {
-              const isAllocated = allocation.volunteers.some(av => av.id === v.id);
+              const isAllocated = allocVolunteers.some(av => av.id === v.id);
               return isAllocated ? { ...v, available: false } : v;
             });
             
@@ -64,11 +79,13 @@ const useCrisisStore = create(
         
         releaseAllocation: (allocationId) => {
           set((state) => {
-            const allocation = state.allocations.find(a => a.allocation_id === allocationId);
+            const allocation = state.allocations.find(
+              a => a.allocation_id === allocationId || a.allocationId === allocationId
+            );
             if (!allocation) return state;
             
-            const releasedResourceIds = allocation.resources.map(r => r.id);
-            const releasedVolunteerIds = allocation.volunteers.map(v => v.id);
+            const releasedResourceIds = (allocation.resources || []).map(r => r.id);
+            const releasedVolunteerIds = (allocation.volunteers || []).map(v => v.id);
             
             const newResources = state.resources.map(r => 
               releasedResourceIds.includes(r.id) ? { ...r, available: true } : r
@@ -79,7 +96,9 @@ const useCrisisStore = create(
             );
             
             return {
-              allocations: state.allocations.filter(a => a.allocation_id !== allocationId),
+              allocations: state.allocations.filter(
+                a => (a.allocation_id || a.allocationId) !== allocationId
+              ),
               resources: newResources,
               volunteers: newVolunteers
             };
@@ -101,20 +120,20 @@ const useCrisisStore = create(
         
         getAvailableResources: () => {
           const state = get();
-          return state.resources.filter(r => r.available);
+          return state.resources.filter(r => r.available !== false);
         },
         
         getAvailableVolunteers: () => {
           const state = get();
-          return state.volunteers.filter(v => v.available);
+          return state.volunteers.filter(v => v.available !== false);
         },
         
         getUtilizationStats: () => {
           const state = get();
           const totalResources = state.resources.length;
-          const availableResources = state.resources.filter(r => r.available).length;
+          const availableResources = state.resources.filter(r => r.available !== false).length;
           const totalVolunteers = state.volunteers.length;
-          const availableVolunteers = state.volunteers.filter(v => v.available).length;
+          const availableVolunteers = state.volunteers.filter(v => v.available !== false).length;
           
           return {
             resources: {

@@ -1,25 +1,30 @@
+"""
+Keyword Matching Engine
+Matches crisis-related keywords in message text.
+"""
+
 def keyword_match(text, keyword_map):
     """
-    Matches disaster-related keywords in text.
+    Checks text against keyword map and returns matched crisis types.
 
     Args:
-        text (str): Incoming message text
-        keyword_map (dict): Disaster type → keyword list
+        text (str): Message text
+        keyword_map (dict): crisis_type -> list of keywords
 
     Returns:
-        list: Matched disaster types
+        list: matched crisis types
     """
 
-    if not text:
+    if not text or not isinstance(text, str):
         return []
 
     text = text.lower()
     matches = []
 
-    for disaster_type, keywords in keyword_map.items():
+    for crisis_type, keywords in keyword_map.items():
         for keyword in keywords:
             if keyword in text:
-                matches.append(disaster_type)
-                break
+                matches.append(crisis_type)
+                break  # Avoid duplicate entries
 
     return list(set(matches))
