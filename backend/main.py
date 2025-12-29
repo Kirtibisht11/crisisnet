@@ -7,6 +7,15 @@ from .api.users import router as users_router
 from .api.crisis import router as crisis_router
 from .api.trust_routes import router as trust_router
 from .api.alert_routes import router as alert_router
+from .api.auth import router as auth_router
+from .api.geo import router as geo_router
+from .api.volunteer import router as volunteer_router
+from .api.assignments import router as assignments_router
+from .api.notify import router as notify_router
+from .api.system import router as system_router
+from .api.simulate import router as simulate_router
+
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +42,13 @@ app.include_router(users_router)
 app.include_router(crisis_router)
 app.include_router(alert_router)      # /api/alerts, /api/mock-scenarios
 app.include_router(trust_router)
+app.include_router(auth_router)
+app.include_router(geo_router)
+app.include_router(volunteer_router)
+app.include_router(assignments_router)
+app.include_router(notify_router)
+app.include_router(system_router)
+app.include_router(simulate_router)
 @app.get("/")
 def root():
     return {

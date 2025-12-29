@@ -1,27 +1,20 @@
-/**
- * api.js
- * -------
- * Central place for all frontend → backend API calls.
- *
- * This keeps network logic out of UI components,
- * so pages stay clean and readable.
- *
- * For now, we only expose a crisis simulation endpoint,
- * which is used during demo to trigger the entire system.
- */
+import axios from "axios";
 
 const BASE_URL = "http://localhost:8000";
 
-// Triggers a fake crisis on the backend.
-// Backend then sends Telegram alerts.
+const api = axios.create({
+  baseURL: BASE_URL,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.token = token;
+  return config;
+});
+
 export const simulateCrisis = async () => {
-  const response = await fetch(`${BASE_URL}/simulate-crisis`, {
-    method: "POST",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to simulate crisis");
-  }
-
-  return response.json();
+  const res = await api.post("/api/alerts/mock");
+  return res.data;
 };
+
+export default api;
