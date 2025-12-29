@@ -15,7 +15,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Citizen from "./pages/citizen";
 import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
-import Login from "./pages/login";
+import Login from "./pages/Login";
 import SignupVolunteer from "./pages/signup_volunteer";
 import VolunteerPage from "./pages/volunteer";
 
