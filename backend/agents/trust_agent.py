@@ -1,3 +1,5 @@
+
+from backend.agents.resource_agent import agent as resource_agent
 from typing import Dict
 from .trust import (
     JsonDataHandler,
@@ -80,12 +82,40 @@ class TrustAgent:
             additional_signals=additional_signals
         )
 
-        alert_id = self.cross_verifier.add_alert(alert)
-        self.rate_limiter.record_activity(user_id)
-        self.duplicate_detector.record_report(alert)
+        try:
+            alert_id = self.cross_verifier.add_alert(alert)
+        except Exception as e:
+            print(f"[Trust] Cross verifier failed: {e}")
+            alert_id = alert.get("alert_id")
+
+        try:
+            self.rate_limiter.record_activity(user_id)
+        except Exception as e:
+            print(f"[Trust] Rate limiter failed: {e}")
+
+        try:
+            self.duplicate_detector.record_report(alert)
+        except Exception as e:
+            print(f"[Trust] Duplicate detector failed: {e}")
+
         
         final_score = score_result['final_score']
         decision = score_result['decision']
+        if decision == "VERIFIED":
+            try:
+                crisis = {
+                    "type": alert.get("crisis_type"),
+                    "location": alert.get("location"),
+                    "lat": alert.get("lat"),
+                    "lon": alert.get("lon"),
+                    "severity": alert.get("severity"),
+                    "required_skills": self._infer_required_skills(alert.get("crisis_type")),
+                    "alert_id": alert.get("alert_id")
+                }
+                resource_agent.allocate_resources(crisis)
+            except Exception as e:
+                print(f"[Trust] Resource allocation failed for {alert.get('alert_id')}: {e}")
+
         
         print(f"   Trust Score: {final_score:.3f}")
         print(f"   Decision: {decision}")
@@ -111,6 +141,18 @@ class TrustAgent:
                 'alert_id': alert_id
             }
         }
+    
+    def _infer_required_skills(self, crisis_type: str):
+        if not crisis_type:
+            return []
+        mapping = {
+            "flood": ["rescue", "first_aid"],
+            "fire": ["firefighting", "medical"],
+            "earthquake": ["rescue", "engineering"],
+            "medical": ["medical"]
+        }
+        return mapping.get(crisis_type.lower(), [])
+
     
     def update_user_feedback(self, user_id: str, was_accurate: bool) -> Dict:
         old_rep = self.reputation_manager.get_reputation_score(user_id)

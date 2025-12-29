@@ -1,0 +1,22 @@
+{
+  "flood": {
+    "title": "Flood Guidance",
+    "guidance": "Stay calm. Move to higher ground. Avoid standing water and electrical lines. Follow local authority instructions. Nearest shelter: Community Hall (1.2 km)."
+  },
+  "fire": {
+    "title": "Fire Guidance",
+    "guidance": "Evacuate immediately if safe. Use stairs, not elevators. Call emergency services. Nearest shelter: Fire Station (0.8 km)."
+  },
+  "earthquake": {
+    "title": "Earthquake Guidance",
+    "guidance": "Drop, cover, and hold on. Stay away from windows and heavy objects. After shaking stops, move to open ground."
+  },
+  "medical": {
+    "title": "Medical Guidance",
+    "guidance": "Call emergency services. Provide first aid if trained. Keep the patient comfortable and monitor breathing."
+  },
+  "default": {
+    "title": "General Guidance",
+    "guidance": "Follow official instructions and stay tuned to updates from authorities."
+  }
+}

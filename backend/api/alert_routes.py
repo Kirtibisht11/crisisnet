@@ -6,213 +6,114 @@ import os
 router = APIRouter(prefix="/api", tags=["Alerts"])
 
 
+def _project_root():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 def load_alerts_log():
-    """Load alerts from alerts_log.json"""
-    alerts_log_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        'data',
-        'alerts_log.json'
-    )
-    
-    try:
-        with open(alerts_log_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
+    alerts_log_path = os.path.join(_project_root(), "data", "alerts_log.json")
+
+    if not os.path.exists(alerts_log_path):
         return {"alerts": [], "total_count": 0, "statistics": {}}
 
-def load_mock_scenarios():
-    """Load mock scenarios from mock_alerts.json"""
-    mock_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        'agents',
-        'trust',
-        'mock_alerts.json'
-    )
-    
     try:
-        with open(mock_path, 'r', encoding='utf-8') as f:
+        with open(alerts_log_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except json.JSONDecodeError:
+        return {"alerts": [], "total_count": 0, "statistics": {}}
+    except Exception as e:
+        raise RuntimeError(f"Failed reading alerts_log.json: {e}")
+
+
+def load_mock_scenarios():
+    mock_path = os.path.join(_project_root(), "agents", "trust", "mock_alerts.json")
+
+    if not os.path.exists(mock_path):
         return {"scenarios": {}, "user_profiles": {}}
+
+    with open(mock_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_companion_guidance():
+    path = os.path.join(_project_root(), "data", "predefined_guidance.json")
+
+    if not os.path.exists(path):
+        return {}
+
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @router.get("/alerts")
 async def get_all_alerts(
-    decision: Optional[str] = Query(None, description="Filter by decision: VERIFIED, REVIEW, REJECTED, UNCERTAIN"),
-    crisis_type: Optional[str] = Query(None, description="Filter by crisis type"),
-    limit: Optional[int] = Query(100, description="Maximum number of alerts to return")
+    decision: Optional[str] = Query(None),
+    crisis_type: Optional[str] = Query(None),
+    limit: int = Query(100)
 ):
-    """
-    Get all alerts from alerts_log.json
-    
-    **This is the main endpoint used by frontend**
-    
-    **Query Parameters:**
-    - decision: Filter by verification decision
-    - crisis_type: Filter by crisis type
-    - limit: Max results (default: 100)
-    
-    **Returns:** List of verified/processed alerts
-    """
     try:
         data = load_alerts_log()
-        alerts = data.get('alerts', [])
+        alerts = data.get("alerts", [])
 
         if decision:
-            alerts = [a for a in alerts if a.get('decision') == decision.upper()]
-        
+            alerts = [a for a in alerts if a.get("decision") == decision.upper()]
+
         if crisis_type:
-            alerts = [a for a in alerts if a.get('crisis_type', '').lower() == crisis_type.lower()]
- 
-        alerts = alerts[:limit]
-        
+            alerts = [a for a in alerts if a.get("crisis_type", "").lower() == crisis_type.lower()]
+
         return {
             "success": True,
-            "alerts": alerts,
+            "alerts": alerts[:limit],
             "count": len(alerts),
-            "total_available": data.get('total_count', 0)
+            "total_available": data.get("total_count", 0),
         }
-    
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to load alerts: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/alerts/{alert_id}")
 async def get_alert_by_id(alert_id: str):
-    """
-    Get specific alert by ID
-    
-    **Returns:** Single alert details
-    """
-    try:
-        data = load_alerts_log()
-        alerts = data.get('alerts', [])
-        
-        alert = next((a for a in alerts if a.get('alert_id') == alert_id), None)
-        
-        if not alert:
-            raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")
-        
-        return {
-            "success": True,
-            "alert": alert
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to load alert: {str(e)}"
-        )
+    data = load_alerts_log()
+    alert = next((a for a in data.get("alerts", []) if a.get("alert_id") == alert_id), None)
+
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    return {"success": True, "alert": alert}
+
 
 @router.get("/alerts/stats")
 async def get_alert_statistics():
-    """
-    Get alert statistics
-    
-    **Returns:** Verification stats, averages, counts
-    """
-    try:
-        data = load_alerts_log()
-        
-        return {
-            "success": True,
-            "statistics": data.get('statistics', {}),
-            "total_count": data.get('total_count', 0),
-            "last_updated": data.get('last_updated')
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to load statistics: {str(e)}"
-        )
+    data = load_alerts_log()
+    return {
+        "success": True,
+        "statistics": data.get("statistics", {}),
+        "total_count": data.get("total_count", 0),
+        "last_updated": data.get("last_updated"),
+    }
 
 
 @router.get("/mock-scenarios")
 async def get_mock_scenarios():
-    """
-    Get all mock test scenarios
-    
-    **For demo/testing purposes**
-    
-    **Returns:** All scenarios from mock_alerts.json
-    """
-    try:
-        data = load_mock_scenarios()
-        
-        return {
-            "success": True,
-            "scenarios": data.get('scenarios', {}),
-            "user_profiles": data.get('user_profiles', {}),
-            "test_expectations": data.get('test_expectations', {})
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to load mock scenarios: {str(e)}"
-        )
-
-@router.get("/mock-scenarios/{scenario_name}")
-async def get_scenario_by_name(scenario_name: str):
-    """
-    Get specific test scenario
-    
-    **Example scenarios:**
-    - scenario_1_high_confidence
-    - scenario_2_duplicate_spam
-    - scenario_3_rate_limiting
-    - scenario_4_low_confidence
-    - scenario_5_different_locations
-    """
-    try:
-        data = load_mock_scenarios()
-        scenarios = data.get('scenarios', {})
-        
-        if scenario_name not in scenarios:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Scenario '{scenario_name}' not found"
-            )
-        
-        return {
-            "success": True,
-            "scenario": scenarios[scenario_name]
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to load scenario: {str(e)}"
-        )
+    data = load_mock_scenarios()
+    return {"success": True, **data}
 
 
 @router.get("/crisis-types")
 async def get_crisis_types():
-    """
-    Get list of supported crisis types
-    
-    **Returns:** List of valid crisis types with metadata
-    """
-    crisis_types = [
-        {"type": "flood", "label": "Flood", "urgent": False},
-        {"type": "fire", "label": "Fire", "urgent": True},
-        {"type": "earthquake", "label": "Earthquake", "urgent": True},
-        {"type": "accident", "label": "Accident", "urgent": False},
-        {"type": "medical", "label": "Medical Emergency", "urgent": True},
-        {"type": "violence", "label": "Violence", "urgent": True},
-        {"type": "storm", "label": "Storm", "urgent": False},
-        {"type": "landslide", "label": "Landslide", "urgent": False},
-        {"type": "other", "label": "Other Emergency", "urgent": False}
-    ]
-    
     return {
         "success": True,
-        "crisis_types": crisis_types
+        "crisis_types": [
+            {"type": "flood", "label": "Flood", "urgent": False},
+            {"type": "fire", "label": "Fire", "urgent": True},
+            {"type": "earthquake", "label": "Earthquake", "urgent": True},
+            {"type": "medical", "label": "Medical Emergency", "urgent": True},
+        ],
     }
+
+
+@router.get("/companion/{ctype}")
+async def get_companion_guidance(ctype: str):
+    data = load_companion_guidance()
+    return {"success": True, "guidance": data.get(ctype.lower(), data.get("default"))}

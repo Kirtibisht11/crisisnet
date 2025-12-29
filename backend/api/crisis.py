@@ -78,6 +78,22 @@ def detect_crisis(crisis: CrisisCreate, background_tasks: BackgroundTasks):
     return crisis_data
 
 
+@router.get("/active")
+def get_active_crises():
+    """Return active crises from crises.json"""
+    try:
+        crises = load_crises()
+        active = [c for c in crises if c.get("status") == "active"]
+
+        return {
+            "success": True,
+            "active_crises": active,
+            "count": len(active)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ---------- Background Logic ----------
 
 def process_and_send_alerts(crisis):
