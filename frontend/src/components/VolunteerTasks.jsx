@@ -53,9 +53,16 @@ const VolunteerTasks = ({ volunteerId }) => {
   /* ---------- FETCH TASKS ---------- */
   const fetchTasks = async () => {
     try {
-      const endpoint = volunteerId
-        ? `${API_BASE}/volunteer/tasks/${volunteerId}`
-        : `${API_BASE}/volunteer/tasks`;
+      // Backend exposes per-volunteer tasks at /resource/volunteer/tasks/{id}
+      if (!volunteerId) {
+        // No volunteer id provided — nothing to fetch for MVP
+        setTasks([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      const endpoint = `${API_BASE}/resource/volunteer/tasks/${volunteerId}`;
 
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Unable to fetch assigned tasks');

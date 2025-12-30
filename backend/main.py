@@ -3,10 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # Import routers
-from api.users import router as users_router
-from api.crisis import router as crisis_router
-from api.trust_routes import router as trust_router
-from api.alert_routes import router as alert_router
+from .api.users import router as users_router
+from .api.crisis import router as crisis_router
+from .api.trust_routes import router as trust_router
+from .api.alert_routes import router as alert_router
+from .api.auth import router as auth_router
+from .api.geo import router as geo_router
+from .api.volunteer import router as volunteer_router
+from .api.assignments import router as assignments_router
+from .api.notify import router as notify_router
+from .api.system import router as system_router
+from .api.simulate import router as simulate_router
+
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,10 +38,17 @@ app.add_middleware(
 )
 
 # Include routers
-#app.include_router(registration_router)
+app.include_router(users_router)
 app.include_router(crisis_router)
 app.include_router(alert_router)      # /api/alerts, /api/mock-scenarios
 app.include_router(trust_router)
+app.include_router(auth_router)
+app.include_router(geo_router)
+app.include_router(volunteer_router)
+app.include_router(assignments_router)
+app.include_router(notify_router)
+app.include_router(system_router)
+app.include_router(simulate_router)
 @app.get("/")
 def root():
     return {
@@ -57,50 +73,51 @@ def root():
 @app.get("/demo-setup")
 def demo_setup():
     """Setup demo data"""
-    from api.registration import USERS_DB
+    import json
+    import os
     
-    # Add demo users if empty
-    if not USERS_DB:
-        demo_users = [
-            {
-                'user_id': 'demo_citizen_1',
-                'phone': '+917500900626',  # Your number
-                'name': 'Demo Citizen',
-                'role': 'citizen',
-                'latitude': 28.6139,
-                'longitude': 77.2090,
-                'is_active': True
-            },
-            {
-                'user_id': 'demo_volunteer_1',
-                'phone': '+917500900626',
-                'name': 'Demo Volunteer',
-                'role': 'volunteer',
-                'latitude': 28.6140,
-                'longitude': 77.2091,
-                'is_active': True
-            },
-            {
-                'user_id': 'demo_authority_1',
-                'phone': '+917500900626',
-                'name': 'Demo Authority',
-                'role': 'authority',
-                'latitude': 28.6150,
-                'longitude': 77.2100,
-                'is_active': True
-            }
-        ]
-        
-        USERS_DB.extend(demo_users)
-        
-        return {
-            "message": "Demo data created",
-            "users_added": len(demo_users),
-            "test_phone": "+917500900626",
-            "note": "All demo users use your phone number for testing"
+    users_file = "users.json"
+    
+    demo_users = [
+        {
+            'user_id': 'demo_citizen_1',
+            'phone': '+917500900626',  # Your number
+            'name': 'Demo Citizen',
+            'role': 'citizen',
+            'latitude': 28.6139,
+            'longitude': 77.2090,
+            'is_active': True
+        },
+        {
+            'user_id': 'demo_volunteer_1',
+            'phone': '+917500900626',
+            'name': 'Demo Volunteer',
+            'role': 'volunteer',
+            'latitude': 28.6140,
+            'longitude': 77.2091,
+            'is_active': True
+        },
+        {
+            'user_id': 'demo_authority_1',
+            'phone': '+917500900626',
+            'name': 'Demo Authority',
+            'role': 'authority',
+            'latitude': 28.6150,
+            'longitude': 77.2100,
+            'is_active': True
         }
+    ]
     
-    return {"message": "Demo data already exists", "total_users": len(USERS_DB)}
+    data = {"users": demo_users}
+    with open(users_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    
+    return {
+        "message": "Demo data created",
+        "users_added": len(demo_users),
+        "test_phone": "+917500900626",
+        "note": "All demo users use your phone number for testing"
+    }
 
 if __name__ == "__main__":
     import uvicorn

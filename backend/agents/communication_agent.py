@@ -98,6 +98,32 @@ def send_flood_alert(zone: str):
 
     print("\n✅ Flood alert process completed.")
 
+def notify(allocation: dict):
+    """
+    Entry point for Resource Agent to notify humans.
+    """
+    try:
+        crisis = allocation.get("crisis", {})
+        zone = crisis.get("location", "Unknown Zone")
+
+        crisis_type = crisis.get("type", "other")
+
+        print(f"[Communication] Notifying for crisis type: {crisis_type}, zone: {zone}")
+
+        if crisis_type == "flood":
+            send_flood_alert(zone)
+        else:
+            # Fallback notification
+            for cid in CITIZEN_IDS:
+                send_telegram_message(cid, f"⚠️ Crisis detected in {zone}. Please stay alert.")
+
+            for vid in VOLUNTEER_IDS:
+                send_telegram_message(vid, f"🚨 Crisis response needed in {zone}. Check dashboard.")
+
+    except Exception as e:
+        print(f"[Communication] Failed to notify: {e}")
+
+
 # ============================================================
 # ▶️ SCRIPT ENTRY POINT (DEMO TRIGGER)
 # ============================================================

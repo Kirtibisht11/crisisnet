@@ -15,19 +15,31 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Citizen from "./pages/citizen";
 import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
+import Login from "./pages/login";
+import Signup from "./pages/signup";
+import VolunteerPage from "./pages/volunteer";
+import Home from "./pages/home";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Home Landing */}
+        <Route path="/" element={<Home />} />
+
         {/* Citizen Landing */}
-        <Route path="/" element={<Citizen />} />
+        <Route path="/citizen" element={<Citizen />} />
 
         {/* NGO Dashboard */}
         <Route path="/ngo" element={<NGO />} />
 
         {/* Authority Dashboard */}
         <Route path="/authority" element={<AuthorityDashboard />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup_volunteer" element={<Signup />} />
+        <Route path="/volunteer" element={<VolunteerPage />} />
       </Routes>
     </BrowserRouter>
   );
