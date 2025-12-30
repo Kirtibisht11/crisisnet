@@ -20,6 +20,8 @@ import Signup from "./pages/signup";
 import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
+import Resources from "./pages/Resources";
 
 export default function App() {
   return (
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="/signup_volunteer" element={<Signup />} />
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/resources" element={<Resources />} />
       </Routes>
     </BrowserRouter>
   );

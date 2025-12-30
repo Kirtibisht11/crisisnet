@@ -14,6 +14,8 @@ from .api.assignments import router as assignments_router
 from .api.notify import router as notify_router
 from .api.system import router as system_router
 from .api.simulate import router as simulate_router
+from .api.orchestrator import router as orchestrator_router
+from .api.resource_routes import router as resource_api_router
 
 
 # Setup logging
@@ -49,6 +51,8 @@ app.include_router(assignments_router)
 app.include_router(notify_router)
 app.include_router(system_router)
 app.include_router(simulate_router)
+app.include_router(orchestrator_router)
+app.include_router(resource_api_router)
 @app.get("/")
 def root():
     return {
