@@ -1,57 +1,58 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signup } from '../services/auth';
 
 export default function Signup() {
   const navigate = useNavigate();
   const [role, setRole] = useState('citizen');
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
-    location: '',
-    skills: [],
-    org: '',
-    title: '',
-    termsAccepted: false
+    password: '',
+    confirmPassword: ''
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
-
-  const handleSkillToggle = (skill) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.includes(skill) 
-        ? prev.skills.filter(s => s !== skill) 
-        : [...prev.skills, skill]
-    }));
-  };
-
-  const skillOptions = ['first_aid', 'medical', 'rescue', 'swimming', 'firefighting', 'logistics', 'communication', 'driver'];
 
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
-    if (role === 'volunteer' && formData.skills.length === 0) newErrors.skills = 'Select at least one skill';
-    if (!formData.termsAccepted) newErrors.termsAccepted = 'Accept terms to continue';
+    if (!formData.password) newErrors.password = 'Password is required';
+    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const saveUserData = (userData) => {
-    // Save to localStorage for Round 1 demo
-    const allUsers = JSON.parse(localStorage.getItem('crisisnet_users') || '[]');
-    allUsers.push(userData);
-    localStorage.setItem('crisisnet_users', JSON.stringify(allUsers));
-    localStorage.setItem('crisisnet_current_user', JSON.stringify(userData));
-  };
+  const tryGeolocation = () => new Promise((resolve) => {
+    // Set a max timeout of 2 seconds to prevent hanging
+    const timeout = setTimeout(() => resolve({ lat: 0.0, lon: 0.0 }), 2000);
+    
+    if (!navigator.geolocation) {
+      clearTimeout(timeout);
+      return resolve({ lat: 0.0, lon: 0.0 });
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(timeout);
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(timeout);
+        resolve({ lat: 0.0, lon: 0.0 });
+      },
+      { timeout: 1500 }
+    );
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,25 +60,13 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      const userId = `${role}_${Date.now()}`;
-      const userData = {
-        id: userId,
-        role: role,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        location: formData.location || 'Unknown',
-        created_at: new Date().toISOString(),
-        ...(role === 'volunteer' && { skills: formData.skills, available: true }),
-        ...(role === 'authority' && { organization: formData.org, title: formData.title })
-      };
-
-      saveUserData(userData);
+      const pos = await tryGeolocation();
+      await signup(formData.name, formData.phone, formData.password, role, pos.lat || 0.0, pos.lon || 0.0);
       
-      // Always navigate to authority dashboard for demo
-      setTimeout(() => navigate('/authority'), 300);
-
+      // Redirect to login page
+      navigate('/login');
     } catch (err) {
+      console.error('Signup error', err);
       setErrors(prev => ({ ...prev, submit: err.message || 'Registration failed' }));
     } finally {
       setIsSubmitting(false);
@@ -86,82 +75,85 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-          <p className="text-gray-600 mb-6">Join CrisisNet</p>
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden p-8">
+          <h1 className="text-3xl font-bold mb-2">Create an account</h1>
+          <p className="text-gray-600 mb-6">Join CrisisNet to help during emergencies</p>
 
-          <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full p-3 border-2 rounded-lg mb-6">
-            <option value="citizen">Citizen</option>
-            <option value="volunteer">Volunteer</option>
-            <option value="authority">Authority</option>
-          </select>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Full Name *</label>
-              <input name="name" value={formData.name} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full p-2 border rounded">
+                <option value="citizen">Citizen</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="authority">Authority</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+              <input 
+                name="name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter your full name"
+              />
               {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone *</label>
-                <input name="phone" value={formData.phone} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
-                {errors.phone && <div className="text-red-500 text-sm mt-1">{errors.phone}</div>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+              <input 
+                name="phone" 
+                value={formData.phone} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter phone number (e.g., +91 9999999999)"
+              />
+              {errors.phone && <div className="text-red-500 text-sm mt-1">{errors.phone}</div>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
-              <input name="location" value={formData.location} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+              <input 
+                type="password"
+                name="password" 
+                value={formData.password} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter password (min 6 characters)"
+              />
+              {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
             </div>
 
-            {role === 'volunteer' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Skills *</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {skillOptions.map(s => (
-                    <button type="button" key={s} onClick={() => handleSkillToggle(s)} className={`px-3 py-2 rounded-lg ${formData.skills.includes(s) ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>
-                      {s.replace('_',' ')}
-                    </button>
-                  ))}
-                </div>
-                {errors.skills && <div className="text-red-500 text-sm mt-2">{errors.skills}</div>}
-              </div>
-            )}
-
-            {role === 'authority' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Organization</label>
-                  <input name="org" value={formData.org} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Title</label>
-                  <input name="title" value={formData.title} onChange={handleInputChange} className="w-full p-3 border-2 rounded-lg" />
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-              <input type="checkbox" name="termsAccepted" checked={formData.termsAccepted} onChange={handleInputChange} />
-              <div className="text-sm">I agree to the terms and conditions</div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+              <input 
+                type="password"
+                name="confirmPassword" 
+                value={formData.confirmPassword} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Confirm your password"
+              />
+              {errors.confirmPassword && <div className="text-red-500 text-sm mt-1">{errors.confirmPassword}</div>}
             </div>
-            {errors.termsAccepted && <div className="text-red-500 text-sm">{errors.termsAccepted}</div>}
 
-            {errors.submit && <div className="bg-red-50 border-2 border-red-200 p-4 text-red-700 rounded-lg">{errors.submit}</div>}
+            {errors.submit && <div className="bg-red-50 border border-red-200 p-3 text-red-700 rounded">{errors.submit}</div>}
 
-            <div className="flex justify-between items-center pt-4">
-              <button type="submit" disabled={isSubmitting} className={`px-8 py-3 rounded-lg font-bold text-white ${isSubmitting ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                {isSubmitting ? 'Registering...' : 'Register'}
+            <div className="pt-4">
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Creating account...' : 'Create Account'}
               </button>
-              <a href="/login" className="text-blue-600 font-semibold hover:underline">Already registered? Login</a>
+            </div>
+
+            <div className="text-center text-sm text-gray-600 pt-2">
+              Already have an account? <a href="/login" className="text-blue-600 hover:underline font-medium">Login</a>
             </div>
           </form>
         </div>

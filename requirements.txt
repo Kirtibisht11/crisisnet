@@ -12,3 +12,9 @@ python-dotenv>=1.0.0
 
 # For WhatsApp messaging 
 pywhatkit>=5.4
+
+# Password hashing
+bcrypt>=4.1.0
+
+ #python ver
+ #node js- 22 ver
