@@ -1,96 +1,77 @@
 import requests
-from datetime import datetime
 
-# ======================================================
-# 🔑 TELEGRAM CONFIG
-# ======================================================
+BOT_TOKEN = "8EGW7WFCGERWXER952927HFV"
+API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-BOT_TOKEN = "8559367774:AAGGQdAD1NfZnMV61olD_lvt2nFtQX47lmk"
-TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
-# ======================================================
-# 👤 CURRENT CONNECTED USER (TEMP / SESSION)
-# ======================================================
-# This data comes from telegram_bot.py after /start
-
-current_user = {
-    "role": "citizen",        # citizen | volunteer | authority
-    "chat_id": 987654321      # <-- TELEGRAM CHAT ID
-}
-
-# ======================================================
-# 📤 LOW-LEVEL SENDER
-# ======================================================
-
-def send_message(chat_id, message):
-    payload = {
+def send(chat_id, text):
+    requests.post(f"{API}/sendMessage", json={
         "chat_id": chat_id,
-        "text": message
-    }
-    requests.post(TELEGRAM_API, json=payload)
+        "text": text
+    })
 
-# ======================================================
-# 🧠 MESSAGE TEMPLATES
-# ======================================================
+def handle_start(message):
+    chat_id = message["chat"]["id"]
+    text = message.get("text", "")
 
-def citizen_alert(disaster, zone):
-    return (
-        f"⚠️ {disaster.upper()} ALERT ⚠️\n\n"
-        f"📍 Location: {zone}\n\n"
-        "Please evacuate immediately.\n"
-        "Avoid flooded or damaged areas.\n"
-        "Follow official safety instructions.\n\n"
-        "🛡️ Stay safe."
-    )
+    if text.startswith("/start"):
+        parts = text.split()
 
-def volunteer_alert(disaster, zone):
-    return (
-        f"🚨 VOLUNTEER ALERT 🚨\n\n"
-        f"{disaster} reported in {zone}\n\n"
-        "🦺 Report immediately for rescue operations.\n"
-        "Coordinate with authorities.\n\n"
-        "🙏 Thank you for your service."
-    )
+        if len(parts) == 2:
+            payload = parts[1]              # userId_role
+            user_id, role = payload.split("_", 1)
 
-def authority_alert(disaster, zone):
-    return (
-        f"📢 AUTHORITY NOTICE 📢\n\n"
-        f"{disaster} confirmed in {zone}\n\n"
-        "You are authorized to issue public alerts\n"
-        "and coordinate emergency response."
-    )
+            # 🔐 CONNECTION CONFIRMATION + INTRO
+            intro_message = (
+                "✅ *Connection Successful*\n\n"
+                "👋 Welcome to *CrisisNet Alert Bot*\n\n"
+                "This bot delivers *verified disaster alerts* in real time.\n\n"
+                f"👤 *Your role:* {role.capitalize()}\n\n"
+            )
 
-# ======================================================
-# 🚨 CORE COMMUNICATION LOGIC
-# ======================================================
+            if role == "citizen":
+                intro_message += (
+                    "You will receive:\n"
+                    "• ⚠️ Emergency warnings\n"
+                    "• 🧭 Evacuation & safety instructions\n\n"
+                )
 
-def send_alert(disaster, zone):
-    role = current_user["role"]
-    chat_id = current_user["chat_id"]
+            elif role == "volunteer":
+                intro_message += (
+                    "You will receive:\n"
+                    "• 🚨 Deployment alerts\n"
+                    "• 🦺 Rescue & response instructions\n\n"
+                )
 
-    print(f"\n📢 Sending alert at {datetime.now()}")
-    print(f"👤 Role: {role} | 📍 Zone: {zone}")
+            elif role == "authority":
+                intro_message += (
+                    "You will receive:\n"
+                    "• 📢 Incident confirmations\n"
+                    "• 🛡️ Authority-level notifications\n\n"
+                )
 
-    if role == "citizen":
-        send_message(chat_id, citizen_alert(disaster, zone))
+            intro_message += (
+                "🔔 Alerts are sent *only during emergencies*.\n"
+                "🛡️ No spam. No false alarms.\n\n"
+                "You are now connected. Stay alert. Stay safe 🤝"
+            )
 
-    elif role == "volunteer":
-        send_message(chat_id, volunteer_alert(disaster, zone))
+            send(chat_id, intro_message)
 
-    elif role == "authority":
-        send_message(chat_id, authority_alert(disaster, zone))
+            # Optional: log for backend use
+            print({
+                "user_id": user_id,
+                "role": role,
+                "chat_id": chat_id
+            })
 
-    else:
-        print("❌ Unknown role")
-
-    print("✅ Alert sent successfully")
-
-# ======================================================
-# ▶️ DEMO TRIGGER
-# ======================================================
+def listen():
+    offset = 0
+    while True:
+        res = requests.get(f"{API}/getUpdates", params={"offset": offset}).json()
+        for update in res.get("result", []):
+            offset = update["update_id"] + 1
+            if "message" in update:
+                handle_start(update["message"])
 
 if __name__ == "__main__":
-    send_alert(
-        disaster="Flood",
-        zone="Zone A"
-    )
+    listen()
