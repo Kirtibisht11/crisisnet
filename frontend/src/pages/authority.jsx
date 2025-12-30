@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+
+
 import AgentStatusPanel from '../components/AgentStatusPanel';
 import { 
   formatTrustScore, 
@@ -19,7 +22,7 @@ const AuthorityDashboard = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [actionLoading, setActionLoading] = useState(false);
   // Fetch alerts from backend
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -71,6 +74,89 @@ const AuthorityDashboard = () => {
   };
 
   const counts = getAlertCounts();
+  const navigate = useNavigate();
+const handleApproveAlert = async (alertData) => {
+
+  if (!window.confirm('Approve this alert and send to Resource Agent?')) return;
+
+  setActionLoading(true);
+  try {
+    const currentUser = JSON.parse(
+      localStorage.getItem('crisisnet_current_user') || '{}'
+    );
+
+    const approvedCrisis = {
+      ...alertData,
+      approved_by: currentUser.name || 'Authority',
+      approved_at: new Date().toISOString(),
+      crisis_status: 'APPROVED',
+      requires_resources: true,
+      priority:
+        alertData.trust_score > 0.5
+          ? 'HIGH'
+          : alertData.trust_score > 0.3
+          ? 'MEDIUM'
+          : 'LOW'
+    };
+
+    const approvedCrises = JSON.parse(
+      localStorage.getItem('approved_crises') || '[]'
+    );
+    approvedCrises.push(approvedCrisis);
+    localStorage.setItem('approved_crises', JSON.stringify(approvedCrises));
+
+    setAlerts(prev =>
+      prev.map(a =>
+        a.alert_id === alertData.alert_id ? approvedCrisis : a
+      )
+    );
+
+    window.alert('Crisis Approved! Sent to Resource Agent for volunteer assignment.');
+    navigate("/resource", { replace: true });
+    setSelectedAlert(null);
+
+  } catch (err) {
+    console.error('Error approving:', err);
+    window.alert('Failed to approve');
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+const handleRejectAlert = async (alertData) => {
+  if (!window.confirm('Reject this alert? It will not be processed further.')) return;
+
+  setActionLoading(true);
+  try {
+    const currentUser = JSON.parse(
+      localStorage.getItem('crisisnet_current_user') || '{}'
+    );
+
+    const rejectedAlert = {
+      ...alertData,
+      rejected_by: currentUser.name || 'Authority',
+      rejected_at: new Date().toISOString(),
+      crisis_status: 'REJECTED'
+    };
+
+    setAlerts(prev =>
+      prev.map(a =>
+        a.alert_id === alertData.alert_id ? rejectedAlert : a
+      )
+    );
+
+    window.alert('Alert Rejected');
+    setSelectedAlert(null);
+
+  } catch (err) {
+    console.error('Error rejecting:', err);
+    window.alert('Failed to reject');
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -371,17 +457,56 @@ const AuthorityDashboard = () => {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                {selectedAlert.decision === 'REVIEW' && (
-                  <div className="flex gap-4">
-                    <button className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl">
-                      Approve Alert
-                    </button>
-                    <button className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl">
-                      Reject Alert
-                    </button>
-                  </div>
-                )}
+                {/* Action Buttons - Show for all alerts except already approved/rejected */}
+{!selectedAlert.approved_by && !selectedAlert.rejected_by && (
+  <div className="flex gap-4">
+    <button 
+      onClick={() => handleApproveAlert(selectedAlert)}
+      disabled={actionLoading}
+      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl ${
+        actionLoading 
+          ? 'bg-gray-400 cursor-not-allowed' 
+          : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+      }`}
+    >
+      {actionLoading ? 'Processing...' : 'Approve & Send to Resources'}
+    </button>
+    <button 
+      onClick={() => handleRejectAlert(selectedAlert)}
+      disabled={actionLoading}
+      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl ${
+        actionLoading 
+          ? 'bg-gray-400 cursor-not-allowed' 
+          : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'
+      }`}
+    >
+      {actionLoading ? 'Processing...' : 'Reject Alert'}
+    </button>
+  </div>
+)}
+
+{/* Show status if already processed */}
+{selectedAlert.approved_by && (
+  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+    <div className="flex items-center gap-2 text-green-800 font-bold">
+      Approved 
+    </div>
+    <div className="text-sm text-green-600 mt-1">
+      {new Date(selectedAlert.approved_at).toLocaleString()}
+    </div>
+  </div>
+)}
+
+{selectedAlert.rejected_by && (
+  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+    <div className="flex items-center gap-2 text-red-800 font-bold">
+      Rejected
+    </div>
+    <div className="text-sm text-red-600 mt-1">
+      {new Date(selectedAlert.rejected_at).toLocaleString()}
+    </div>
+  </div>
+)}
               </div>
             </div>
           </div>

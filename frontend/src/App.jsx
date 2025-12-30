@@ -20,6 +20,7 @@ import Signup from "./pages/signup";
 import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
+import ResourceDashboard from './pages/resource_dashboard';
 
 export default function App() {
   return (
@@ -42,6 +43,8 @@ export default function App() {
         <Route path="/signup_volunteer" element={<Signup />} />
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+         <Route path="/resource" element={<ResourceDashboard />} />
+        
       </Routes>
     </BrowserRouter>
   );
