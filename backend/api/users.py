@@ -5,7 +5,7 @@ User Registration API
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from database.models import User, add_user, get_all_users, get_users_by_role
+from data.models import User, add_user, get_all_users, get_users_by_role
 
 router = APIRouter(prefix="/users", tags=["users"])
 

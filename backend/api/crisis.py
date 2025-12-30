@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-from database.models import Crisis, add_crisis, get_all_crises, get_active_crises, get_all_users
-from services.location_service import location_service
-from agents.communication_agent import communication_agent
-from services.whatsapp_service import whatsapp_service
+from data.models import Crisis, add_crisis, get_all_crises, get_active_crises, get_all_users
+#from services.location_service import location_service
+#from agents.communication_agent import communication_agent
+#from services.whatsapp_service import whatsapp_service
 
 router = APIRouter(prefix="/crisis", tags=["crisis"])
 

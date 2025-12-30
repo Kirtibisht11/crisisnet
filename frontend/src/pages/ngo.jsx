@@ -8,8 +8,8 @@
  * so they can mobilize resources quickly.
  */
 
-import { useAgentStore } from "../state/agentStore";
-import AgentStatusPanel from "../components/AgentStatusPanel";
+/*import { useAgentStore } from "../state/agentStore";
+import AgentStatusPanel from "../components/AgentStatusPanel";*/
 
 export default function NGO() {
   const { communicationAgent } = useAgentStore();

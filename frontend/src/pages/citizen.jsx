@@ -10,20 +10,20 @@
  * They just need clear, calm, verified information.
  */
 
-import { useAgentStore } from "../state/agentStore";
-import AgentStatusPanel from "../components/AgentStatusPanel";
+/*import { useAgentStore } from "../state/agentStore";
+import AgentStatusPanel from "../components/AgentStatusPanel";*/
 import SimulateCrisis from "../components/SimulateCrisis";
 
 export default function Citizen() {
-  const { communicationAgent } = useAgentStore();
+  /*const { communicationAgent } = useAgentStore();*/
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold mb-6">Citizen Dashboard</h1>
 
-      <AgentStatusPanel />
+      {/* <AgentStatusPanel /> */}
 
-      {communicationAgent.active ? (
+      {/* {communicationAgent.active ? (
         <div className="bg-red-100 border-l-4 border-red-600 p-4 rounded-lg">
           <h2 className="text-lg font-semibold text-red-700">
             ⚠ Emergency Alert
@@ -40,7 +40,7 @@ export default function Citizen() {
         </div>
       ) : (
         <p className="text-gray-600">No active alerts</p>
-      )}
+      )} */}
 
       {/* Demo-only trigger button */}
       <div className="mt-6">

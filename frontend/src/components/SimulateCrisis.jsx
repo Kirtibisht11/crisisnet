@@ -12,9 +12,9 @@
  * 3. Updates frontend state so dashboards react instantly
  */
 
-import { simulateCrisis } from "../services/api";
+/*import { simulateCrisis } from "../services/api";
 import { useAgentStore } from "../state/agentStore";
-
+*/
 export default function SimulateCrisis() {
   const setAlert = useAgentStore((state) => state.setAlert);
 

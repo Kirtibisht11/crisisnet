@@ -1,12 +1,15 @@
+"""
+CrisisNet - Real Disaster Alert System
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # Import routers
-from api.users import router as users_router
+from api.registration import router as registration_router
 from api.crisis import router as crisis_router
-from api.trust_routes import router as trust_router
-from api.alert_routes import router as alert_router
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,10 +32,9 @@ app.add_middleware(
 )
 
 # Include routers
-#app.include_router(registration_router)
+app.include_router(registration_router)
 app.include_router(crisis_router)
-app.include_router(alert_router)      # /api/alerts, /api/mock-scenarios
-app.include_router(trust_router)
+
 @app.get("/")
 def root():
     return {
@@ -106,14 +108,13 @@ if __name__ == "__main__":
     import uvicorn
     
     logger.info("=" * 60)
-    logger.info("CRISISNET - DISASTER ALERT SYSTEM")
+    logger.info("🚨 CRISISNET - DISASTER ALERT SYSTEM")
     logger.info("=" * 60)
-    logger.info("Messaging: WhatsApp via pywhatkit")
-    logger.info("Features: Location-based alerts")
-    logger.info("Roles: Citizens, Volunteers, Authorities")
-    logger.info("API: http://localhost:8000/docs")
-    logger.info("Demo: http://localhost:8000/demo-setup")
+    logger.info("📱 Messaging: WhatsApp via pywhatkit")
+    logger.info("🌍 Features: Location-based alerts")
+    logger.info("👥 Roles: Citizens, Volunteers, Authorities")
+    logger.info("🌐 API: http://localhost:8000/docs")
+    logger.info("🎮 Demo: http://localhost:8000/demo-setup")
     logger.info("=" * 60)
     
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
-
