@@ -19,24 +19,44 @@ const createIcon = (color) =>
 const crisisIcon = createIcon('red');
 const resourceIcon = createIcon('blue');
 const volunteerIcon = createIcon('green');
+const userIcon = createIcon('violet');
 
 /* ---------- COMPONENT ---------- */
 
 const MapView = () => {
   const { crises, resources, volunteers, allocations } = useCrisisStore();
-  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]);
-  const [selectedCrisis, setSelectedCrisis] = useState(null);
 
-  /* ---------- AUTO CENTER ---------- */
+  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // India default
+  const [selectedCrisis, setSelectedCrisis] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+
+  /* ---------- USER LOCATION ---------- */
   useEffect(() => {
-    if (crises.length > 0) {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = [pos.coords.latitude, pos.coords.longitude];
+        setUserLocation(loc);
+        setMapCenter(loc);
+      },
+      () => {
+        console.warn('Location permission denied');
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, []);
+
+  /* ---------- AUTO CENTER ON CRISIS IF EXISTS ---------- */
+  useEffect(() => {
+    if (!userLocation && crises.length > 0) {
       const latest = crises[crises.length - 1];
       setMapCenter([latest.location.lat, latest.location.lon]);
       setSelectedCrisis(latest.id);
     }
-  }, [crises]);
+  }, [crises, userLocation]);
 
-  /* ---------- ALLOCATION LOOKUP (MEMOIZED) ---------- */
+  /* ---------- ALLOCATION LOOKUP ---------- */
   const allocationMap = useMemo(() => {
     const map = {};
     allocations.forEach(a => {
@@ -57,7 +77,7 @@ const MapView = () => {
     <div className="w-full h-full">
       <MapContainer
         center={mapCenter}
-        zoom={11}
+        zoom={12}
         style={{ height: '100%', width: '100%' }}
         className="rounded-lg shadow-lg"
       >
@@ -65,6 +85,15 @@ const MapView = () => {
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* ---------- USER LOCATION ---------- */}
+        {userLocation && (
+          <Marker position={userLocation} icon={userIcon}>
+            <Popup>
+              <strong>You are here</strong>
+            </Popup>
+          </Marker>
+        )}
 
         {/* ---------- CRISES ---------- */}
         {crises.map(crisis => {

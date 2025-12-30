@@ -7,7 +7,7 @@ from .resource.availability_manager import AvailabilityManager
 from .resource.priority_engine import PriorityEngine
 from .resource.skill_matcher import SkillMatcher
 from .resource.reassignment_engine import ReassignmentEngine
-from backend.agents.communication_agent import notify
+from backend.api.notify import notify
 import json
 from fastapi import Header
 from backend.core.role_guard import require_role
