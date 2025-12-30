@@ -1,60 +1,58 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+import { signup } from '../services/auth';
 
 export default function Signup() {
   const navigate = useNavigate();
   const [role, setRole] = useState('citizen');
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
-    location: '',
-    address: '',
-    skills: [],
-    availability: 'anytime',
-    org: '',
-    title: '',
-    termsAccepted: false
+    password: '',
+    confirmPassword: ''
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
-
-  const handleSkillToggle = (skill) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.includes(skill) ? prev.skills.filter(s => s !== skill) : [...prev.skills, skill]
-    }));
-  };
-
-  const skillOptions = ['first_aid','medical','rescue','swimming','firefighting','logistics','communication','driver'];
-
-  const tryGeolocation = () => new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve({ lat: 0.0, lon: 0.0 });
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      () => resolve({ lat: 0.0, lon: 0.0 }),
-      { timeout: 3000 }
-    );
-  });
 
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
-    if (role === 'volunteer' && formData.skills.length === 0) newErrors.skills = 'Select at least one skill';
-    if (!formData.termsAccepted) newErrors.termsAccepted = 'Accept terms to continue';
+    if (!formData.password) newErrors.password = 'Password is required';
+    if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const tryGeolocation = () => new Promise((resolve) => {
+    // Set a max timeout of 2 seconds to prevent hanging
+    const timeout = setTimeout(() => resolve({ lat: 0.0, lon: 0.0 }), 2000);
+    
+    if (!navigator.geolocation) {
+      clearTimeout(timeout);
+      return resolve({ lat: 0.0, lon: 0.0 });
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(timeout);
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(timeout);
+        resolve({ lat: 0.0, lon: 0.0 });
+      },
+      { timeout: 1500 }
+    );
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,60 +60,11 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      if (role === 'volunteer') {
-        // Register with resource agent
-        const resp = await fetch(`${API_BASE}/resource/volunteer/register`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            location: formData.location || 'Unknown',
-            address: formData.address,
-            skills: formData.skills,
-            experience: formData.experience || '',
-            availability: formData.availability,
-            emergency_contact: formData.emergency_contact || '',
-            available: true
-          })
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-          localStorage.setItem('volunteerId', data.volunteer_id || data.volunteer?.id || '');
-          navigate('/volunteer');
-        } else throw new Error(data.detail || 'Registration failed');
-
-      } else {
-        // Citizen or Authority -> register as user
-        const pos = await tryGeolocation();
-        const payload = {
-          name: formData.name,
-          phone: formData.phone,
-          role: role,
-          latitude: pos.lat || 0.0,
-          longitude: pos.lon || 0.0
-        };
-
-        // include minimal metadata for authority
-        if (role === 'authority') {
-          payload['org'] = formData.org;
-          payload['title'] = formData.title;
-        }
-
-        const res = await fetch(`${API_BASE}/users/register`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const d = await res.json();
-        if (res.ok) {
-          // store user id for demo
-          localStorage.setItem('user', JSON.stringify(d));
-          if (role === 'citizen') navigate('/');
-          else navigate('/authority');
-        } else throw new Error(d.detail || 'User registration failed');
-      }
-
+      const pos = await tryGeolocation();
+      await signup(formData.name, formData.phone, formData.password, role, pos.lat || 0.0, pos.lon || 0.0);
+      
+      // Redirect to login page
+      navigate('/login');
     } catch (err) {
       console.error('Signup error', err);
       setErrors(prev => ({ ...prev, submit: err.message || 'Registration failed' }));
@@ -126,82 +75,85 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden p-8">
-          <h1 className="text-3xl font-bold mb-4">Create an account</h1>
-
-          <label className="block text-sm text-gray-700 mb-2">Role</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)} className="mb-6 p-2 border rounded">
-            <option value="citizen">Citizen</option>
-            <option value="volunteer">Volunteer</option>
-            <option value="authority">Authority</option>
-          </select>
+          <h1 className="text-3xl font-bold mb-2">Create an account</h1>
+          <p className="text-gray-600 mb-6">Join CrisisNet to help during emergencies</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Full Name *</label>
-              <input name="name" value={formData.name} onChange={handleInputChange} className="w-full p-2 border rounded" />
-              {errors.name && <div className="text-red-500 text-sm">{errors.name}</div>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone *</label>
-                <input name="phone" value={formData.phone} onChange={handleInputChange} className="w-full p-2 border rounded" />
-                {errors.phone && <div className="text-red-500 text-sm">{errors.phone}</div>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input name="email" value={formData.email} onChange={handleInputChange} className="w-full p-2 border rounded" />
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full p-2 border rounded">
+                <option value="citizen">Citizen</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="authority">Authority</option>
+              </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location / Area</label>
-              <input name="location" value={formData.location} onChange={handleInputChange} className="w-full p-2 border rounded" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+              <input 
+                name="name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter your full name"
+              />
+              {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
             </div>
 
-            {role === 'volunteer' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Skills *</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {skillOptions.map(s => (
-                    <button type="button" key={s} onClick={() => handleSkillToggle(s)} className={`px-3 py-2 rounded ${formData.skills.includes(s) ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>
-                      {s.replace('_',' ')}
-                    </button>
-                  ))}
-                </div>
-                {errors.skills && <div className="text-red-500 text-sm">{errors.skills}</div>}
-              </div>
-            )}
-
-            {role === 'authority' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Organization</label>
-                  <input name="org" value={formData.org} onChange={handleInputChange} className="w-full p-2 border rounded" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Title / Role</label>
-                  <input name="title" value={formData.title} onChange={handleInputChange} className="w-full p-2 border rounded" />
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-start gap-3">
-              <input type="checkbox" name="termsAccepted" checked={formData.termsAccepted} onChange={handleInputChange} />
-              <div className="text-sm text-gray-700">I agree to be contacted for emergency response and accept terms.</div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+              <input 
+                name="phone" 
+                value={formData.phone} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter phone number (e.g., +91 9999999999)"
+              />
+              {errors.phone && <div className="text-red-500 text-sm mt-1">{errors.phone}</div>}
             </div>
-            {errors.termsAccepted && <div className="text-red-500 text-sm">{errors.termsAccepted}</div>}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+              <input 
+                type="password"
+                name="password" 
+                value={formData.password} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Enter password (min 6 characters)"
+              />
+              {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+              <input 
+                type="password"
+                name="confirmPassword" 
+                value={formData.confirmPassword} 
+                onChange={handleInputChange} 
+                className="w-full p-2 border rounded focus:outline-none focus:border-blue-500" 
+                placeholder="Confirm your password"
+              />
+              {errors.confirmPassword && <div className="text-red-500 text-sm mt-1">{errors.confirmPassword}</div>}
+            </div>
 
             {errors.submit && <div className="bg-red-50 border border-red-200 p-3 text-red-700 rounded">{errors.submit}</div>}
 
-            <div className="flex justify-between items-center">
-              <button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-blue-600 text-white rounded">
-                {isSubmitting ? 'Registering...' : 'Register'}
+            <div className="pt-4">
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Creating account...' : 'Create Account'}
               </button>
-              <div className="text-sm text-gray-500">Already registered? <a href="/login" className="text-blue-600">Login</a></div>
+            </div>
+
+            <div className="text-center text-sm text-gray-600 pt-2">
+              Already have an account? <a href="/login" className="text-blue-600 hover:underline font-medium">Login</a>
             </div>
           </form>
         </div>

@@ -15,10 +15,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Citizen from "./pages/citizen";
 import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
-import Login from "./pages/login";
+import Login from "./pages/Login";
 import Signup from "./pages/signup";
 import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
+import Dashboard from "./pages/Dashboard";
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signup_volunteer" element={<Signup />} />
         <Route path="/volunteer" element={<VolunteerPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
