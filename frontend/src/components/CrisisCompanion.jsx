@@ -5,12 +5,12 @@ const FLOWS = {
   start: {
     text: "I'm your Crisis Companion. Please select your emergency type or situation:",
     options: [
-      { label: "Flood 🌊", next: "flood" },
-      { label: "Fire 🔥", next: "fire" },
-      { label: "Medical 🏥", next: "medical" },
-      { label: "Earthquake 🏚️", next: "earthquake" },
-      { label: "Landslide ⛰️", next: "landslide" },
-      { label: "Anxiety / Panic 😰", next: "anxiety" }
+      { label: "Flood ", next: "flood" },
+      { label: "Fire ", next: "fire" },
+      { label: "Medical ", next: "medical" },
+      { label: "Earthquake ", next: "earthquake" },
+      { label: "Landslide ", next: "landslide" },
+      { label: "Anxiety / Panic ", next: "anxiety" }
     ]
   },
   flood: {
