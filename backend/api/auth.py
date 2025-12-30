@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import json
 import os
+import bcrypt
 
 from ..core.auth import create_token
 
@@ -30,6 +31,7 @@ def load_users():
 class LoginRequest(BaseModel):
     username: str | None = None
     phone: str | None = None
+    password: str
 
 
 @router.post('/login')
@@ -44,11 +46,14 @@ def login(req: LoginRequest):
         phone = req.phone if req.phone.startswith('+') else '+' + req.phone
         user = next((u for u in users if u.get('phone') == phone), None)
 
-    # If user not found, return a demo token with provided role="citizen"
+    # User not found
     if not user:
-        demo_payload = {"user_id": "demo_user", "role": "citizen"}
-        token = create_token(demo_payload)
-        return {"access_token": token, "token_type": "bearer", "user": demo_payload}
+        raise HTTPException(401, "Invalid username/phone or password")
+
+    # Verify password
+    password_hash = user.get('password_hash')
+    if not password_hash or not bcrypt.checkpw(req.password.encode('utf-8'), password_hash.encode('utf-8')):
+        raise HTTPException(401, "Invalid username/phone or password")
 
     payload = {"user_id": user.get('user_id'), "role": user.get('role')}
     token = create_token(payload)

@@ -9,10 +9,16 @@ from datetime import datetime
 import json
 import uuid
 import os
+import bcrypt
+import time
+import logging
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-USERS_FILE = "users.json"
+# Use the data/users.json path to match other modules
+USERS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'users.json')
+
+logger = logging.getLogger(__name__)
 
 
 # ---------- Utility Functions ----------
@@ -25,8 +31,11 @@ def load_users():
 
 
 def save_users(data):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
+    # atomic write to reduce partial writes
+    tmp = USERS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
+    os.replace(tmp, USERS_FILE)
 
 
 # ---------- Models ----------
@@ -34,6 +43,7 @@ def save_users(data):
 class UserCreate(BaseModel):
     name: str
     phone: str
+    password: str
     role: str
     latitude: float
     longitude: float
@@ -64,10 +74,27 @@ def register_user(user_data: UserCreate):
 
     users_data = load_users()
 
+    # Check if user already exists
+    existing = next((u for u in users_data["users"] if u.get("phone") == phone), None)
+    if existing:
+        raise HTTPException(400, "User with this phone already exists")
+
+    try:
+        # Measure hashing time to detect slowness
+        t0 = time.time()
+        # use 10 rounds to be faster on demo systems; increase in production
+        password_hash = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt(rounds=10)).decode('utf-8')
+        t_hash = time.time() - t0
+        logger.info(f"Password hashing took {t_hash:.3f}s for phone={phone}")
+    except Exception as ex:
+        logger.exception("Error hashing password")
+        raise HTTPException(500, "Internal error processing password")
+
     new_user = {
         "user_id": f"u_{uuid.uuid4().hex[:8]}",
         "name": user_data.name,
         "phone": phone,
+        "password_hash": password_hash,
         "role": user_data.role,
         "latitude": user_data.latitude,
         "longitude": user_data.longitude,
@@ -76,7 +103,14 @@ def register_user(user_data: UserCreate):
     }
 
     users_data["users"].append(new_user)
-    save_users(users_data)
+    try:
+        t0 = time.time()
+        save_users(users_data)
+        t_save = time.time() - t0
+        logger.info(f"Saving users.json took {t_save:.3f}s for phone={phone}")
+    except Exception as ex:
+        logger.exception("Failed to save users.json")
+        raise HTTPException(500, "Failed to save user data")
 
     return new_user
 
