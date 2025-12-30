@@ -1,16 +1,20 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { signup, login } from "../services/auth";
 import { useUserStore } from "../state/userStore";
-import { getCurrentLocation } from "../utils/location";
+import { getBestLocation } from "../utils/location";
 
 export default function Signup() {
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
 
-  const [role, setRole] = useState("citizen");
+  const loc = useLocation();
+  const [role, setRole] = useState(() =>
+    loc?.pathname === "/signup_volunteer" ? "volunteer" : "citizen"
+  );
   const [manualLocation, setManualLocation] = useState("");
   const [location, setLocation] = useState({ lat: null, lon: null, source: null });
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -49,8 +53,10 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      // 1️⃣ Get location (non‑blocking)
-      const geo = await getCurrentLocation();
+      // 1️⃣ Use prefetched location (fetch if missing)
+      const geo = location.lat == null && location.lon == null
+        ? await getBestLocation()
+        : location;
       setLocation(geo);
 
       // 2️⃣ Signup
@@ -96,6 +102,13 @@ export default function Signup() {
     }
   };
 
+  // Prefetch location on mount so signup form can show it (includes human-readable place)
+  React.useEffect(() => {
+    let mounted = true;
+    getBestLocation().then((g) => { if (mounted) setLocation(g); });
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -132,15 +145,19 @@ export default function Signup() {
             {/* Role */}
             <div>
               <label className="block text-sm font-medium mb-2">Your Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg"
-              >
-                <option value="citizen">Citizen / Resident</option>
-                <option value="volunteer">Volunteer</option>
-                <option value="authority">Authority / Official</option>
-              </select>
+              {role === "volunteer" ? (
+                <div className="px-4 py-3 border rounded-lg bg-slate-50 text-slate-700">
+                  Signing up as <strong>Volunteer</strong>
+                </div>
+              ) : (
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-lg"
+                >
+                  <option value="citizen">Citizen / Resident</option>
+                </select>
+              )}
             </div>
 
             {/* Name */}
@@ -179,6 +196,18 @@ export default function Signup() {
                 placeholder="Enter manually if needed (e.g. Delhi)"
                 value={manualLocation}
                 onChange={(e) => setManualLocation(e.target.value)}
+                onFocus={async () => {
+                  if (detectingLocation) return;
+                  setDetectingLocation(true);
+                  try {
+                    const best = await getBestLocation();
+                    setLocation(best);
+                    if (best.humanLocation) setManualLocation(best.humanLocation);
+                    else if (best.lat) setManualLocation(`${best.lat.toFixed(4)}, ${best.lon.toFixed(4)}`);
+                  } finally {
+                    setDetectingLocation(false);
+                  }
+                }}
                 className="w-full px-4 py-3 border rounded-lg"
               />
               <p className="text-xs text-slate-500 mt-1">
@@ -189,10 +218,11 @@ export default function Signup() {
             {/* Location Preview */}
             <div className="p-3 bg-slate-50 border rounded-lg">
               <p className="text-sm text-slate-700">
-                📍 Detected:{" "}
-                {location.lat
-                  ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`
-                  : "Detecting automatically…"}
+                📍 Detected: {detectingLocation ? 'Detecting location...' : (location.humanLocation
+                  ? location.humanLocation
+                  : (location.lat
+                      ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`
+                      : "Detecting automatically…"))}
               </p>
             </div>
 
@@ -239,6 +269,16 @@ export default function Signup() {
             >
               {isSubmitting ? "Creating account…" : "Create Account"}
             </button>
+            {/* Volunteer signup shortcut */}
+            {role !== "volunteer" && (
+              <button
+                type="button"
+                onClick={() => navigate("/signup_volunteer")}
+                className="w-full mt-3 py-3 rounded-lg border border-blue-600 text-blue-600 font-medium hover:bg-blue-50"
+              >
+                Sign up as Volunteer
+              </button>
+            )}
           </form>
 
           <div className="mt-6 pt-6 border-t text-center">

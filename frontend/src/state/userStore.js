@@ -3,7 +3,30 @@
  * Handles login & signup with optional location support
  */
 
+import { create } from 'zustand';
+
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+
+// Simple client-side user store (persisted to localStorage)
+const _initialUser = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('user')) || null;
+  } catch (e) {
+    return null;
+  }
+})();
+
+export const useUserStore = create((set) => ({
+  user: _initialUser,
+  setUser: (user) => {
+    try { localStorage.setItem('user', JSON.stringify(user)); } catch (e) {}
+    set({ user });
+  },
+  logout: () => {
+    try { localStorage.removeItem('access_token'); localStorage.removeItem('user'); } catch (e) {}
+    set({ user: null });
+  }
+}));
 
 /**
  * LOGIN

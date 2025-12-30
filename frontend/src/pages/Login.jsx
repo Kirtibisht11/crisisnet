@@ -3,17 +3,19 @@
  * Professional login with location capture (CrisisNet)
  */
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/auth";
 import { useUserStore } from "../state/userStore";
 import { promptTelegramConnection } from "../services/telegramUtils";
-import { getCurrentLocation } from "../utils/location";
+import { getBestLocation } from "../utils/location";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [manualLocation, setManualLocation] = useState("");
+  const [geo, setGeo] = useState({ lat: null, lon: null, source: null });
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,13 +27,15 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      // 1️⃣ Get location (non-blocking)
-      const geo = await getCurrentLocation();
+      // 1️⃣ Use already-detected location (or try to fetch if missing)
+      const currentGeo = geo.lat == null && geo.lon == null
+        ? await getBestLocation()
+        : geo;
 
       // 2️⃣ Login API
       const data = await login(username, password, {
-        lat: geo.lat,
-        lon: geo.lon,
+        lat: currentGeo.lat,
+        lon: currentGeo.lon,
         manualLocation
       });
 
@@ -44,10 +48,10 @@ export default function Login() {
       const enrichedUser = {
         ...user,
         location: {
-          lat: geo.lat,
-          lon: geo.lon,
+          lat: currentGeo.lat,
+          lon: currentGeo.lon,
           manual: manualLocation,
-          source: geo.source
+          source: currentGeo.source
         }
       };
 
@@ -74,6 +78,26 @@ export default function Login() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Prefetch location on mount so UI shows detected value (with human-readable place)
+  useEffect(() => {
+    let mounted = true;
+    getBestLocation().then((g) => { if (mounted) setGeo(g); });
+    return () => { mounted = false; };
+  }, []);
+
+  const detectLocation = async () => {
+    if (detectingLocation) return;
+    setDetectingLocation(true);
+    try {
+      const best = await getBestLocation();
+      setGeo(best);
+      if (best.humanLocation) setManualLocation(best.humanLocation);
+      else if (best.lat) setManualLocation(`${best.lat.toFixed(4)}, ${best.lon.toFixed(4)}`);
+    } finally {
+      setDetectingLocation(false);
     }
   };
 
@@ -144,10 +168,14 @@ export default function Login() {
                 placeholder="Enter manually if needed (e.g. Delhi)"
                 value={manualLocation}
                 onChange={(e) => setManualLocation(e.target.value)}
+                onFocus={() => detectLocation()}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg"
               />
               <p className="text-xs text-slate-500 mt-1">
                 Used for nearby alerts, shelters, and volunteer matching
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                📍 Detected: {detectingLocation ? 'Detecting location...' : (geo.humanLocation ? geo.humanLocation : (geo.lat ? `${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}` : 'Detecting automatically...'))}
               </p>
             </div>
 
