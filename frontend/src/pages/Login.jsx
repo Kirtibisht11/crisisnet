@@ -1,6 +1,6 @@
 /**
  * Login Page
- * Professional login with consistent CrisisNet branding
+ * Professional login with location capture (CrisisNet)
  */
 
 import { useState } from "react";
@@ -8,38 +8,66 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/auth";
 import { useUserStore } from "../state/userStore";
 import { promptTelegramConnection } from "../services/telegramUtils";
+import { getCurrentLocation } from "../utils/location";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [manualLocation, setManualLocation] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
 
   const handleLogin = async () => {
     setError("");
     setIsSubmitting(true);
+
     try {
-      const data = await login(username, password);
+      // 1️⃣ Get location (non-blocking)
+      const geo = await getCurrentLocation();
+
+      // 2️⃣ Login API
+      const data = await login(username, password, {
+        lat: geo.lat,
+        lon: geo.lon,
+        manualLocation
+      });
+
       const token = data?.access_token;
-      let user = data?.user || { username };
+      const user = data?.user || { username };
 
+      // 3️⃣ Persist session
       if (token) localStorage.setItem("access_token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      setUser(user, token);
 
+      const enrichedUser = {
+        ...user,
+        location: {
+          lat: geo.lat,
+          lon: geo.lon,
+          manual: manualLocation,
+          source: geo.source
+        }
+      };
+
+      localStorage.setItem("user", JSON.stringify(enrichedUser));
+      setUser(enrichedUser, token);
+
+      // 4️⃣ Telegram linking (optional)
       setTimeout(() => {
-        promptTelegramConnection(user);
+        promptTelegramConnection(enrichedUser);
       }, 500);
 
+      // 5️⃣ Role-based redirect
       if (user.role === "volunteer") navigate("/volunteer");
       else if (user.role === "authority") navigate("/authority");
-      else navigate("/dashboard");
+      else navigate("/citizen");
+
     } catch (e) {
       console.error(e);
-      const msg = e.message || String(e) || "Login failed";
-      if (/invalid username|invalid phone|invalid username\/phone|password/i.test(msg)) {
+      const msg = e?.message || "Login failed";
+      if (/invalid|password|username|phone/i.test(msg)) {
         setError("Invalid credentials. If you don't have an account, please sign up first.");
       } else {
         setError(msg);
@@ -61,7 +89,10 @@ export default function Login() {
             <span className="font-bold text-slate-900">CrisisNet</span>
           </Link>
           <p className="text-sm text-slate-600">
-            Don't have an account? <Link to="/signup" className="text-blue-700 font-medium hover:underline">Sign up</Link>
+            Don’t have an account?{" "}
+            <Link to="/signup" className="text-blue-700 font-medium hover:underline">
+              Sign up
+            </Link>
           </p>
         </div>
       </header>
@@ -74,7 +105,8 @@ export default function Login() {
             <p className="text-slate-600">Access your CrisisNet dashboard</p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">
                 Username or Phone
@@ -84,10 +116,11 @@ export default function Login() {
                 placeholder="your-username or +1234567890"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
+            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">
                 Password
@@ -97,20 +130,39 @@ export default function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-2">
+                Location (auto‑detected)
+              </label>
+              <input
+                type="text"
+                placeholder="Enter manually if needed (e.g. Delhi)"
+                value={manualLocation}
+                onChange={(e) => setManualLocation(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Used for nearby alerts, shelters, and volunteer matching
+              </p>
+            </div>
+
+            {/* Error */}
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
 
+            {/* Submit */}
             <button
               onClick={handleLogin}
               disabled={isSubmitting}
-              className="w-full py-3 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-60"
             >
               {isSubmitting ? "Signing in..." : "Sign In"}
             </button>
@@ -118,7 +170,7 @@ export default function Login() {
 
           <div className="mt-6 pt-6 border-t border-slate-200 text-center">
             <p className="text-sm text-slate-600">
-              Don't have an account?{" "}
+              Don’t have an account?{" "}
               <Link to="/signup" className="text-blue-700 font-medium hover:underline">
                 Create one now
               </Link>
