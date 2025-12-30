@@ -64,7 +64,10 @@ const VolunteerTasks = ({ volunteerId }) => {
 
       const endpoint = `${API_BASE}/resource/volunteer/tasks/${volunteerId}`;
 
-      const response = await fetch(endpoint);
+      const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+      const response = await fetch(endpoint, {
+        headers: token ? { token } : {},
+      });
       if (!response.ok) throw new Error('Unable to fetch assigned tasks');
 
       const data = await response.json();
@@ -94,6 +97,7 @@ const VolunteerTasks = ({ volunteerId }) => {
       </div>
     );
   }
+
 
   if (error) {
     return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVolunteerStore } from '../state/volunteerStore';
-import VolunteerTasks from '../components/VolunteerTasks';
+import VolunteerTasks from './VolunteerTasks';
 import { 
   User, MapPin, Award, Activity, CheckCircle, Clock, 
   Bell, Settings, LogOut, Edit2, Save, X, Phone, Mail,
@@ -45,7 +45,10 @@ const VolunteerProfile = () => {
   const loadVolunteerProfile = async () => {
     try {
       const id = volunteerId || localStorage.getItem('volunteerId');
-      const response = await fetch(`http://localhost:8000/volunteer/profile/${id}`);
+      const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/resource/volunteer/profile/${id}`, {
+        headers: token ? { token } : {},
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -130,7 +133,7 @@ const VolunteerProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="w-full">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
