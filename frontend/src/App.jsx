@@ -21,8 +21,8 @@ import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
+import ResourceDashboard from "./pages/resource_dashboard";
 import Resources from "./pages/Resources";
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -45,7 +45,8 @@ export default function App() {
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
-        <Route path="/resources" element={<Resources />} />
+        <Route path="/resource" element={<ResourceDashboard />} />
+       <Route path="/resources" element={<Resources />} />
       </Routes>
     </BrowserRouter>
   );
