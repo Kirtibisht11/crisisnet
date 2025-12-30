@@ -1,134 +1,96 @@
 import requests
 from datetime import datetime
 
-# ============================================================
-# 🔑 TELEGRAM BOT CONFIG
-# ============================================================
+# ======================================================
+# 🔑 TELEGRAM CONFIG
+# ======================================================
 
 BOT_TOKEN = "8559367774:AAGGQdAD1NfZnMV61olD_lvt2nFtQX47lmk"
+TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
-# ============================================================
-# 👥 DEMO USERS
-# ============================================================
+# ======================================================
+# 👤 CURRENT CONNECTED USER (TEMP / SESSION)
+# ======================================================
+# This data comes from telegram_bot.py after /start
 
-# 👉 (VOLUNTEER)
-VOLUNTEER_IDS = [
-    7526773581   # <-- voul id 
-]
+current_user = {
+    "role": "citizen",        # citizen | volunteer | authority
+    "chat_id": 987654321      # <-- TELEGRAM CHAT ID
+}
 
-# 👉 (Citizen ids)
-CITIZEN_IDS = [
-   6381863134
-]
-
-# ============================================================
+# ======================================================
 # 📤 LOW-LEVEL SENDER
-# ============================================================
+# ======================================================
 
-def send_telegram_message(chat_id: int, message: str):
-    """
-    Sends a Telegram message to a single user.
-    """
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
+def send_message(chat_id, message):
     payload = {
         "chat_id": chat_id,
         "text": message
     }
+    requests.post(TELEGRAM_API, json=payload)
 
-    response = requests.post(url, json=payload)
+# ======================================================
+# 🧠 MESSAGE TEMPLATES
+# ======================================================
 
-    if response.status_code != 200:
-        print(f"❌ Failed to send to {chat_id}")
-    else:
-        print(f"✅ Message sent to {chat_id}")
-
-# ============================================================
-# 🧠 MESSAGE BUILDERS
-# ============================================================
-
-def build_citizen_flood_message(zone: str):
+def citizen_alert(disaster, zone):
     return (
-        "⚠️ FLOOD EMERGENCY ALERT ⚠️\n\n"
-        f"📍 Affected Zone: {zone}\n\n"
-        "🚨 A flood has been detected in your area.\n\n"
-        "🛑 IMMEDIATE ACTION REQUIRED:\n"
-        "• Evacuate to higher ground\n"
-        "• Avoid flooded roads\n"
-        "• Carry essentials only\n"
-        "• Follow official instructions\n\n"
-        "📞 Emergency services are active.\n"
-        "Stay calm. Stay safe."
+        f"⚠️ {disaster.upper()} ALERT ⚠️\n\n"
+        f"📍 Location: {zone}\n\n"
+        "Please evacuate immediately.\n"
+        "Avoid flooded or damaged areas.\n"
+        "Follow official safety instructions.\n\n"
+        "🛡️ Stay safe."
     )
 
-def build_volunteer_flood_message(zone: str):
+def volunteer_alert(disaster, zone):
     return (
-        "🚨 VOLUNTEER DEPLOYMENT ALERT 🚨\n\n"
-        f"📍 Deployment Zone: {zone}\n\n"
-        "⚠️ Flood emergency reported.\n\n"
-        "🦺 YOUR TASKS:\n"
-        "• Report to assigned zone immediately\n"
-        "• Assist with evacuation\n"
-        "• Coordinate with authorities\n"
-        "• Ensure citizen safety\n\n"
+        f"🚨 VOLUNTEER ALERT 🚨\n\n"
+        f"{disaster} reported in {zone}\n\n"
+        "🦺 Report immediately for rescue operations.\n"
+        "Coordinate with authorities.\n\n"
         "🙏 Thank you for your service."
     )
 
-# ============================================================
-# 🚨 MAIN COMMUNICATION AGENT
-# ============================================================
+def authority_alert(disaster, zone):
+    return (
+        f"📢 AUTHORITY NOTICE 📢\n\n"
+        f"{disaster} confirmed in {zone}\n\n"
+        "You are authorized to issue public alerts\n"
+        "and coordinate emergency response."
+    )
 
-def send_flood_alert(zone: str):
-    """
-    Sends flood alerts to all citizens and volunteers.
-    """
-    print("\n📢 Sending FLOOD alerts...")
-    print(f"🕒 Time: {datetime.now()}")
-    print(f"📍 Zone: {zone}\n")
+# ======================================================
+# 🚨 CORE COMMUNICATION LOGIC
+# ======================================================
 
-    # Send to Citizens
-    for citizen_id in CITIZEN_IDS:
-        message = build_citizen_flood_message(zone)
-        send_telegram_message(citizen_id, message)
+def send_alert(disaster, zone):
+    role = current_user["role"]
+    chat_id = current_user["chat_id"]
 
-    # Send to Volunteers
-    for volunteer_id in VOLUNTEER_IDS:
-        message = build_volunteer_flood_message(zone)
-        send_telegram_message(volunteer_id, message)
+    print(f"\n📢 Sending alert at {datetime.now()}")
+    print(f"👤 Role: {role} | 📍 Zone: {zone}")
 
-    print("\n✅ Flood alert process completed.")
+    if role == "citizen":
+        send_message(chat_id, citizen_alert(disaster, zone))
 
-def notify(allocation: dict):
-    """
-    Entry point for Resource Agent to notify humans.
-    """
-    try:
-        crisis = allocation.get("crisis", {})
-        zone = crisis.get("location", "Unknown Zone")
+    elif role == "volunteer":
+        send_message(chat_id, volunteer_alert(disaster, zone))
 
-        crisis_type = crisis.get("type", "other")
+    elif role == "authority":
+        send_message(chat_id, authority_alert(disaster, zone))
 
-        print(f"[Communication] Notifying for crisis type: {crisis_type}, zone: {zone}")
+    else:
+        print("❌ Unknown role")
 
-        if crisis_type == "flood":
-            send_flood_alert(zone)
-        else:
-            # Fallback notification
-            for cid in CITIZEN_IDS:
-                send_telegram_message(cid, f"⚠️ Crisis detected in {zone}. Please stay alert.")
+    print("✅ Alert sent successfully")
 
-            for vid in VOLUNTEER_IDS:
-                send_telegram_message(vid, f"🚨 Crisis response needed in {zone}. Check dashboard.")
-
-    except Exception as e:
-        print(f"[Communication] Failed to notify: {e}")
-
-
-# ============================================================
-# ▶️ SCRIPT ENTRY POINT (DEMO TRIGGER)
-# ============================================================
+# ======================================================
+# ▶️ DEMO TRIGGER
+# ======================================================
 
 if __name__ == "__main__":
-    send_flood_alert(
+    send_alert(
+        disaster="Flood",
         zone="Zone A"
     )
