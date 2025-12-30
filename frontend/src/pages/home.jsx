@@ -1,19 +1,355 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-blue-50">
-      <div className="max-w-3xl w-full bg-white rounded-xl shadow-lg p-10 text-center">
-        <h1 className="text-4xl font-bold mb-4">CrisisNet</h1>
-        <p className="text-gray-600 mb-6">Real-time community crisis alerts — citizens, volunteers, and authorities.</p>
+    <div className="min-h-screen bg-white text-slate-900">
+      {/* Header - Fixed Navigation */}
+      <header className="fixed w-full top-0 z-50 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
+              <span className="text-white font-bold text-sm">CN</span>
+            </div>
+            <span className="text-lg font-bold text-slate-900">CrisisNet</span>
+          </Link>
+          
+          <nav className="hidden md:flex items-center space-x-8">
+            <a href="#how-it-works" className="text-sm text-slate-600 hover:text-slate-900 transition">
+              How It Works
+            </a>
+            <a href="#features" className="text-sm text-slate-600 hover:text-slate-900 transition">
+              Features
+            </a>
+            <a href="#contact" className="text-sm text-slate-600 hover:text-slate-900 transition">
+              Contact
+            </a>
+          </nav>
 
-        <div className="grid gap-3 md:grid-cols-3 mb-6">
-          <Link to="/login" className="px-4 py-3 bg-blue-600 text-white rounded-lg">Login</Link>
-          <Link to="/signup" className="px-4 py-3 bg-green-600 text-white rounded-lg">Sign Up</Link>
+          <div className="flex items-center space-x-3">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
+      </header>
 
-      </div>
+      {/* Hero Section */}
+      <section className="pt-32 pb-24 px-6 bg-gradient-to-b from-blue-50 to-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-slate-900">
+            Detect crises.<br />
+            <span className="text-blue-700">Coordinate response.</span><br />
+            Save lives.
+          </h1>
+
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
+            CrisisNet gives communities and authorities real-time intelligence and coordination tools 
+            to detect disasters faster, allocate resources smarter, and save more lives.
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <Link
+              to="/signup"
+              className="px-8 py-4 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+            >
+              Start Now — It's Free
+            </Link>
+            <Link
+              to="/login"
+              className="px-8 py-4 rounded-lg font-semibold border border-slate-300 text-slate-900 hover:border-slate-400 hover:bg-slate-50 transition-colors"
+            >
+              Already have an account?
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Section - Social Proof */}
+      <section className="py-12 px-6 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-sm font-medium text-slate-600 mb-6">
+            TRUSTED BY COMMUNITIES & AUTHORITIES WORLDWIDE
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-3xl font-bold text-blue-700">100+</div>
+              <p className="text-sm text-slate-600 mt-1">Communities</p>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-blue-700">5K+</div>
+              <p className="text-sm text-slate-600 mt-1">Active Volunteers</p>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-blue-700">99%</div>
+              <p className="text-sm text-slate-600 mt-1">Uptime</p>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-blue-700">24/7</div>
+              <p className="text-sm text-slate-600 mt-1">Monitoring</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - The Crisis Pipeline */}
+      <section id="how-it-works" className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              From Crisis to Response in Seconds
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Our four-stage pipeline detects emerging crises, validates threats, 
+              and coordinates the right resources to the right place—instantly.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Stage 1 */}
+            <div className="relative">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-blue-700">
+                  1
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Detect</h3>
+                <p className="text-sm text-slate-600 text-center">
+                  AI analyzes reports, sensors, and social signals to identify emerging crises in real-time.
+                </p>
+              </div>
+              {/* Connector line (hidden on mobile) */}
+              <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-1 bg-gradient-to-r from-blue-300 to-transparent"></div>
+            </div>
+
+            {/* Stage 2 */}
+            <div className="relative">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-blue-700">
+                  2
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Evaluate</h3>
+                <p className="text-sm text-slate-600 text-center">
+                  Trust scoring filters false alarms and prioritizes verified, high-confidence threats.
+                </p>
+              </div>
+              <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-1 bg-gradient-to-r from-blue-300 to-transparent"></div>
+            </div>
+
+            {/* Stage 3 */}
+            <div className="relative">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-blue-700">
+                  3
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Allocate</h3>
+                <p className="text-sm text-slate-600 text-center">
+                  Instantly match available volunteers and resources to crisis needs by location and skill.
+                </p>
+              </div>
+              <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-1 bg-gradient-to-r from-blue-300 to-transparent"></div>
+            </div>
+
+            {/* Stage 4 */}
+            <div className="relative">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-orange-600">
+                  4
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">Notify</h3>
+                <p className="text-sm text-slate-600 text-center">
+                  Send real-time alerts to all stakeholders via Telegram, SMS, and push notifications.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features - Two Column */}
+      <section id="features" className="py-20 px-6 bg-slate-50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-slate-900 text-center mb-16">
+            Built for Crisis Response
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-16">
+            {/* Left Column */}
+            <div>
+              <h3 className="text-2xl font-semibold text-slate-900 mb-6">
+                Detection & Intelligence
+              </h3>
+              <p className="text-slate-600 mb-8 leading-relaxed">
+                Multi-source crisis detection powered by AI. Our algorithms analyze reports, 
+                social media, sensors, and expert networks to spot emerging threats before they escalate.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex items-start space-x-3">
+                  <span className="text-green-600 font-bold">✓</span>
+                  <span className="text-slate-600">Real-time multi-source monitoring</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-green-600 font-bold">✓</span>
+                  <span className="text-slate-600">AI-powered crisis classification</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-green-600 font-bold">✓</span>
+                  <span className="text-slate-600">Reputation-based trust scoring</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-green-600 font-bold">✓</span>
+                  <span className="text-slate-600">Severity & urgency assessment</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Right Column */}
+            <div>
+              <h3 className="text-2xl font-semibold text-slate-900 mb-6">
+                Coordination & Response
+              </h3>
+              <p className="text-slate-600 mb-8 leading-relaxed">
+                Instantly coordinate volunteers, resources, and authorities. Location-aware matching 
+                ensures the right help gets to the right place at the right time.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex items-start space-x-3">
+                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-slate-600">Smart resource allocation by location</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-slate-600">Volunteer skill & availability matching</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-slate-600">Role-based access control (citizens, volunteers, authorities)</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-slate-600">Real-time mass notification system</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Trust CrisisNet */}
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-slate-900 text-center mb-16">
+            Why Communities Trust CrisisNet
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Lightning Fast</h3>
+              <p className="text-slate-600 text-sm">
+                From detection to response in seconds. Every second counts in a crisis.
+              </p>
+            </div>
+
+            <div className="p-8 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+              <div className="text-4xl mb-4">🔒</div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Enterprise Security</h3>
+              <p className="text-slate-600 text-sm">
+                Bank-level encryption and compliance with emergency response standards.
+              </p>
+            </div>
+
+            <div className="p-8 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+              <div className="text-4xl mb-4">🌍</div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Global Ready</h3>
+              <p className="text-slate-600 text-sm">
+                Works across geographies and in any language. No internet? Works offline too.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section id="contact" className="py-20 px-6 bg-blue-50">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">
+            Ready to coordinate better?
+          </h2>
+          <p className="text-lg text-slate-600 mb-8">
+            Join communities and authorities already using CrisisNet to respond faster and smarter to emergencies.
+          </p>
+          <Link
+            to="/signup"
+            className="inline-block px-8 py-4 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+          >
+            Get Started — Free Account
+          </Link>
+          <p className="text-sm text-slate-600 mt-4">
+            No credit card required. Set up in minutes.
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <Link to="/" className="flex items-center space-x-2 mb-4">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">CN</span>
+                </div>
+                <span className="font-semibold text-slate-900">CrisisNet</span>
+              </Link>
+              <p className="text-sm text-slate-600">
+                Real-time crisis detection, intelligence, and coordination platform.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-4">Product</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#how-it-works" className="text-slate-600 hover:text-slate-900">How It Works</a></li>
+                <li><a href="#features" className="text-slate-600 hover:text-slate-900">Features</a></li>
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Pricing</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-4">Resources</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Documentation</a></li>
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Blog</a></li>
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Support</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Privacy</a></li>
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Terms</a></li>
+                <li><a href="#" className="text-slate-600 hover:text-slate-900">Contact</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 pt-8 text-center">
+            <p className="text-sm text-slate-600">
+              © 2025 CrisisNet. Built to save lives.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

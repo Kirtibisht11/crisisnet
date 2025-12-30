@@ -1,134 +1,77 @@
 import requests
-from datetime import datetime
 
-# ============================================================
-# 🔑 TELEGRAM BOT CONFIG
-# ============================================================
+BOT_TOKEN = "8EGW7WFCGERWXER952927HFV"
+API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-BOT_TOKEN = "8559367774:AAGGQdAD1NfZnMV61olD_lvt2nFtQX47lmk"
-
-# ============================================================
-# 👥 DEMO USERS
-# ============================================================
-
-# 👉 (VOLUNTEER)
-VOLUNTEER_IDS = [
-    7526773581   # <-- voul id 
-]
-
-# 👉 (Citizen ids)
-CITIZEN_IDS = [
-   6381863134
-]
-
-# ============================================================
-# 📤 LOW-LEVEL SENDER
-# ============================================================
-
-def send_telegram_message(chat_id: int, message: str):
-    """
-    Sends a Telegram message to a single user.
-    """
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
-    payload = {
+def send(chat_id, text):
+    requests.post(f"{API}/sendMessage", json={
         "chat_id": chat_id,
-        "text": message
-    }
+        "text": text
+    })
 
-    response = requests.post(url, json=payload)
+def handle_start(message):
+    chat_id = message["chat"]["id"]
+    text = message.get("text", "")
 
-    if response.status_code != 200:
-        print(f"❌ Failed to send to {chat_id}")
-    else:
-        print(f"✅ Message sent to {chat_id}")
+    if text.startswith("/start"):
+        parts = text.split()
 
-# ============================================================
-# 🧠 MESSAGE BUILDERS
-# ============================================================
+        if len(parts) == 2:
+            payload = parts[1]              # userId_role
+            user_id, role = payload.split("_", 1)
 
-def build_citizen_flood_message(zone: str):
-    return (
-        "⚠️ FLOOD EMERGENCY ALERT ⚠️\n\n"
-        f"📍 Affected Zone: {zone}\n\n"
-        "🚨 A flood has been detected in your area.\n\n"
-        "🛑 IMMEDIATE ACTION REQUIRED:\n"
-        "• Evacuate to higher ground\n"
-        "• Avoid flooded roads\n"
-        "• Carry essentials only\n"
-        "• Follow official instructions\n\n"
-        "📞 Emergency services are active.\n"
-        "Stay calm. Stay safe."
-    )
+            # 🔐 CONNECTION CONFIRMATION + INTRO
+            intro_message = (
+                "✅ *Connection Successful*\n\n"
+                "👋 Welcome to *CrisisNet Alert Bot*\n\n"
+                "This bot delivers *verified disaster alerts* in real time.\n\n"
+                f"👤 *Your role:* {role.capitalize()}\n\n"
+            )
 
-def build_volunteer_flood_message(zone: str):
-    return (
-        "🚨 VOLUNTEER DEPLOYMENT ALERT 🚨\n\n"
-        f"📍 Deployment Zone: {zone}\n\n"
-        "⚠️ Flood emergency reported.\n\n"
-        "🦺 YOUR TASKS:\n"
-        "• Report to assigned zone immediately\n"
-        "• Assist with evacuation\n"
-        "• Coordinate with authorities\n"
-        "• Ensure citizen safety\n\n"
-        "🙏 Thank you for your service."
-    )
+            if role == "citizen":
+                intro_message += (
+                    "You will receive:\n"
+                    "• ⚠️ Emergency warnings\n"
+                    "• 🧭 Evacuation & safety instructions\n\n"
+                )
 
-# ============================================================
-# 🚨 MAIN COMMUNICATION AGENT
-# ============================================================
+            elif role == "volunteer":
+                intro_message += (
+                    "You will receive:\n"
+                    "• 🚨 Deployment alerts\n"
+                    "• 🦺 Rescue & response instructions\n\n"
+                )
 
-def send_flood_alert(zone: str):
-    """
-    Sends flood alerts to all citizens and volunteers.
-    """
-    print("\n📢 Sending FLOOD alerts...")
-    print(f"🕒 Time: {datetime.now()}")
-    print(f"📍 Zone: {zone}\n")
+            elif role == "authority":
+                intro_message += (
+                    "You will receive:\n"
+                    "• 📢 Incident confirmations\n"
+                    "• 🛡️ Authority-level notifications\n\n"
+                )
 
-    # Send to Citizens
-    for citizen_id in CITIZEN_IDS:
-        message = build_citizen_flood_message(zone)
-        send_telegram_message(citizen_id, message)
+            intro_message += (
+                "🔔 Alerts are sent *only during emergencies*.\n"
+                "🛡️ No spam. No false alarms.\n\n"
+                "You are now connected. Stay alert. Stay safe 🤝"
+            )
 
-    # Send to Volunteers
-    for volunteer_id in VOLUNTEER_IDS:
-        message = build_volunteer_flood_message(zone)
-        send_telegram_message(volunteer_id, message)
+            send(chat_id, intro_message)
 
-    print("\n✅ Flood alert process completed.")
+            # Optional: log for backend use
+            print({
+                "user_id": user_id,
+                "role": role,
+                "chat_id": chat_id
+            })
 
-def notify(allocation: dict):
-    """
-    Entry point for Resource Agent to notify humans.
-    """
-    try:
-        crisis = allocation.get("crisis", {})
-        zone = crisis.get("location", "Unknown Zone")
-
-        crisis_type = crisis.get("type", "other")
-
-        print(f"[Communication] Notifying for crisis type: {crisis_type}, zone: {zone}")
-
-        if crisis_type == "flood":
-            send_flood_alert(zone)
-        else:
-            # Fallback notification
-            for cid in CITIZEN_IDS:
-                send_telegram_message(cid, f"⚠️ Crisis detected in {zone}. Please stay alert.")
-
-            for vid in VOLUNTEER_IDS:
-                send_telegram_message(vid, f"🚨 Crisis response needed in {zone}. Check dashboard.")
-
-    except Exception as e:
-        print(f"[Communication] Failed to notify: {e}")
-
-
-# ============================================================
-# ▶️ SCRIPT ENTRY POINT (DEMO TRIGGER)
-# ============================================================
+def listen():
+    offset = 0
+    while True:
+        res = requests.get(f"{API}/getUpdates", params={"offset": offset}).json()
+        for update in res.get("result", []):
+            offset = update["update_id"] + 1
+            if "message" in update:
+                handle_start(update["message"])
 
 if __name__ == "__main__":
-    send_flood_alert(
-        zone="Zone A"
-    )
+    listen()

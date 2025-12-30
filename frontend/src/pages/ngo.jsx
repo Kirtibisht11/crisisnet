@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUserStore } from '../state/userStore';
 import { MapPin, Shield, Users, X, CheckCircle, Clock, AlertCircle, Droplets, Flame, Activity, Mountain } from 'lucide-react';
 
 // Mock API with data
@@ -65,11 +67,19 @@ const ngoApi = {
 };
 
 const NGO = () => {
+  const navigate = useNavigate();
+  const user = useUserStore((s) => s.user);
   const [activeCrises, setActiveCrises] = useState([]);
   const [acceptedTasks, setAcceptedTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCrisis, setSelectedCrisis] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   useEffect(() => {
     loadData();

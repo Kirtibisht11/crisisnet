@@ -42,26 +42,15 @@
       "created_at": "2025-12-30T10:07:46.000891Z"
     },
     {
-      "user_id": "u_2a2cb15b",
-      "name": "simran",
-      "phone": "+9368553469",
-      "password_hash": "$2b$10$xfgz2PVWzbb0TpyNAyKmHOXklK9H20mnUsjNP92UlBxb0L/k5TQu6",
+      "user_id": "u_ef1d7598",
+      "name": "Lavika Panwar",
+      "phone": "+91 1234567890",
+      "password_hash": "$2b$10$vzRJj1bYOJNImDpiIrMcyO1svrlgW6JHnoTwZqq3oChd7ygw0LUv2",
       "role": "citizen",
       "latitude": 0.0,
       "longitude": 0.0,
       "is_active": true,
-      "created_at": "2025-12-30T10:57:28.469348Z"
-    },
-    {
-      "user_id": "u_5532488f",
-      "name": "tamanna",
-      "phone": "+6395303423",
-      "password_hash": "$2b$10$5syC10QUMmxar3RiqUqhU.xo/dGGotXbgW0rQOpdLTa3v2bS9YC7m",
-      "role": "citizen",
-      "latitude": 0.0,
-      "longitude": 0.0,
-      "is_active": true,
-      "created_at": "2025-12-30T10:59:48.187360Z"
+      "created_at": "2025-12-30T11:04:36.909504Z"
     }
   ]
 }

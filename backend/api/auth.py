@@ -52,8 +52,13 @@ def login(req: LoginRequest):
 
     # Verify password
     password_hash = user.get('password_hash')
-    if not password_hash or not bcrypt.checkpw(req.password.encode('utf-8'), password_hash.encode('utf-8')):
-        raise HTTPException(401, "Invalid username/phone or password")
+    if not password_hash:
+        # Demo fallback: allow login if user exists but no password hash stored
+        # This keeps backwards compatibility for demo users created without passwords.
+        print(f"[Auth] Demo fallback login for user {user.get('user_id')}")
+    else:
+        if not bcrypt.checkpw(req.password.encode('utf-8'), password_hash.encode('utf-8')):
+            raise HTTPException(401, "Invalid username/phone or password")
 
     payload = {"user_id": user.get('user_id'), "role": user.get('role')}
     token = create_token(payload)
