@@ -62,6 +62,17 @@
       "longitude": 0.0,
       "is_active": true,
       "created_at": "2025-12-30T14:30:23.978134Z"
+    },
+    {
+      "user_id": "u_979d0096",
+      "name": "tamanna",
+      "phone": "+6395303423",
+      "password_hash": "$2b$10$QU3JGIgUGmt0iktGRrBNFuz5zizMRCvjh9i6pWPFQC1f4lALVEzNu",
+      "role": "citizen",
+      "latitude": 30.3275,
+      "longitude": 78.0325,
+      "is_active": true,
+      "created_at": "2025-12-30T17:05:27.302062Z"
     }
   ]
 }

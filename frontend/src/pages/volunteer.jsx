@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
 import { UserPlus, MapPin, Award, CheckCircle } from 'lucide-react';
+import VolunteerProfile from './volunteer_profile';
+import VolunteerTasks from '../components/VolunteerTasks';
 
 /* ================= LOCATION HELPERS ================= */
 
@@ -48,7 +50,8 @@ const VolunteerPage = () => {
   const navigate = useNavigate();
   const { user, setUser } = useUserStore();
 
-  const [activeTab, setActiveTab] = useState('signup');
+  const loc = useLocation();
+  const [activeTab, setActiveTab] = useState(() => loc?.state?.openTab || 'signup');
   const [submitStatus, setSubmitStatus] = useState(null);
   const [volunteerId, setVolunteerId] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -116,7 +119,7 @@ const VolunteerPage = () => {
   /* ================= TASK LOAD ================= */
 
   useEffect(() => {
-    if (activeTab === 'dashboard') {
+    if (activeTab === 'dashboard' || activeTab === 'tasks') {
       loadTasks();
     }
   }, [activeTab]);
@@ -250,7 +253,7 @@ const VolunteerPage = () => {
           <button onClick={() => setActiveTab('dashboard')} className="btn">My Tasks</button>
         </div>
 
-        {activeTab === 'signup' ? (
+        {activeTab === 'signup' && (
           <form className="bg-white p-6 rounded-lg border space-y-4">
             <input name="name" placeholder="Full Name" onChange={handleInputChange} className="input" />
             <input name="phone" placeholder="Phone" onChange={handleInputChange} className="input" />
@@ -276,22 +279,21 @@ const VolunteerPage = () => {
 
             {submitStatus && <p>{submitStatus.message}</p>}
           </form>
-        ) : (
-          <div>
-            {tasks.length === 0 ? (
-              <p>No tasks assigned yet.</p>
-            ) : (
-              tasks.map((task) => {
-                const crisis = formatCrisisType(task.crisis_type);
-                return (
-                  <div key={task.assignment_id} className="border p-4 mb-3 rounded">
-                    <div className="text-lg">{crisis.emoji} {crisis.label}</div>
-                    <p>{task.message}</p>
-                  </div>
-                );
-              })
-            )}
+        )}
+
+        {activeTab === 'dashboard' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="col-span-2">
+              <VolunteerTasks volunteerId={volunteerId || localStorage.getItem('volunteerId')} />
+            </div>
+            <div>
+              <VolunteerProfile />
+            </div>
           </div>
+        )}
+
+        {activeTab === 'tasks' && (
+          <VolunteerTasks volunteerId={volunteerId || localStorage.getItem('volunteerId')} />
         )}
       </div>
     </div>

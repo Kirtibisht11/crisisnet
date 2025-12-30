@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getBestLocation } from '../utils/location';
 import { Heart, MapPin, Phone, Mail, CheckCircle2 } from 'lucide-react';
 
 const SignupVolunteer = () => {
@@ -17,6 +18,8 @@ const SignupVolunteer = () => {
     emergencyContact: '',
     termsAccepted: false
   });
+  const [location, setLocation] = useState({ lat: null, lon: null, source: null, humanLocation: '' });
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -133,8 +136,8 @@ const SignupVolunteer = () => {
       if (response.ok) {
         localStorage.setItem('volunteerId', data.volunteer_id);
         setTimeout(() => {
-          navigate('/volunteer/dashboard');
-        }, 2000);
+          navigate('/volunteer', { state: { openTab: 'dashboard' } });
+        }, 800);
       } else {
         setErrors({ submit: data.detail || 'Registration failed' });
       }
@@ -247,11 +250,28 @@ const SignupVolunteer = () => {
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
+                    onFocus={async () => {
+                      if (detectingLocation) return;
+                      setDetectingLocation(true);
+                      try {
+                        const best = await getBestLocation();
+                        setLocation(best);
+                        if (best.humanLocation) {
+                          setFormData(prev => ({ ...prev, location: best.humanLocation }));
+                        } else if (best.lat) {
+                          const coords = `${best.lat.toFixed(4)}, ${best.lon.toFixed(4)}`;
+                          setFormData(prev => ({ ...prev, location: coords }));
+                        }
+                      } finally {
+                        setDetectingLocation(false);
+                      }
+                    }}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                       errors.location ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Ward 12, Downtown"
                   />
+                  <p className="text-xs text-slate-500 mt-1">{detectingLocation ? 'Detecting location…' : (location.humanLocation || (location.lat ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}` : 'Auto-detect on focus'))}</p>
                   {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
                 </div>
 

@@ -3,7 +3,25 @@ import { User, MapPin, Phone, Hash } from 'lucide-react';
 
 const CitizenProfileCard = ({ user }) => {
   const getLocationDisplay = () => {
-    if (user?.location) return user.location;
+    const loc = user?.location;
+    if (loc) {
+      // If stored as structured location object
+      if (typeof loc === 'object') {
+        if (loc.manualLocation) return loc.manualLocation;
+        if (loc.lat !== undefined && loc.lon !== undefined) {
+          if (loc.lat === 0 && loc.lon === 0) return "Location not set";
+          try {
+            return `${Number(loc.lat).toFixed(4)}, ${Number(loc.lon).toFixed(4)}`;
+          } catch (e) {
+            return 'Unknown Location';
+          }
+        }
+        // fallback to source or JSON
+        if (loc.source) return `${loc.source}`;
+        return JSON.stringify(loc);
+      }
+      return loc;
+    }
     if (user?.latitude !== undefined && user?.longitude !== undefined) {
       if (user.latitude === 0 && user.longitude === 0) return "Location not set";
       return `${user.latitude}, ${user.longitude}`;
