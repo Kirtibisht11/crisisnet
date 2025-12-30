@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCrisisStore } from '../state/crisisStore';
@@ -19,12 +19,38 @@ const createIcon = (color) =>
 const crisisIcon = createIcon('red');
 const resourceIcon = createIcon('blue');
 const volunteerIcon = createIcon('green');
-const userIcon = createIcon('violet');
+const userIcon = createIcon('grey');
+
+const getResourceIcon = (type) => {
+  const t = type?.toLowerCase() || '';
+  if (t.includes('ambulance') || t.includes('hospital') || t.includes('medical')) return createIcon('red');
+  if (t.includes('police')) return createIcon('violet');
+  if (t.includes('fire')) return createIcon('orange');
+  if (t.includes('shelter')) return createIcon('green');
+  if (t.includes('boat') || t.includes('rescue')) return createIcon('gold');
+  return createIcon('blue');
+};
+
+// Helper to update map center when props change
+const MapUpdater = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+};
 
 /* ---------- COMPONENT ---------- */
 
-const MapView = () => {
-  const { crises, resources, volunteers, allocations } = useCrisisStore();
+const MapView = ({ crises: propCrises, resources: propResources, userLocation: propUserLocation }) => {
+  const store = useCrisisStore();
+  
+  const crises = propCrises || store.crises;
+  const resources = propResources || store.resources;
+  const volunteers = store.volunteers; // Usually from store
+  const allocations = store.allocations; // Usually from store
 
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // India default
   const [selectedCrisis, setSelectedCrisis] = useState(null);
@@ -32,8 +58,13 @@ const MapView = () => {
 
   /* ---------- USER LOCATION ---------- */
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (propUserLocation) {
+      setUserLocation(propUserLocation);
+      setMapCenter(propUserLocation);
+      return;
+    }
 
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = [pos.coords.latitude, pos.coords.longitude];
@@ -44,17 +75,19 @@ const MapView = () => {
         console.warn('Location permission denied');
       },
       { enableHighAccuracy: true, timeout: 5000 }
-    );
-  }, []);
+    ); 
+  }, [propUserLocation]);
 
   /* ---------- AUTO CENTER ON CRISIS IF EXISTS ---------- */
   useEffect(() => {
-    if (!userLocation && crises.length > 0) {
+    if (!userLocation && !propUserLocation && crises.length > 0) {
       const latest = crises[crises.length - 1];
-      setMapCenter([latest.location.lat, latest.location.lon]);
-      setSelectedCrisis(latest.id);
+      if (latest.location && latest.location.lat) {
+        setMapCenter([latest.location.lat, latest.location.lon]);
+        setSelectedCrisis(latest.id);
+      }
     }
-  }, [crises, userLocation]);
+  }, [crises, userLocation, propUserLocation]);
 
   /* ---------- ALLOCATION LOOKUP ---------- */
   const allocationMap = useMemo(() => {
@@ -86,6 +119,8 @@ const MapView = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        <MapUpdater center={mapCenter} />
+
         {/* ---------- USER LOCATION ---------- */}
         {userLocation && (
           <Marker position={userLocation} icon={userIcon}>
@@ -97,6 +132,7 @@ const MapView = () => {
 
         {/* ---------- CRISES ---------- */}
         {crises.map(crisis => {
+          if (!crisis.location || !crisis.location.lat) return null;
           const allocation = allocationMap[crisis.id];
           const priority = crisis.priority_score || 5;
 
@@ -191,16 +227,19 @@ const MapView = () => {
         })}
 
         {/* ---------- AVAILABLE RESOURCES ---------- */}
-        {resources.filter(r => r.available).map(r => (
+        {resources.map(r => (
           <Marker
             key={r.id}
             position={[r.location.lat, r.location.lon]}
-            icon={resourceIcon}
+            icon={getResourceIcon(r.type)}
             opacity={0.5}
           >
             <Popup>
-              <strong>{r.type}</strong>
-              <p className="text-green-600">Available</p>
+              <strong className="capitalize">{r.type}</strong>
+              <p className={r.available ? "text-green-600" : "text-red-600"}>
+                {r.available ? 'Available' : 'Busy'}
+              </p>
+              {r.capacity && <p className="text-xs">Capacity: {r.capacity}</p>}
             </Popup>
           </Marker>
         ))}
