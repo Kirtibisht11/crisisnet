@@ -1,5 +1,3 @@
-
-
 const AgentStatusPanel = ({ alerts }) => {
   const verifiedCount = alerts.filter(a => a.decision === 'VERIFIED').length;
   const reviewCount = alerts.filter(a => a.decision === 'REVIEW').length;

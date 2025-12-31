@@ -1,33 +1,61 @@
-import React from 'react';
-import { User, MapPin, Phone, Hash } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, MapPin, Phone } from 'lucide-react';
 
 const CitizenProfileCard = ({ user }) => {
-  const getLocationDisplay = () => {
-    const loc = user?.location;
-    if (loc) {
-      // If stored as structured location object
-      if (typeof loc === 'object') {
-        if (loc.manualLocation) return loc.manualLocation;
-        if (loc.lat !== undefined && loc.lon !== undefined) {
-          if (loc.lat === 0 && loc.lon === 0) return "Location not set";
-          try {
-            return `${Number(loc.lat).toFixed(4)}, ${Number(loc.lon).toFixed(4)}`;
-          } catch (e) {
-            return 'Unknown Location';
-          }
-        }
-        // fallback to source or JSON
-        if (loc.source) return `${loc.source}`;
-        return JSON.stringify(loc);
+  const [locationDisplay, setLocationDisplay] = useState("Detecting...");
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loc = user.location;
+
+    // Handle string location directly (e.g. "Ward 12, Downtown")
+    if (typeof loc === 'string' && loc.trim() !== '') {
+      setLocationDisplay(loc);
+      return;
+    }
+
+    // 1. Prefer Manual Location Name
+    if (loc?.manualLocation) {
+      setLocationDisplay(loc.manualLocation);
+      return;
+    }
+
+    // 2. Resolve Coordinates
+    let lat, lon;
+    if (loc?.lat !== undefined) { lat = loc.lat; lon = loc.lon; }
+    else if (user.latitude !== undefined) { lat = user.latitude; lon = user.longitude; }
+
+    if (lat !== undefined && lon !== undefined) {
+      if (lat === 0 && lon === 0) {
+        setLocationDisplay("Location not set");
+      } else {
+        // Reverse Geocode
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+          .then(res => res.json())
+          .then(data => {
+            const addr = data.address || {};
+            
+            // Construct a more descriptive address: "Road, Area, City"
+            const parts = [];
+            if (addr.road) parts.push(addr.road);
+            if (addr.neighbourhood && addr.neighbourhood !== addr.road) parts.push(addr.neighbourhood);
+            if (addr.suburb && addr.suburb !== addr.neighbourhood) parts.push(addr.suburb);
+            
+            const city = addr.city || addr.town || addr.village || addr.county;
+            if (city && !parts.includes(city)) parts.push(city);
+
+            const name = parts.slice(0, 3).join(', ');
+            setLocationDisplay(name || data.display_name?.split(',').slice(0, 2).join(',') || `${Number(lat).toFixed(4)}, ${Number(lon).toFixed(4)}`);
+          })
+          .catch(() => {
+            setLocationDisplay(`${Number(lat).toFixed(4)}, ${Number(lon).toFixed(4)}`);
+          });
       }
-      return loc;
+    } else {
+      setLocationDisplay("Location not set");
     }
-    if (user?.latitude !== undefined && user?.longitude !== undefined) {
-      if (user.latitude === 0 && user.longitude === 0) return "Location not set";
-      return `${user.latitude}, ${user.longitude}`;
-    }
-    return "Detecting...";
-  };
+  }, [user]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -51,7 +79,7 @@ const CitizenProfileCard = ({ user }) => {
         <div>
           <label className="text-xs text-slate-500 uppercase font-semibold">Location</label>
           <p className="text-slate-900 font-medium flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {getLocationDisplay()}
+            <MapPin className="w-3 h-3" /> {locationDisplay}
           </p>
         </div>
         <div>
@@ -60,18 +88,6 @@ const CitizenProfileCard = ({ user }) => {
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             <span className="text-sm text-slate-700">Safe</span>
           </div>
-        </div>
-        {user?.user_id && (
-          <div className="pt-2">
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 rounded text-xs text-slate-500 font-mono">
-              <Hash className="w-3 h-3" /> ID: {user.user_id}
-            </div>
-          </div>
-        )}
-        <div className="pt-4 border-t border-slate-100">
-          <button className="w-full py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition">
-            Update Medical Info
-          </button>
         </div>
       </div>
     </div>

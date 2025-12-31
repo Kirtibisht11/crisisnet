@@ -2,9 +2,14 @@
   {
     "id": "vol_001",
     "name": "Ravi",
-    "skills": ["rescue"],
+    "skills": [
+      "rescue"
+    ],
     "available": true,
-    "location": { "lat": 13.081, "lon": 80.268 },
+    "location": {
+      "lat": 13.081,
+      "lon": 80.268
+    },
     "allocated_to": null,
     "allocation_priority": 0,
     "allocated_at": null,
@@ -13,9 +18,14 @@
   {
     "id": "vol_002",
     "name": "Anita",
-    "skills": ["first_aid"],
+    "skills": [
+      "first_aid"
+    ],
     "available": true,
-    "location": { "lat": 13.084, "lon": 80.271 },
+    "location": {
+      "lat": 13.084,
+      "lon": 80.271
+    },
     "allocated_to": null,
     "allocation_priority": 0,
     "allocated_at": null,
@@ -24,9 +34,14 @@
   {
     "id": "vol_003",
     "name": "Kartik",
-    "skills": ["logistics"],
+    "skills": [
+      "logistics"
+    ],
     "available": false,
-    "location": { "lat": 13.078, "lon": 80.266 },
+    "location": {
+      "lat": 13.078,
+      "lon": 80.266
+    },
     "allocated_to": "crisis_001",
     "allocation_priority": 6,
     "allocated_at": "2024-12-26T08:55:00",
