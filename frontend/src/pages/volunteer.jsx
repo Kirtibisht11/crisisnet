@@ -7,6 +7,12 @@ import {
   Save, Phone, Mail, Calendar, TrendingUp, Zap, 
   MessageCircle, User, Flame, AlertCircle
 } from 'lucide-react';
+import { formatPriority } from '../utils/formatter';
+
+/* ================= ICON COMPONENTS ================= */
+const FlameIcon = () => <Flame className="w-5 h-5" />;
+const AlertCircleIcon = () => <AlertCircle className="w-5 h-5" />;
+const ActivityIcon = () => <Activity className="w-5 h-5" />;
 
 /* ================= LOCATION HELPERS ================= */
 const getBrowserLocation = () =>
@@ -37,37 +43,104 @@ const PRIORITY_STYLES = {
   critical: {
     border: 'border-red-500',
     bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: <Flame className="w-5 h-5" />
+    text: 'text-red-800',
+    icon: <FlameIcon />
   },
   high: {
-    border: 'border-red-500',
-    bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: <Flame className="w-5 h-5" />
-  },
-  medium: {
     border: 'border-orange-500',
     bg: 'bg-orange-100',
-    text: 'text-orange-700',
-    icon: <AlertCircle className="w-5 h-5" />
+    text: 'text-orange-800',
+    icon: <FlameIcon />
+  },
+  medium: {
+    border: 'border-yellow-500',
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    icon: <AlertCircleIcon />
   },
   low: {
-    border: 'border-blue-500',
-    bg: 'bg-blue-100',
-    text: 'text-blue-700',
-    icon: <Activity className="w-5 h-5" />
+    border: 'border-green-500',
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    icon: <ActivityIcon />
   },
   default: {
     border: 'border-gray-400',
     bg: 'bg-gray-100',
     text: 'text-gray-700',
-    icon: <Activity className="w-5 h-5" />
+    icon: <ActivityIcon />
   }
 };
 
+/* ================= LOCATION RENDERER ================= */
+const LocationRenderer = ({ location, lat, lon }) => {
+  const [displayLocation, setDisplayLocation] = useState(() => {
+    // If we have a descriptive string that isn't "Unknown Location" or "Location not specified" or coordinates, use it
+    if (location && location !== 'Unknown Location' && location !== 'Location not specified' && !/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim())) {
+      return location;
+    }
+    // If we have explicit lat/lon, we will resolve it
+    if (lat || lon) return null;
+    // If we have a coordinate string, we will resolve it
+    if (location && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim())) return null;
+
+    return location || 'Location not specified';
+  });
+
+  useEffect(() => {
+    const isCoordinates = location && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim());
+    let queryLat = lat;
+    let queryLon = lon;
+
+    if (isCoordinates && (!queryLat || !queryLon)) {
+      const parts = String(location).split(',').map(s => s.trim());
+      queryLat = parts[0];
+      queryLon = parts[1];
+    }
+
+    if (!queryLat || !queryLon) {
+      if (location && !isCoordinates && location !== 'Unknown Location' && location !== 'Location not available') {
+        setDisplayLocation(location);
+      }
+      return;
+    }
+
+    // Show coordinates immediately when location is unknown
+    if (location === 'Unknown Location' || location === 'Location not available') {
+      setDisplayLocation(`${Number(queryLat).toFixed(4)}, ${Number(queryLon).toFixed(4)}`);
+      return;
+    }
+
+    let active = true;
+
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${queryLat}&lon=${queryLon}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!active) return;
+        if (data.address) {
+          const { road, suburb, city, town, village, county } = data.address;
+          const parts = [road, suburb || village || town, city || county].filter(Boolean);
+          if (parts.length > 0) setDisplayLocation(parts.join(', '));
+          else if (data.display_name) setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
+        } else if (data.display_name) {
+          setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
+        }
+      })
+      .catch(() => {
+        if (active) setDisplayLocation(`${queryLat}, ${queryLon}`);
+      });
+    return () => { active = false; };
+  }, [location, lat, lon]);
+
+  if (displayLocation === null) {
+    return <span className="text-slate-400 italic text-xs">Resolving location...</span>;
+  }
+
+  return <span>{displayLocation}</span>;
+};
+
 /* ================= VOLUNTEER OPPORTUNITIES COMPONENT ================= */
-const VolunteerOpportunities = () => {
+const VolunteerOpportunities = ({ volunteerId }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +148,17 @@ const VolunteerOpportunities = () => {
     try {
       const res = await fetch('http://localhost:8000/api/resource/volunteer_requests');
       const data = await res.json();
-      setRequests((data.items || []).filter(r => r.status === 'OPEN'));
+      
+      // Get current user ID to ensure we filter out requests accepted by this user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.user_id || user.id;
+
+      // Filter out requests already accepted by this volunteer
+      const openRequests = (data.items || []).filter(r => 
+        r.status === 'OPEN' && 
+        (!r.accepted_volunteers || (!r.accepted_volunteers.includes(volunteerId) && (!userId || !r.accepted_volunteers.includes(userId))))
+      );
+      setRequests(openRequests);
     } catch (e) {
       console.error(e);
     } finally {
@@ -103,7 +186,7 @@ const VolunteerOpportunities = () => {
     }
   };
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => { fetchRequests(); }, [volunteerId]);
 
   if (loading) return <div className="p-8 text-center">Loading opportunities...</div>;
 
@@ -116,31 +199,42 @@ const VolunteerOpportunities = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {requests.map(req => (
-            <div key={req.request_id} className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">{req.crisis_type.toUpperCase()}</h3>
-                  <p className="text-sm text-gray-600 mb-2">📍 {req.location}</p>
-                  <p className="text-gray-700 mb-3">{req.message}</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {req.skills_required.map(s => (
-                      <span key={s} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{s}</span>
-                    ))}
+          {requests.map(req => {
+            const priorityInfo = formatPriority(req.trust_score, req.crisis_type);
+            const priorityKey = priorityInfo.level.toLowerCase();
+            const style = PRIORITY_STYLES[priorityKey] || PRIORITY_STYLES.default;
+
+            return (
+              <div key={req.request_id} className={`bg-white p-5 rounded-lg shadow border-l-4 ${style.border}`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg text-gray-900">{req.crisis_type.toUpperCase()}</h3>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${style.bg} ${style.text}`}>
+                        {priorityInfo.level}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> <LocationRenderer location={req.location} lat={req.lat} lon={req.lon} /></p>
+                    <p className="text-gray-700 mb-3">{req.message}</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {req.skills_required.map(s => (
+                        <span key={s} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{s}</span>
+                      ))}
+                    </div>
                   </div>
+                  <button
+                    onClick={() => handleAccept(req.request_id)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                  >
+                    Accept
+                  </button>
                 </div>
-                <button 
-                  onClick={() => handleAccept(req.request_id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-                >
-                  Accept
-                </button>
+                <div className="mt-3 text-xs text-gray-500">
+                  Needed: {req.volunteers_needed} • Fulfilled: {req.fulfilled_count}
+                </div>
               </div>
-              <div className="mt-3 text-xs text-gray-500">
-                Needed: {req.volunteers_needed} • Fulfilled: {req.fulfilled_count}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -162,7 +256,7 @@ const VolunteerTasks = ({ volunteerId }) => {
         return;
       }
 
-      const API_BASE = 'http://localhost:8000';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
       const endpoint = `${API_BASE}/api/resource/volunteer/tasks/${volunteerId}`;
       const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       
@@ -232,17 +326,12 @@ const VolunteerTasks = ({ volunteerId }) => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Assigned Tasks</h2>
-        <button
-          onClick={fetchTasks}
-          className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm transition self-start sm:self-auto"
-        >
-          Refresh
-        </button>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+      <div className="flex flex-col gap-4">
         {tasks.map((task, idx) => {
-          const priorityKey = (task.priority || 'default').toLowerCase();
+          const priorityLevel = task.priority || 'default';
+          const priorityKey = priorityLevel.toLowerCase();
           const style = PRIORITY_STYLES[priorityKey] || PRIORITY_STYLES.default;
 
           return (
@@ -259,26 +348,22 @@ const VolunteerTasks = ({ volunteerId }) => {
                     <h3 className="font-bold text-base sm:text-lg break-words">
                       {task.task || 'Assigned Task'}
                     </h3>
-                    <p className="text-xs text-gray-500 truncate">
-                      ID: {task.task_id || 'N/A'}
-                    </p>
                   </div>
                 </div>
                 <span
                   className={`px-3 py-1 ${style.bg} ${style.text} rounded-full text-xs font-bold uppercase self-start sm:self-auto flex-shrink-0`}
                 >
-                  {task.priority || 'normal'}
+                  {priorityLevel}
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm">
-                {task.location && (
+              <div className="space-y-2">
+                {(task.location || (task.lat && task.lon)) && (
                   <div className="flex items-start gap-1">
                     <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span className="break-words">{task.location}</span>
+                    <span className="break-words"><LocationRenderer location={task.location} lat={task.lat} lon={task.lon} /></span>
                   </div>
                 )}
-
                 {task.description && (
                   <p className="bg-gray-50 p-2 sm:p-3 rounded text-sm break-words">{task.description}</p>
                 )}
@@ -414,9 +499,20 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
     }
   };
 
-  const toggleAvailability = () => {
-    setAvailability(!availability);
-    // Update backend if needed
+  const toggleAvailability = async () => {
+    const newStatus = !availability;
+    setAvailability(newStatus);
+    try {
+      const token = localStorage.getItem('access_token');
+      await fetch(`http://localhost:8000/api/resource/volunteers/${volunteerId}/availability`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'token': token },
+        body: JSON.stringify({ available: newStatus })
+      });
+    } catch (e) {
+      console.error("Failed to update availability", e);
+      setAvailability(!newStatus);
+    }
   };
 
   const handleOpenTelegram = () => {
@@ -961,7 +1057,7 @@ const VolunteerPage = () => {
 
         {/* OPPORTUNITIES TAB */}
         {activeTab === 'opportunities' && (
-          <VolunteerOpportunities />
+          <VolunteerOpportunities volunteerId={volunteerId} />
         )}
       </div>
     </div>

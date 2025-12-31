@@ -46,6 +46,12 @@ export default function Login() {
       // 3️⃣ Persist session
       if (token) localStorage.setItem("access_token", token);
 
+      // Check if user has volunteer profile attached and save ID
+      if (user.volunteer || user.volunteer_id) {
+        const vId = user.volunteer?.id || user.volunteer?.volunteer_id || user.volunteer_id;
+        if (vId) localStorage.setItem("volunteerId", vId);
+      }
+
       const enrichedUser = {
         ...user,
         location: {
@@ -103,19 +109,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CN</span>
-            </div>
-            <span className="font-bold text-slate-900">CrisisNet</span>
-          </Link>
-          <p className="text-sm text-slate-600">
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div className="w-full px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="font-bold text-xl tracking-tight">CrisisNet</Link>
+          <p className="text-sm text-slate-400">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-blue-700 font-medium hover:underline">
+            <Link to="/signup" className="text-blue-400 font-medium hover:text-blue-300">
               Sign up
             </Link>
           </p>
@@ -123,8 +124,8 @@ export default function Login() {
       </header>
 
       {/* Login Form */}
-      <div className="min-h-[calc(100vh-73px)] flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
+      <div className="w-[96%] mx-auto py-12 flex items-center justify-center">
+        <div className="w-full max-w-2xl bg-white rounded-xl shadow-sm border border-slate-200 p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Sign In</h1>
             <p className="text-slate-600">Access your CrisisNet dashboard</p>
@@ -141,7 +142,7 @@ export default function Login() {
                 placeholder="your-username or +1234567890"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
               />
             </div>
 
@@ -156,7 +157,7 @@ export default function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors pr-10"
                 />
                 <button
                   type="button"
@@ -188,13 +189,13 @@ export default function Login() {
                 value={manualLocation}
                 onChange={(e) => setManualLocation(e.target.value)}
                 onFocus={() => detectLocation()}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
               />
               <p className="text-xs text-slate-500 mt-1">
                 Used for nearby alerts, shelters, and volunteer matching
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                📍 Detected: {detectingLocation ? 'Detecting location...' : (geo.humanLocation ? geo.humanLocation : (geo.lat ? `${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}` : 'Detecting automatically...'))}
+               Detected: {detectingLocation ? 'Detecting location...' : (geo.humanLocation ? geo.humanLocation : (geo.lat ? `${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}` : 'Detecting automatically...'))}
               </p>
             </div>
 
@@ -209,7 +210,7 @@ export default function Login() {
             <button
               onClick={handleLogin}
               disabled={isSubmitting}
-              className="w-full py-3 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-60"
+              className="w-full py-3 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
             >
               {isSubmitting ? "Signing in..." : "Sign In"}
             </button>
@@ -218,7 +219,7 @@ export default function Login() {
           <div className="mt-6 pt-6 border-t border-slate-200 text-center">
             <p className="text-sm text-slate-600">
               Don’t have an account?{" "}
-              <Link to="/signup" className="text-blue-700 font-medium hover:underline">
+              <Link to="/signup" className="text-blue-600 font-medium hover:text-blue-700">
                 Create one now
               </Link>
             </p>
