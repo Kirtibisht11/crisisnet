@@ -1,169 +1,120 @@
+Round 2 Roadmap – CrisisNet
+
 Round 2 focuses on intelligence, real-time coordination, scalability, and completing partial integrations from Round 1.
 The goal is to evolve CrisisNet from a working prototype into a production-ready, city-scale emergency response system.
 
- 1. AI-Based Crisis Detection & Intelligence (to be added)
+1. AI-Based Crisis Detection & Intelligence (to be added)
 
-NLP analysis on real-time social feeds (Twitter/X, Telegram, SMS)
+NLP-based analysis of real-time social feeds (Twitter/X, Telegram, SMS)
 
-Distress keyword and phrase extraction
-
-Automatic crisis type classification (flood, fire, medical, collapse, etc.)
-
-Severity estimation using ML models
+Automatic crisis type classification and severity estimation
 
 Geo-clustering of alerts to detect emerging hotspots
 
- 2. Trust, Credibility & Misinformation Control (to be improved)
+2. Trust, Credibility & Misinformation Control (to be improved)
 
-Multi-source alert verification (citizen + authority + social data)
+Multi-source alert verification (citizen, authority, social data)
 
-Dynamic trust and confidence scoring
+Dynamic trust and confidence scoring for crises
 
-Duplicate and fake alert suppression
+Duplicate, fake, and low-credibility alert suppression
 
-Reputation scoring for repeat sources
+3. Real-Time & Event-Driven System (to be improved)
 
-Manual review and override by authorities
+WebSockets for live crisis and task updates
 
- 3. Real-Time & Event-Driven System (to be improved)
+Real-time volunteer and authority dashboard synchronization
 
-WebSockets for live crisis updates
+Instant escalation for high-severity events
 
-Real-time volunteer task status sync
-
-Live authority dashboards
-
-Push notifications (Telegram / SMS / App)
-
-Instant escalation for high-severity crises
-
- 4. Citizen Crisis Interface (to be improved)
+4. Citizen Crisis Interface (to be improved)
 
 Clear crisis type and severity indicators
 
-Contextual safety instructions
+Contextual safety instructions and emergency guidance
 
-Nearby shelters and safe zones
+Accessibility-focused, calm UI for emergency situations
 
-Emergency contacts and guidance
+5. Advanced Crisis Map & Situation Awareness (to be improved)
 
-Accessibility-focused, calm UI for emergencies
+Live crisis heatmaps and affected area visualization
 
- 5. Advanced Crisis Map & Situation Awareness (to be improved)
-
-Live crisis heatmaps
-
-Shelter and safe-zone visualization
-
-Assigned volunteers and resources view
-
-Affected radius and population overlays
+Shelter, safe-zone, and resource location mapping
 
 City-level and region-level coordination views
 
- 6. Smart Resource & Volunteer Optimization (to be improved)
+6. Smart Resource & Volunteer Optimization (to be improved)
 
-Skill-weighted volunteer matching
+Skill-weighted and distance-aware volunteer matching
 
-Distance-based and ETA-aware task assignments
-
-Priority-aware resource allocation
-
-Load balancing across NGOs and agencies
+Priority-based resource allocation
 
 Automatic reassignment on task failure or delay
 
- 7. NGO Coordination & Crisis Acceptance
-(half-implemented in Round 1 → fully integrated in Round 2)
+7. NGO Coordination & Crisis Acceptance
 
-Round 1 (Partial)
+(Half-implemented in Round 1 → Fully integrated in Round 2)
 
-NGO APIs and basic acceptance flow implemented
+Round 1 (Partial):
 
-NGO task views and status endpoints created
+NGO APIs and basic crisis acceptance flow
+
+NGO task views and status endpoints
 
 Limited integration with crisis lifecycle
 
-Round 2 (To be completed)
+Round 2 (To be completed):
 
-Full NGO dashboard integration
+Full NGO dashboard and workflow integration
 
 NGO-specific crisis assignment and tracking
 
-Resource commitment by NGOs
+NGO-to-authority coordination and reporting
 
-NGO-to-authority coordination flow
+8. Learning & Adaptive Response Agent (to be added)
 
-NGO performance and utilization tracking
+Learns from past crisis outcomes and response performance
 
- 8. Learning & Adaptive Response Agent (to be added)
+Tracks response time and success/failure metrics
 
-Learns from past crises and response outcomes
+Improves priority scoring and allocation strategies over time
 
-Tracks response time and success/failure rates
+9. Advanced Routing & Navigation (to be added)
 
-Improves priority scoring dynamically
-
-Optimizes future resource allocation strategies
-
-Self-improving decision support over time
-
- 9. Advanced Routing & Navigation (to be added)
-
-Safe evacuation route suggestions
+Safe evacuation route recommendations
 
 Detection of blocked or high-risk roads
 
-Optimized navigation for responders
-
-Shelter capacity-aware routing
-
 Dynamic rerouting during ongoing crises
 
- 10. System-Wide Analytics & Dashboards (to be added)
+10. System-Wide Analytics & Dashboards (to be added)
 
-Total crises detected over time
-
-Average response time per crisis type
+Crisis trends and response time analytics
 
 Volunteer and NGO utilization metrics
 
-Resource efficiency and deployment success
+Data-driven decision support for authorities
 
-City-level and region-level analytics
+11. Voice-Based Assistance & Accessibility (to be added)
 
- 11. Voice-Based Assistance & Accessibility (to be added)
-
-Audio safety instructions for citizens
+Audio-based safety instructions for citizens
 
 Voice-guided emergency steps
 
 Support for elderly and visually impaired users
 
-Reduced dependency on reading during high stress
+12. Multi-Crisis Parallel Processing (to be added)
 
-Future voice-to-text emergency reporting
-
- 12. Multi-Crisis Parallel Processing (to be added)
-
-Multiple crisis handling in parallel
+Parallel handling of multiple crises
 
 Independent processing pipelines per crisis
 
-City, state, and national-level scaling
+Scalable city, state, and national-level execution
 
-Isolated failure handling per crisis
-
-No performance degradation during surge events
-
- 13. Scalable Database & Infrastructure (to be improved)
+13. Scalable Database & Infrastructure (to be improved)
 
 Centralized relational database (PostgreSQL / MySQL)
 
-Structured storage for users, crises, resources, and logs
+High-concurrency and large-scale user support
 
-High-concurrency support
-
-Containerized services for horizontal scaling
-
-Role-based secure data access
+Role-based secure data access and permissions
