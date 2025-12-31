@@ -17,6 +17,7 @@ import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
 import Login from "./pages/Login";
 import Signup from "./pages/signup";
+import SignupVolunteer from "./pages/signup_volunteer";
 import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
@@ -41,6 +42,7 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup-volunteer" element={<SignupVolunteer />} />
  
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />

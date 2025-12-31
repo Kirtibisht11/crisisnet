@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
 import { connectTelegram } from "../services/telegramUtils";
 import {
-  MapPin, Clock, Bell, CheckCircle, Navigation
+  MapPin, Clock, Bell, CheckCircle, Navigation, UserPlus
 } from 'lucide-react';
 
 import EmergencyPanel from '../components/EmergencyPanel';
@@ -158,6 +158,21 @@ export default function Citizen() {
           <Link to="/" className="font-bold text-xl tracking-tight flex items-center gap-2">CrisisNet</Link>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-slate-300 hidden sm:block">{user?.name || "Citizen"}</span>
+            {(user?.role === 'volunteer' || localStorage.getItem('volunteerId')) ? (
+              <button 
+                onClick={() => navigate('/volunteer')}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+              >
+                <UserPlus size={16} /> Volunteer Dashboard
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/signup-volunteer')}
+                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+              >
+                <UserPlus size={16} /> Become Volunteer
+              </button>
+            )}
             <button onClick={logout} className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition">
               Sign Out
             </button>
