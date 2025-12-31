@@ -5,14 +5,14 @@ import { useUserStore } from '../state/userStore'
 
 const formatCrisisType = (type) => {
   const types = {
-    'flood': { label: 'Flood Emergency', emoji: '🌊' },
-    'fire': { label: 'Fire Emergency', emoji: '🔥' },
-    'medical': { label: 'Medical Emergency', emoji: '🏥' },
-    'earthquake': { label: 'Earthquake', emoji: '🏚️' },
-    'landslide': { label: 'Landslide', emoji: '⛰️' },
-    'collapse': { label: 'Building Collapse', emoji: '🏢' }
+    'flood': { label: 'Flood Emergency' },
+    'fire': { label: 'Fire Emergency' },
+    'medical': { label: 'Medical Emergency' },
+    'earthquake': { label: 'Earthquake' },
+    'landslide': { label: 'Landslide'},
+    'collapse': { label: 'Building Collapse' }
   };
-  return types[type] || { label: type, emoji: '⚠️' };
+  return types[type] || { label: type };
 };
 
 const getRequiredSkills = (crisisType) => {
