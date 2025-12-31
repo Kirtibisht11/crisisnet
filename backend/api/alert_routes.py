@@ -30,6 +30,14 @@ def load_alerts_log():
         raise RuntimeError(f"Failed reading alerts_log.json: {e}")
 
 
+def save_alerts_log(data):
+    path = os.path.join(_project_root(), "data", "alerts_log.json")
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, path)
+
+
 def load_mock_scenarios():
     mock_path = os.path.join(_project_root(), "agents", "trust", "mock_alerts.json")
 
@@ -85,6 +93,30 @@ async def get_alert_by_id(alert_id: str):
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
 
+    return {"success": True, "alert": alert}
+
+
+@router.put("/alerts/{alert_id}/decision")
+async def update_alert_decision(alert_id: str, payload: dict):
+    data = load_alerts_log()
+    alerts = data.get("alerts", [])
+    
+    alert = next((a for a in alerts if a.get("alert_id") == alert_id), None)
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    
+    if "decision" in payload:
+        alert["decision"] = payload["decision"]
+    if "approved_by" in payload:
+        alert["approved_by"] = payload["approved_by"]
+    if "approved_at" in payload:
+        alert["approved_at"] = payload["approved_at"]
+    if "rejected_by" in payload:
+        alert["rejected_by"] = payload["rejected_by"]
+    if "rejected_at" in payload:
+        alert["rejected_at"] = payload["rejected_at"]
+        
+    save_alerts_log(data)
     return {"success": True, "alert": alert}
 
 

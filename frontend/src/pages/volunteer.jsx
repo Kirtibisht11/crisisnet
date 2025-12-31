@@ -66,6 +66,87 @@ const PRIORITY_STYLES = {
   }
 };
 
+/* ================= VOLUNTEER OPPORTUNITIES COMPONENT ================= */
+const VolunteerOpportunities = () => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/resource/volunteer_requests');
+      const data = await res.json();
+      setRequests((data.items || []).filter(r => r.status === 'OPEN'));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async (reqId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`http://localhost:8000/api/resource/volunteer_requests/${reqId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'token': token },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        alert('Request accepted! Check "My Tasks" for details.');
+        fetchRequests();
+      } else {
+        const d = await res.json();
+        alert(d.detail || 'Failed to accept');
+      }
+    } catch (e) {
+      alert('Error accepting request');
+    }
+  };
+
+  useEffect(() => { fetchRequests(); }, []);
+
+  if (loading) return <div className="p-8 text-center">Loading opportunities...</div>;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Open Volunteer Opportunities</h2>
+      {requests.length === 0 ? (
+        <div className="p-8 bg-white rounded-lg shadow text-center text-gray-500">
+          No open requests at the moment.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {requests.map(req => (
+            <div key={req.request_id} className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">{req.crisis_type.toUpperCase()}</h3>
+                  <p className="text-sm text-gray-600 mb-2">📍 {req.location}</p>
+                  <p className="text-gray-700 mb-3">{req.message}</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {req.skills_required.map(s => (
+                      <span key={s} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{s}</span>
+                    ))}
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleAccept(req.request_id)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                >
+                  Accept
+                </button>
+              </div>
+              <div className="mt-3 text-xs text-gray-500">
+                Needed: {req.volunteers_needed} • Fulfilled: {req.fulfilled_count}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ================= VOLUNTEER TASKS COMPONENT ================= */
 const VolunteerTasks = ({ volunteerId }) => {
   const [tasks, setTasks] = useState([]);
@@ -820,6 +901,16 @@ const VolunteerPage = () => {
           >
             My Tasks
           </button>
+          <button 
+            onClick={() => setActiveTab('opportunities')} 
+            className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
+              activeTab === 'opportunities' 
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            Opportunities
+          </button>
         </div>
 
         {/* DASHBOARD TAB */}
@@ -866,6 +957,11 @@ const VolunteerPage = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* OPPORTUNITIES TAB */}
+        {activeTab === 'opportunities' && (
+          <VolunteerOpportunities />
         )}
       </div>
     </div>

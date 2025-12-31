@@ -1,0 +1,56 @@
+[
+  {
+    "request_id": "req_20251231160132",
+    "crisis_id": "DET_a96f4dc2",
+    "crisis_type": "flood",
+    "location": "Unknown",
+    "message": "Flood water entering ground floor houses, need rescue boats",
+    "skills_required": [
+      "rescue",
+      "swimming",
+      "first_aid",
+      "logistics"
+    ],
+    "volunteers_needed": 8,
+    "fulfilled_count": 0,
+    "status": "OPEN",
+    "created_at": "2025-12-31T16:01:32.210998",
+    "created_by": "u_44bdf70e"
+  },
+  {
+    "request_id": "req_20251231155212",
+    "crisis_id": "DET_a96f4dc2",
+    "crisis_type": "flood",
+    "location": "Unknown",
+    "message": "Flood water entering ground floor houses, need rescue boats",
+    "skills_required": [
+      "rescue",
+      "swimming",
+      "first_aid",
+      "logistics"
+    ],
+    "volunteers_needed": 7,
+    "fulfilled_count": 0,
+    "status": "OPEN",
+    "created_at": "2025-12-31T15:52:12.673222",
+    "created_by": "u_44bdf70e"
+  },
+  {
+    "request_id": "req_20251231155201",
+    "crisis_id": "DET_63e25a3c",
+    "crisis_type": "fire",
+    "location": "Unknown",
+    "message": "Fire broke out in small warehouse, thick smoke visible",
+    "skills_required": [
+      "firefighting",
+      "first_aid",
+      "rescue",
+      "medical"
+    ],
+    "volunteers_needed": 6,
+    "fulfilled_count": 0,
+    "status": "OPEN",
+    "created_at": "2025-12-31T15:52:01.080982",
+    "created_by": "u_44bdf70e"
+  }
+]

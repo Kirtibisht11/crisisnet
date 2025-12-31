@@ -120,21 +120,14 @@ const AuthorityDashboard = () => {
         const data = await response.json();
         
         if (isMounted) {
-          // Merge with local decisions to persist state across refreshes/polls
-          const approvedCrises = JSON.parse(localStorage.getItem('approved_crises') || '[]');
-          const rejectedCrises = JSON.parse(localStorage.getItem('rejected_crises') || '[]');
-          
-          const mergedAlerts = (data.alerts || []).map(alert => {
-            const approved = approvedCrises.find(a => a.alert_id === alert.alert_id);
-            if (approved) return { ...alert, ...approved, decision: 'VERIFIED' };
-            
-            const rejected = rejectedCrises.find(a => a.alert_id === alert.alert_id);
-            if (rejected) return { ...alert, ...rejected, decision: 'REJECTED' };
-            
-            return alert;
+          const mergedAlerts = data.alerts || [];
+
+          // Deduplicate alerts to ensure uniqueness
+          const uniqueMap = new Map();
+          mergedAlerts.forEach(a => {
+            if (a.alert_id) uniqueMap.set(a.alert_id, a);
           });
-          
-          setAlerts(mergedAlerts);
+          setAlerts(Array.from(uniqueMap.values()));
         }
         
       } catch (err) {
@@ -192,32 +185,24 @@ const AuthorityDashboard = () => {
         localStorage.getItem('crisisnet_current_user') || localStorage.getItem('user') || '{}'
       );
 
-      const approvedCrisis = {
-        ...alertData,
-        approved_by: currentUser.name || 'Authority',
-        approved_at: new Date().toISOString(),
-        crisis_status: 'APPROVED',
-        requires_resources: true,
-        decision: 'VERIFIED',
-        priority:
-          alertData.trust_score > 0.5
-            ? 'HIGH'
-            : alertData.trust_score > 0.3
-            ? 'MEDIUM'
-            : 'LOW'
-      };
-
-      const approvedCrises = JSON.parse(
-        localStorage.getItem('approved_crises') || '[]'
-      );
-      approvedCrises.push(approvedCrisis);
-      localStorage.setItem('approved_crises', JSON.stringify(approvedCrises));
+      await fetch(`http://localhost:8000/api/alerts/${alertData.alert_id}/decision`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          decision: 'VERIFIED',
+          approved_by: currentUser.name || 'Authority',
+          approved_at: new Date().toISOString()
+        })
+      });
 
       // Update local state
       setAlerts(prev =>
-        prev.map(a =>
-          a.alert_id === alertData.alert_id ? approvedCrisis : a
-        )
+        prev.map(a => {
+          if (a.alert_id === alertData.alert_id) {
+            return { ...a, decision: 'VERIFIED', approved_by: currentUser.name };
+          }
+          return a;
+        })
       );
 
       // Close modal first
@@ -248,18 +233,17 @@ const AuthorityDashboard = () => {
         localStorage.getItem('crisisnet_current_user') || localStorage.getItem('user') || '{}'
       );
 
-      const rejectedAlert = {
-        ...alertData,
-        rejected_by: currentUser.name || 'Authority',
-        rejected_at: new Date().toISOString(),
-        crisis_status: 'REJECTED',
-        decision: 'REJECTED'
-      };
+      await fetch(`http://localhost:8000/api/alerts/${alertData.alert_id}/decision`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          decision: 'REJECTED',
+          rejected_by: currentUser.name || 'Authority',
+          rejected_at: new Date().toISOString()
+        })
+      });
 
-      const rejectedCrises = JSON.parse(localStorage.getItem('rejected_crises') || '[]');
-      rejectedCrises.push(rejectedAlert);
-      localStorage.setItem('rejected_crises', JSON.stringify(rejectedCrises));
-
+      const rejectedAlert = { ...alertData, decision: 'REJECTED' };
       setAlerts(prev =>
         prev.map(a =>
           a.alert_id === alertData.alert_id ? rejectedAlert : a

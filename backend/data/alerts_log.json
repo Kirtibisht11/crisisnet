@@ -10,7 +10,7 @@
       "message": "Flood water entering ground floor houses, need rescue boats",
       "has_image": false,
       "trust_score": 0.417,
-      "decision": "UNCERTAIN",
+      "decision": "VERIFIED",
       "status": "Low confidence",
       "reputation": 0.5,
       "cross_verification": {
@@ -39,7 +39,9 @@
           "sentiment_urgent": false
         },
         "alert_id": 1
-      }
+      },
+      "approved_by": "anu",
+      "approved_at": "2025-12-31T15:15:24.847Z"
     },
     {
       "alert_id": "DET_f449d282",
@@ -92,7 +94,7 @@
       "message": "Man unconscious and bleeding near bus stand, medical emergency",
       "has_image": false,
       "trust_score": 0.438,
-      "decision": "UNCERTAIN",
+      "decision": "REJECTED",
       "status": "Low confidence",
       "reputation": 0.5,
       "cross_verification": {
@@ -121,7 +123,9 @@
           "sentiment_urgent": true
         },
         "alert_id": 3
-      }
+      },
+      "rejected_by": "anu",
+      "rejected_at": "2025-12-31T15:16:19.045Z"
     },
     {
       "alert_id": "DET_63e25a3c",
@@ -133,7 +137,7 @@
       "message": "Fire broke out in small warehouse, thick smoke visible",
       "has_image": false,
       "trust_score": 0.417,
-      "decision": "UNCERTAIN",
+      "decision": "VERIFIED",
       "status": "Low confidence",
       "reputation": 0.5,
       "cross_verification": {
@@ -162,7 +166,9 @@
           "sentiment_urgent": false
         },
         "alert_id": 4
-      }
+      },
+      "approved_by": "anu",
+      "approved_at": "2025-12-31T15:15:56.069Z"
     },
     {
       "alert_id": "DET_3ca1cc10",
@@ -215,7 +221,7 @@
       "message": "Road blocked due to landslide after heavy rainfall",
       "has_image": false,
       "trust_score": 0.417,
-      "decision": "UNCERTAIN",
+      "decision": "VERIFIED",
       "status": "Low confidence",
       "reputation": 0.5,
       "cross_verification": {
@@ -244,7 +250,9 @@
           "sentiment_urgent": false
         },
         "alert_id": 6
-      }
+      },
+      "approved_by": "anu",
+      "approved_at": "2025-12-31T16:01:15.343Z"
     },
     {
       "alert_id": "DET_82c6c2c2",
@@ -409,9 +417,419 @@
         },
         "alert_id": 10
       }
+    },
+    {
+      "alert_id": "DET_bfcd88f9",
+      "user_id": "twitter",
+      "crisis_type": "flood",
+      "location": "Unknown",
+      "lat": 30.2681,
+      "lon": 77.9895,
+      "message": "Flood water entering ground floor houses, need rescue boats",
+      "has_image": false,
+      "trust_score": 0.417,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:14:00Z",
+      "verified_at": "2025-12-31T15:16:31.803136Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.42 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 1
+      }
+    },
+    {
+      "alert_id": "DET_8c0884ae",
+      "user_id": "sms",
+      "crisis_type": "flood",
+      "location": "Unknown",
+      "lat": 30.2669,
+      "lon": 77.9879,
+      "message": "People stuck on rooftop due to flooding, urgent help required",
+      "has_image": false,
+      "trust_score": 0.458,
+      "decision": "REVIEW",
+      "status": "Needs human review",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.22,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.05
+      },
+      "timestamp": "2025-07-19T10:16:00Z",
+      "verified_at": "2025-12-31T15:16:31.805697Z",
+      "severity": "medium",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 REVIEW\n\nScore Breakdown:\n  Cross-Verification: +0.22\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.05\n\nFinal Decision: Needs human review",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": true
+        },
+        "alert_id": 2
+      }
+    },
+    {
+      "alert_id": "DET_770452d5",
+      "user_id": "sms",
+      "crisis_type": "medical",
+      "location": "Unknown",
+      "lat": 30.2678,
+      "lon": 77.9899,
+      "message": "Man unconscious and bleeding near bus stand, medical emergency",
+      "has_image": false,
+      "trust_score": 0.438,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.05
+      },
+      "timestamp": "2025-07-19T10:20:00Z",
+      "verified_at": "2025-12-31T15:16:31.806361Z",
+      "severity": "high",
+      "verified": false,
+      "explanation": "Trust Score: 0.44 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.05\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": true
+        },
+        "alert_id": 3
+      }
+    },
+    {
+      "alert_id": "DET_1e77bed7",
+      "user_id": "twitter",
+      "crisis_type": "fire",
+      "location": "Unknown",
+      "lat": 30.2692,
+      "lon": 77.9908,
+      "message": "Fire broke out in small warehouse, thick smoke visible",
+      "has_image": false,
+      "trust_score": 0.417,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:22:00Z",
+      "verified_at": "2025-12-31T15:16:31.806835Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.42 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 4
+      }
+    },
+    {
+      "alert_id": "DET_b6c9039c",
+      "user_id": "twitter",
+      "crisis_type": "earthquake",
+      "location": "Unknown",
+      "lat": 30.2671,
+      "lon": 77.9881,
+      "message": "Is anyone else feeling mild earthquake tremors?",
+      "has_image": false,
+      "trust_score": 0.417,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:26:00Z",
+      "verified_at": "2025-12-31T15:16:31.807270Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.42 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 5
+      }
+    },
+    {
+      "alert_id": "DET_dcb437a7",
+      "user_id": "manual",
+      "crisis_type": "landslide",
+      "location": "Unknown",
+      "lat": 30.2724,
+      "lon": 77.9931,
+      "message": "Road blocked due to landslide after heavy rainfall",
+      "has_image": false,
+      "trust_score": 0.417,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:30:00Z",
+      "verified_at": "2025-12-31T15:16:31.807683Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.42 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 6
+      }
+    },
+    {
+      "alert_id": "DET_80170ea5",
+      "user_id": "twitter",
+      "crisis_type": "landslide",
+      "location": "Unknown",
+      "lat": 30.2731,
+      "lon": 77.994,
+      "message": "Mud and rocks falling continuously near highway curve",
+      "has_image": false,
+      "trust_score": 0.408,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.22,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.03,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:32:00Z",
+      "verified_at": "2025-12-31T15:16:31.808390Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.41 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.22\n  Source Reputation:  +0.19\n  Rate Limit:         -0.03\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.2,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 7
+      }
+    },
+    {
+      "alert_id": "DET_3d25ccf5",
+      "user_id": "sms",
+      "crisis_type": "medical",
+      "location": "Unknown",
+      "lat": 30.2662,
+      "lon": 77.9876,
+      "message": "Child having breathing issues, ambulance needed urgently",
+      "has_image": false,
+      "trust_score": 0.438,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.05
+      },
+      "timestamp": "2025-07-19T10:34:00Z",
+      "verified_at": "2025-12-31T15:16:31.808965Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.44 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.05\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": true
+        },
+        "alert_id": 8
+      }
+    },
+    {
+      "alert_id": "DET_9d5b523d",
+      "user_id": "twitter",
+      "crisis_type": "flood",
+      "location": "Unknown",
+      "lat": 30.27,
+      "lon": 77.992,
+      "message": "People sharing flood videos but not sure if current",
+      "has_image": false,
+      "trust_score": 0.378,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.55,
+        "sources": 1,
+        "details": "Confirmed by 1 independent source(s)"
+      },
+      "components": {
+        "cross_verification": 0.22,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.06,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:36:00Z",
+      "verified_at": "2025-12-31T15:16:31.809466Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.38 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.22\n  Source Reputation:  +0.19\n  Rate Limit:         -0.06\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.4,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 9
+      }
+    },
+    {
+      "alert_id": "DET_cc39408d",
+      "user_id": "manual",
+      "crisis_type": "collapse",
+      "location": "Unknown",
+      "lat": 30.2689,
+      "lon": 77.9891,
+      "message": "Building wall collapsed near construction site, injuries reported",
+      "has_image": false,
+      "trust_score": 0.417,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.188,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.03
+      },
+      "timestamp": "2025-07-19T10:38:00Z",
+      "verified_at": "2025-12-31T15:16:31.809915Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.42 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.19\n  Bonus Signals:      +0.03\n\nFinal Decision: Low confidence",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": true,
+          "sentiment_urgent": false
+        },
+        "alert_id": 10
+      }
     }
   ],
-  "total_count": 10,
+  "total_count": 20,
   "statistics": {},
-  "last_updated": "2025-12-31T14:07:39.885779Z"
+  "last_updated": "2025-12-31T15:16:31.811013Z"
 }
