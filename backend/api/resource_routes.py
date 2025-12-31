@@ -66,7 +66,10 @@ def set_resource_availability(resource_id: str, payload: dict, token: str = Head
 
 @router.get('/volunteers')
 def list_volunteers(page: int = 1, per_page: int = 20, skill: Optional[str] = None, available: Optional[bool] = None):
-    data = _read_json(_data_path('volunteers.json'))
+    users_data = _read_json(_data_path('users.json'))
+    users = users_data.get('users', []) if isinstance(users_data, dict) else []
+    data = [u.get('volunteer') for u in users if u.get('volunteer')]
+
     if skill:
         data = [v for v in data if skill in (v.get('skills') or [])]
     if available is not None:
@@ -85,10 +88,13 @@ def set_volunteer_availability(vol_id: str, payload: dict, token: str = Header(N
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
 
-    path = _data_path('volunteers.json')
-    data = _read_json(path)
+    path = _data_path('users.json')
+    data_wrapper = _read_json(path)
+    users = data_wrapper.get('users', []) if isinstance(data_wrapper, dict) else []
     updated = None
-    for v in data:
+    for u in users:
+        v = u.get('volunteer')
+        if not v: continue
         if v.get('id') == vol_id:
             # if role is volunteer, ensure they only update their own id
             if payload_user.get('role') == 'volunteer' and payload_user.get('user_id') != vol_id:
@@ -100,7 +106,7 @@ def set_volunteer_availability(vol_id: str, payload: dict, token: str = Header(N
             break
     if not updated:
         raise HTTPException(status_code=404, detail='volunteer not found')
-    _write_json(path, data)
+    _write_json(path, data_wrapper)
     return {'status': 'ok', 'volunteer': updated}
 
 
@@ -129,11 +135,12 @@ def create_assignment(payload: dict, token: str = Header(None)):
         raise HTTPException(status_code=400, detail='resource_id and volunteer_ids required')
 
     resources_path = _data_path('resources.json')
-    vols_path = _data_path('volunteers.json')
+    users_path = _data_path('users.json')
     assignments_path = _data_path('assignments.json')
 
     resources = _read_json(resources_path)
-    volunteers = _read_json(vols_path)
+    users_data = _read_json(users_path)
+    users = users_data.get('users', []) if isinstance(users_data, dict) else []
     assignments = _read_json(assignments_path)
 
     resource = next((r for r in resources if r.get('id') == resource_id), None)
@@ -142,7 +149,8 @@ def create_assignment(payload: dict, token: str = Header(None)):
 
     assigned_vols = []
     for vid in volunteer_ids:
-        v = next((x for x in volunteers if x.get('id') == vid), None)
+        user = next((u for u in users if u.get('volunteer', {}).get('id') == vid), None)
+        v = user.get('volunteer') if user else None
         if not v:
             continue
         # mark volunteer assigned
@@ -170,7 +178,7 @@ def create_assignment(payload: dict, token: str = Header(None)):
 
     # persist all
     _write_json(resources_path, resources)
-    _write_json(vols_path, volunteers)
+    _write_json(users_path, users_data)
     _write_json(assignments_path, assignments)
 
     return {'status': 'ok', 'assignment': assignment}

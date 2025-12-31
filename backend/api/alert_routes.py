@@ -3,6 +3,11 @@ from typing import Optional
 import json
 import os
 
+import sys
+# Add project root to path to allow imports from backend
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from backend.agents.detection_agent import run_detection_pipeline
+
 router = APIRouter(prefix="/api", tags=["Alerts"])
 
 
@@ -92,6 +97,15 @@ async def get_alert_statistics():
         "total_count": data.get("total_count", 0),
         "last_updated": data.get("last_updated"),
     }
+
+
+@router.post("/run-pipeline")
+async def trigger_pipeline():
+    try:
+        result = run_detection_pipeline()
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/mock-scenarios")

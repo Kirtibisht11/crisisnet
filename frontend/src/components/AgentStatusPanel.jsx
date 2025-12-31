@@ -1,7 +1,7 @@
 const AgentStatusPanel = ({ alerts }) => {
   const verifiedCount = alerts.filter(a => a.decision === 'VERIFIED').length;
-  const reviewCount = alerts.filter(a => a.decision === 'REVIEW').length;
-  const rejectedCount = alerts.filter(a => a.decision === 'REJECTED' || a.decision === 'UNCERTAIN').length;
+  const reviewCount = alerts.filter(a => a.decision === 'REVIEW' || a.decision === 'UNCERTAIN').length;
+  const rejectedCount = alerts.filter(a => a.decision === 'REJECTED').length;
   
   const avgTrustScore = alerts.length > 0 
     ? (alerts.reduce((sum, a) => sum + (a.trust_score || 0), 0) / alerts.length * 100).toFixed(1)
@@ -72,32 +72,6 @@ const AgentStatusPanel = ({ alerts }) => {
           <div className="p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
             <div className="font-bold text-red-800 mb-1">Rejected (&lt; 40%)</div>
             <div className="text-xs text-red-700">Low confidence, likely false</div>
-          </div>
-        </div>
-      </div>
-
-      {/* AI Components */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          AI Components
-        </h3>
-        
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            <span className="text-gray-700">User Reputation Score</span>
-          </div>
-          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
-            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-            <span className="text-gray-700">Cross-Verification</span>
-          </div>
-          <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span className="text-gray-700">Location Analysis</span>
-          </div>
-          <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-            <span className="text-gray-700">Temporal Consistency</span>
           </div>
         </div>
       </div>
