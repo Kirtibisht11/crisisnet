@@ -24,6 +24,7 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import ResourceDashboard from "./pages/resource_dashboard";
 import Resources from "./pages/Resources";
+import SignupAuthority from "./pages/SignupAuthority";
 export default function App() {
   return (
     <BrowserRouter>
@@ -36,7 +37,7 @@ export default function App() {
 
         {/* NGO Dashboard */}
         <Route path="/ngo" element={<NGO />} />
-
+      <Route path="/signup_authority" element={<SignupAuthority />} />
         {/* Authority Dashboard */}
         <Route path="/authority" element={<AuthorityDashboard />} />
 

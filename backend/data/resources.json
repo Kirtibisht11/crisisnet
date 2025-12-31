@@ -4,8 +4,8 @@
     "type": "boat",
     "available": true,
     "location": {
-      "lat": 13.0827,
-      "lon": 80.2707
+      "lat": 30.26733069602734,
+      "lon":77.98888688423514
     },
     "capacity": 6,
     "allocated_to": null,
@@ -17,8 +17,8 @@
     "type": "boat",
     "available": true,
     "location": {
-      "lat": 13.075,
-      "lon": 80.265
+      "lat": 30.26733069602734,
+      "lon":77.98888688423514
     },
     "capacity": 4,
     "allocated_to": null,
@@ -30,8 +30,8 @@
     "type": "shelter",
     "available": true,
     "location": {
-      "lat": 13.079,
-      "lon": 80.272
+      "lat": 30.26733069602734,
+      "lon":77.98888688423514
     },
     "capacity": 50,
     "allocated_to": null,
@@ -43,8 +43,8 @@
     "type": "ambulance",
     "available": true,
     "location": {
-      "lat": 13.085,
-      "lon": 80.275
+      "lat": 30.26733069602734,
+      "lon":77.98888688423514
     },
     "capacity": 2,
     "allocated_to": null,
