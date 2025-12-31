@@ -33,18 +33,21 @@ CrisisNet provides:
 - Git
 
 ## Backend
-bash
+
+```
 cd backend
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 python main.py
+```
 
 ## Frontend
+```
 cd frontend
 npm install
 npm run dev
-
+```
 ## Access
 Frontend: http://localhost:5173
 Backend API: http://localhost:8000
@@ -55,9 +58,5 @@ Backend API: http://localhost:8000
 - Crisis simulation enabled
 - Role-based workflows implemented  
 
-📄Detailed documentation is available in `/docs`:
-README_ARCHITECTURE.md
+📄Detailed documentation is available in `/docs`
 
-README_DATA_FLOW.md
-
-README_ROUND2.md
