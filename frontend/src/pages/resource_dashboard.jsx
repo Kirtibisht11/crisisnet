@@ -179,10 +179,23 @@ export default function Resources() {
         alert('Authentication token missing. Please log in again.');
         return;
       }
+
+      // Resolve location
+      let loc = 'Unknown Location';
+      let lat = null;
+      let lon = null;
+      
+      if (typeof crisis.location === 'string' && crisis.location.trim()) loc = crisis.location;
+      if (crisis.lat || crisis.latitude) lat = crisis.lat || crisis.latitude;
+      if (crisis.lon || crisis.longitude) lon = crisis.lon || crisis.longitude;
+      if (loc === 'Unknown Location' && lat && lon) loc = `${lat}, ${lon}`;
+
       await api.post('/api/resource/volunteer_requests', {
         crisis_id: crisis.alert_id || crisis.id,
         crisis_type: crisis.crisis_type,
-        location: typeof crisis.location === 'string' ? crisis.location : 'Unknown Location',
+        location: loc,
+        lat: lat,
+        lon: lon,
         message: crisis.message || 'Emergency assistance required',
         skills: getRequiredSkills(crisis.crisis_type),
         count: Number(requestCount) || 1

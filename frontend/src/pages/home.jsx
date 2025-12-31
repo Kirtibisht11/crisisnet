@@ -4,23 +4,20 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <header className="fixed w-full top-0 z-50 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div className="w-full px-6 py-4 flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CN</span>
-            </div>
-            <span className="text-lg font-bold text-slate-900">CrisisNet</span>
+            <span className="font-bold text-xl tracking-tight text-white">CrisisNet</span>
           </Link>
           
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#how-it-works" className="text-sm text-slate-600 hover:text-slate-900 transition">
+            <a href="#how-it-works" className="text-sm text-slate-300 hover:text-white transition">
               How It Works
             </a>
-            <a href="#features" className="text-sm text-slate-600 hover:text-slate-900 transition">
+            <a href="#features" className="text-sm text-slate-300 hover:text-white transition">
               Features
             </a>
-            <a href="#contact" className="text-sm text-slate-600 hover:text-slate-900 transition">
+            <a href="#contact" className="text-sm text-slate-300 hover:text-white transition">
               Contact
             </a>
           </nav>
@@ -28,13 +25,13 @@ export default function Home() {
           <div className="flex items-center space-x-3">
             <Link
               to="/login"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+              className="text-sm font-medium text-slate-300 hover:text-white transition"
             >
               Sign In
             </Link>
             <Link
               to="/signup"
-              className="px-5 py-2 rounded-lg text-sm font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Get Started
             </Link>
@@ -42,7 +39,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="pt-32 pb-24 px-6 bg-gradient-to-b from-blue-50 to-white">
+      <section className="py-20 px-6 bg-gradient-to-b from-blue-50 to-white">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-slate-900">
             Detect crises.<br />
@@ -58,7 +55,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <Link
               to="/signup"
-              className="px-8 py-4 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              className="px-8 py-4 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Start Now — It's Free
             </Link>
@@ -126,7 +123,7 @@ export default function Home() {
 
             <div className="relative">
               <div className="flex flex-col items-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-orange-600">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-3xl font-semibold text-blue-700">
                   4
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-3">Notify</h3>
@@ -238,7 +235,7 @@ export default function Home() {
           </p>
           <Link
             to="/signup"
-            className="inline-block px-8 py-4 rounded-lg font-semibold bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+            className="inline-block px-8 py-4 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             Get Started — Free Account
           </Link>

@@ -111,19 +111,14 @@ export default function Signup() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CN</span>
-            </div>
-            <span className="font-bold text-slate-900">CrisisNet</span>
-          </Link>
-          <p className="text-sm text-slate-600">
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div className="w-full px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="font-bold text-xl tracking-tight">CrisisNet</Link>
+          <p className="text-sm text-slate-400">
             Already a member?{" "}
-            <Link to="/login" className="text-blue-700 font-medium hover:underline">
+            <Link to="/login" className="text-blue-400 font-medium hover:text-blue-300">
               Sign in
             </Link>
           </p>
@@ -131,8 +126,8 @@ export default function Signup() {
       </header>
 
       {/* Signup Form */}
-      <div className="min-h-[calc(100vh-73px)] flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
+      <div className="w-[96%] mx-auto py-12 flex items-center justify-center">
+        <div className="w-full max-w-2xl bg-white rounded-xl shadow-sm border border-slate-200 p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
               Create Account
@@ -151,7 +146,7 @@ export default function Signup() {
                 onChange={(e) => {
                   setRole(e.target.value);
                 }}
-                className="w-full px-4 py-3 border rounded-lg"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
               >
                 <option value="citizen">Citizen / Resident</option>
               </select>
@@ -164,7 +159,7 @@ export default function Signup() {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border rounded-lg"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                 placeholder="John Doe"
               />
               {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
@@ -177,7 +172,7 @@ export default function Signup() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border rounded-lg"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                 placeholder="+1 555 000 0000"
               />
               {errors.phone && <p className="text-red-600 text-sm">{errors.phone}</p>}
@@ -205,7 +200,7 @@ export default function Signup() {
                     setDetectingLocation(false);
                   }
                 }}
-                className="w-full px-4 py-3 border rounded-lg"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
               />
               <p className="text-xs text-slate-500 mt-1">
                 Used for alerts, shelters & volunteer matching
@@ -215,7 +210,7 @@ export default function Signup() {
             {/* Location Preview */}
             <div className="p-3 bg-slate-50 border rounded-lg">
               <p className="text-sm text-slate-700">
-                📍 Detected: {detectingLocation ? 'Detecting location...' : (location.humanLocation
+                Detected: {detectingLocation ? 'Detecting location...' : (location.humanLocation
                   ? location.humanLocation
                   : (location.lat
                       ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`
@@ -232,7 +227,7 @@ export default function Signup() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border rounded-lg pr-10"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors pr-10"
                 />
                 <button
                   type="button"
@@ -265,7 +260,7 @@ export default function Signup() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border rounded-lg pr-10"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors pr-10"
                 />
                 <button
                   type="button"
@@ -298,14 +293,14 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-60"
+              className="w-full py-3 rounded-lg bg-blue-600 text-white font-semibold disabled:opacity-60 hover:bg-blue-700 transition-colors"
             >
               {isSubmitting ? "Creating account…" : "Create Account"}
             </button>
             <button
               type="button"
               onClick={() => navigate('/signup_authority')}
-              className="w-full mt-3 py-3 rounded-lg bg-blue-600 text-white font-semibold"
+              className="w-full mt-3 py-3 rounded-lg bg-slate-200 text-slate-900 font-semibold hover:bg-slate-300 transition-colors"
             >
               Sign up as Authority
             </button>
@@ -314,7 +309,7 @@ export default function Signup() {
           <div className="mt-6 pt-6 border-t text-center">
             <p className="text-sm text-slate-600">
               Already have an account?{" "}
-              <Link to="/login" className="text-blue-700 font-medium hover:underline">
+              <Link to="/login" className="text-blue-600 font-medium hover:text-blue-700">
                 Sign in here
               </Link>
             </p>

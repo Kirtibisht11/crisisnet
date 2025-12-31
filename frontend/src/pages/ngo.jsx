@@ -1,69 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
-import { MapPin, Shield, Users, X, CheckCircle, Clock, AlertCircle, Droplets, Flame, Activity, Mountain } from 'lucide-react';
+import { MapPin, Shield, Users, X, CheckCircle, Clock, AlertCircle, Droplets, Flame, Activity, Mountain, RefreshCw, TrendingUp } from 'lucide-react';
 
-// Mock API with data
-const ngoApi = {
-  getActiveCrises: async () => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return {
-      crises: [
-        {
-          id: "CR-202",
-          type: "Flood",
-          location: "Sector 21, North District",
-          severity: "HIGH",
-          resources: ["Food", "Shelter", "Medical"],
-          trust: 0.87,
-          description: "Severe flooding affecting 200+ families. Immediate evacuation and shelter needed. Water levels rising rapidly.",
-          sources: 15,
-          timestamp: "2 hours ago"
-        },
-        {
-          id: "CR-203",
-          type: "Fire",
-          location: "Industrial Area B",
-          severity: "MEDIUM",
-          resources: ["Medical", "Food"],
-          trust: 0.72,
-          description: "Factory fire contained but workers need medical attention and temporary support.",
-          sources: 8,
-          timestamp: "4 hours ago"
-        },
-        {
-          id: "CR-204",
-          type: "Medical Emergency",
-          location: "Rural Village - Sector 45",
-          severity: "HIGH",
-          resources: ["Medical", "Transport"],
-          trust: 0.91,
-          description: "Disease outbreak reported. Mobile medical unit urgently required.",
-          sources: 12,
-          timestamp: "30 minutes ago"
-        },
-        {
-          id: "CR-205",
-          type: "Landslide",
-          location: "Mountain Road, Highway 7",
-          severity: "LOW",
-          resources: ["Food", "Shelter"],
-          trust: 0.68,
-          description: "Minor landslide blocking road. 20 families temporarily displaced.",
-          sources: 5,
-          timestamp: "6 hours ago"
-        }
-      ]
-    };
-  },
-  acceptCrisis: async (crisisId) => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    return { success: true, crisisId };
-  },
-  getAcceptedTasks: async () => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { tasks: [] };
-  }
+// Helper functions
+const getRequiredResources = (type) => {
+  const map = {
+    'flood': ['Food', 'Shelter', 'Medical', 'Boats'],
+    'fire': ['Medical', 'Shelter', 'Water'],
+    'medical': ['Medical', 'Transport', 'PPE'],
+    'landslide': ['Shelter', 'Excavators', 'Food'],
+    'earthquake': ['Search & Rescue', 'Medical', 'Shelter'],
+    'violence': ['Security', 'Medical']
+  };
+  const key = type?.toLowerCase().split(' ')[0];
+  return map[key] || ['General Aid', 'Volunteers'];
+};
+
+const calculateSeverity = (trust) => {
+  if (trust >= 0.8) return 'HIGH';
+  if (trust >= 0.5) return 'MEDIUM';
+  return 'LOW';
+};
+
+const formatTimeAgo = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 };
 
 const NGO = () => {
@@ -90,12 +61,40 @@ const NGO = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [crisesData, tasksData] = await Promise.all([
-        ngoApi.getActiveCrises(),
-        ngoApi.getAcceptedTasks()
-      ]);
-      setActiveCrises(crisesData.crises);
-      setAcceptedTasks(tasksData.tasks);
+      const res = await fetch('http://localhost:8000/api/alerts');
+      const data = await res.json();
+      const alerts = data.alerts || [];
+      
+      // Filter verified alerts
+      const verified = alerts.filter(a => a.decision === 'VERIFIED');
+
+      // Get accepted IDs from local storage
+      const acceptedIds = JSON.parse(localStorage.getItem('ngo_accepted_ids') || '[]');
+
+      // Map to view model
+      const mappedCrises = verified.map(a => ({
+        id: a.alert_id,
+        type: a.crisis_type.charAt(0).toUpperCase() + a.crisis_type.slice(1),
+        location: a.location || (a.lat ? `${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}` : 'Unknown Location'),
+        severity: calculateSeverity(a.trust_score),
+        resources: getRequiredResources(a.crisis_type),
+        trust: a.trust_score,
+        description: a.message,
+        sources: a.cross_verification?.sources || 1,
+        timestamp: formatTimeAgo(a.timestamp),
+        affectedCount: 'Unknown',
+        rawTimestamp: a.timestamp
+      })).sort((a, b) => new Date(b.rawTimestamp) - new Date(a.rawTimestamp));
+
+      const active = mappedCrises.filter(c => !acceptedIds.includes(c.id));
+      const accepted = mappedCrises.filter(c => acceptedIds.includes(c.id)).map(c => ({
+        ...c,
+        status: 'active',
+        acceptedAt: new Date().toISOString().split('T')[0]
+      }));
+
+      setActiveCrises(active);
+      setAcceptedTasks(accepted);
       setLastRefresh(new Date());
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -106,12 +105,16 @@ const NGO = () => {
 
   const handleAcceptCrisis = async (crisis) => {
     try {
-      await ngoApi.acceptCrisis(crisis.id);
+      // Persist to localStorage
+      const acceptedIds = JSON.parse(localStorage.getItem('ngo_accepted_ids') || '[]');
+      if (!acceptedIds.includes(crisis.id)) {
+        acceptedIds.push(crisis.id);
+        localStorage.setItem('ngo_accepted_ids', JSON.stringify(acceptedIds));
+      }
+
       const newTask = {
-        id: crisis.id,
-        type: crisis.type,
-        location: crisis.location,
-        status: 'Pending',
+        ...crisis,
+        status: 'active',
         acceptedAt: new Date().toISOString().split('T')[0]
       };
       setAcceptedTasks([newTask, ...acceptedTasks]);
@@ -127,166 +130,173 @@ const NGO = () => {
       'Flood': Droplets,
       'Fire': Flame,
       'Medical Emergency': Activity,
+      'Medical': Activity,
       'Landslide': Mountain
     };
-    const Icon = icons[type] || AlertCircle;
+    const key = Object.keys(icons).find(k => type?.includes(k)) || 'Other';
+    const Icon = icons[key] || AlertCircle;
     return <Icon className="w-5 h-5" />;
   };
 
   const getSeverityColor = (severity) => {
     return severity === 'HIGH' 
-      ? { bg: 'bg-gradient-to-br from-red-500/10 to-red-600/5', border: 'border-red-200/20', text: 'text-red-100', badge: 'bg-gradient-to-r from-red-400 to-red-500 text-white' } 
+      ? { bg: '#FEE2E2', border: '#FECACA', text: '#DC2626', badge: '#DC2626' } 
       : severity === 'MEDIUM' 
-      ? { bg: 'bg-gradient-to-br from-amber-500/10 to-amber-600/5', border: 'border-amber-200/20', text: 'text-amber-100', badge: 'bg-gradient-to-r from-amber-400 to-amber-500 text-white' } 
-      : { bg: 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5', border: 'border-emerald-200/20', text: 'text-emerald-100', badge: 'bg-gradient-to-r from-emerald-400 to-emerald-500 text-white' };
+      ? { bg: '#FEF3C7', border: '#FDE68A', text: '#F59E0B', badge: '#F59E0B' } 
+      : { bg: '#D1FAE5', border: '#A7F3D0', text: '#10B981', badge: '#10B981' };
+  };
+
+  const getTrustBadge = (trust) => {
+    const percentage = trust * 100;
+    if (percentage >= 90) return { label: 'Verified', color: '#10B981' };
+    if (percentage >= 70) return { label: 'High', color: '#3B82F6' };
+    if (percentage >= 50) return { label: 'Medium', color: '#F59E0B' };
+    return { label: 'Low', color: '#EF4444' };
   };
 
   const highPriorityCrises = activeCrises.filter(c => c.severity === 'HIGH').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 relative">
-      {/* Premium Background Pattern - Fixed Syntax */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 60 0 L 0 0 0 60' fill='none' stroke='rgba(255,255,255,0.02)' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grid)'/%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px'
-        }}
-      ></div>
-      
-      {/* Glassmorphic Header */}
-      <div className="relative z-30 backdrop-blur-xl bg-gray-900/70 border-b border-gray-700/30 shadow-2xl shadow-black/30">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      {/* Header - Homepage Style */}
+      <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-cyan-200 to-blue-300 bg-clip-text text-transparent">
-                Relief Force International
-              </h1>
-              <p className="text-sm text-gray-300 font-medium">Crisis Response Dashboard</p>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">CN</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-[#1F2937]">Relief Force International</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <div className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></div>
+                  <span className="text-sm text-[#6B7280]">Active & Monitoring</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-400/20 to-emerald-500/10 border border-emerald-300/20">
-              <div className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shadow-lg shadow-emerald-300/50"></div>
-              <span className="text-sm font-semibold text-emerald-200">Active</span>
+            <button 
+              onClick={loadData}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#1F2937] hover:bg-[#F8F9FA] transition-all"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Feed
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Summary Cards - Homepage Style */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#DBEAFE] rounded-xl flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-[#2563EB]" />
+              </div>
+              <div>
+                <div className="text-[32px] font-bold text-[#1F2937] leading-none mb-1">
+                  {activeCrises.length}
+                </div>
+                <div className="text-sm text-[#6B7280]">Active Crises</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#FEE2E2] rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-[#DC2626]" />
+              </div>
+              <div>
+                <div className="text-[32px] font-bold text-[#1F2937] leading-none mb-1">
+                  {highPriorityCrises}
+                </div>
+                <div className="text-sm text-[#6B7280]">High Priority</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-[#D1FAE5] rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-[#10B981]" />
+              </div>
+              <div>
+                <div className="text-[32px] font-bold text-[#1F2937] leading-none mb-1">
+                  {acceptedTasks.length}
+                </div>
+                <div className="text-sm text-[#6B7280]">Accepted Tasks</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Premium Stats Cards */}
-      <div className="relative z-20 max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/40 to-gray-900/40 p-6 shadow-2xl shadow-black/40 border border-gray-600/30 hover:border-blue-400/30 transition-all duration-500 hover:scale-[1.02]">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative">
-              <div className="text-5xl font-bold bg-gradient-to-br from-blue-200 to-cyan-100 bg-clip-text text-transparent mb-2">
-                {activeCrises.length}
-              </div>
-              <div className="text-sm font-medium text-gray-300">Active Crises</div>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-900/20 to-rose-900/20 p-6 shadow-2xl shadow-black/40 border border-red-700/30 hover:border-red-400/30 transition-all duration-500 hover:scale-[1.02]">
-            <div className="absolute inset-0 bg-gradient-to-br from-red-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative">
-              <div className="text-5xl font-bold bg-gradient-to-br from-red-200 to-rose-100 bg-clip-text text-transparent mb-2">
-                {highPriorityCrises}
-              </div>
-              <div className="text-sm font-medium text-red-300">High Priority</div>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900/20 to-blue-900/20 p-6 shadow-2xl shadow-black/40 border border-blue-700/30 hover:border-blue-400/30 transition-all duration-500 hover:scale-[1.02]">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative">
-              <div className="text-5xl font-bold bg-gradient-to-br from-blue-200 to-indigo-100 bg-clip-text text-transparent mb-2">
-                {acceptedTasks.length}
-              </div>
-              <div className="text-sm font-medium text-blue-300">Tasks Accepted</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-20 max-w-7xl mx-auto px-6 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Crisis Feed */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Active Crises</h2>
-              <button 
-                onClick={loadData}
-                className="px-4 py-2 bg-gradient-to-r from-gray-700/50 to-gray-800/50 text-gray-300 text-sm font-medium rounded-lg hover:from-gray-600/50 hover:to-gray-700/50 transition-all duration-300 border border-gray-600/30 flex items-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                Refresh
-              </button>
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-[#1F2937] mb-1">Available Crises</h2>
+              <p className="text-[15px] text-[#6B7280]">Review and accept crises that match your capabilities</p>
             </div>
-            
+
             {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-4 border-gray-600/30"></div>
-                  <div className="w-16 h-16 rounded-full border-4 border-blue-400 border-t-transparent animate-spin absolute top-0"></div>
-                </div>
+              <div className="text-center py-16">
+                <div className="inline-block w-10 h-10 border-3 border-[#E5E7EB] border-t-[#2563EB] rounded-full animate-spin"></div>
+                <p className="mt-4 text-[#6B7280]">Loading crises...</p>
               </div>
             ) : activeCrises.length === 0 ? (
-              <div className="rounded-2xl bg-gray-800/40 backdrop-blur-sm border border-gray-600/30 p-12 text-center shadow-xl">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-700/50 to-gray-800/50 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-10 h-10 text-gray-500" />
-                </div>
-                <p className="text-gray-400 font-medium">No active crises at the moment</p>
+              <div className="bg-white border border-[#E5E7EB] rounded-xl p-12 text-center">
+                <CheckCircle className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3" />
+                <p className="text-[#6B7280] font-medium">No active crises at the moment</p>
               </div>
             ) : (
-              <div className="space-y-5">
-                {activeCrises.map((crisis, idx) => {
+              <div className="space-y-4">
+                {activeCrises.map((crisis) => {
                   const severityColors = getSeverityColor(crisis.severity);
+                  const trustBadge = getTrustBadge(crisis.trust);
+                  
                   return (
                     <div
                       key={crisis.id}
-                      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-sm border border-gray-600/30 hover:border-gray-500/40 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500"
+                      onClick={() => setSelectedCrisis(crisis)}
+                      className="bg-white border border-[#E5E7EB] rounded-xl p-6 hover:shadow-lg hover:border-[#2563EB] transition-all cursor-pointer"
                     >
-                      <div className={`absolute inset-0 ${severityColors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
-                      
-                      <div className="relative p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-3 rounded-xl ${severityColors.bg} border ${severityColors.border}`}>
-                              {getCrisisIcon(crisis.type)}
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-bold text-white">{crisis.type}</h3>
-                              <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                                <MapPin className="w-4 h-4" />
-                                <span>{crisis.location}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className={`px-4 py-2 text-xs font-bold rounded-full ${severityColors.badge} shadow-lg`}>
-                            {crisis.severity}
+                      <div className="flex items-start justify-between mb-4">
+                        <div 
+                          className="px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide"
+                          style={{ backgroundColor: severityColors.bg, color: severityColors.text }}
+                        >
+                          {crisis.severity}
+                        </div>
+                        <div className="text-[13px] font-semibold" style={{ color: trustBadge.color }}>
+                          {trustBadge.label} Trust
+                        </div>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-[#1F2937] mb-3">{crisis.type}</h3>
+                      <p className="text-[15px] text-[#6B7280] leading-relaxed mb-4">{crisis.description}</p>
+
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+                          <MapPin className="w-4 h-4" />
+                          <span>{crisis.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+                          <Users className="w-4 h-4" />
+                          <span>{crisis.affectedCount} affected</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+                          <Clock className="w-4 h-4" />
+                          <span>{crisis.timestamp}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {crisis.resources.map((resource, idx) => (
+                          <span key={idx} className="px-3 py-1.5 bg-[#F3F4F6] text-[#4B5563] text-[13px] font-medium rounded-md">
+                            {resource}
                           </span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {crisis.resources.map((resource, idx) => (
-                            <span key={idx} className="px-3 py-1.5 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-blue-200 text-xs font-semibold rounded-lg border border-blue-700/30">
-                              {resource}
-                            </span>
-                          ))}
-                        </div>
-                        
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-600/30">
-                          <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-                            <Clock className="w-3 h-3" />
-                            {crisis.timestamp}
-                          </div>
-                          <button
-                            onClick={() => setSelectedCrisis(crisis)}
-                            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
-                          >
-                            View Details
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -297,33 +307,35 @@ const NGO = () => {
 
           {/* Accepted Tasks Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-32 rounded-2xl bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-sm border border-gray-600/30 p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">Accepted Tasks</h2>
-                <span className="px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-gray-700 to-gray-800 text-gray-300">
-                  {acceptedTasks.length}
-                </span>
+            <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 sticky top-24">
+              <h2 className="text-lg font-bold text-[#1F2937] mb-1">Your Active Responses</h2>
+              <div className="text-sm text-[#6B7280] mb-5">
+                {acceptedTasks.length} ongoing {acceptedTasks.length === 1 ? 'task' : 'tasks'}
               </div>
-              
+
               {acceptedTasks.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-700/50 to-gray-800/50 flex items-center justify-center mx-auto mb-4">
-                    <AlertCircle className="w-8 h-8 text-gray-500" />
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium">No tasks accepted yet</p>
+                <div className="text-center py-10">
+                  <CheckCircle className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3" />
+                  <p className="text-[15px] font-semibold text-[#6B7280] mb-1">No active responses yet</p>
+                  <p className="text-[13px] text-[#9CA3AF]">Accept crises to start coordinating</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {acceptedTasks.map(task => (
-                    <div key={task.id} className="p-4 rounded-xl bg-gradient-to-br from-gray-700/30 to-gray-800/30 border border-gray-600/30 hover:border-gray-500/40 transition-all duration-300">
-                      <h4 className="font-bold text-white mb-1">{task.type}</h4>
-                      <p className="text-sm text-gray-400 mb-3">{task.location}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-white">
+                    <div key={task.id} className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg hover:bg-white hover:shadow-sm transition-all">
+                      <div className="mb-2">
+                        <span className="px-2.5 py-1 bg-[#DBEAFE] text-[#2563EB] text-[11px] font-semibold rounded uppercase tracking-wide">
                           {task.status}
                         </span>
-                        <span className="text-xs text-gray-500">{task.acceptedAt}</span>
                       </div>
+                      <h4 className="text-sm font-semibold text-[#1F2937] mb-2">{task.type}</h4>
+                      <p className="flex items-center gap-1.5 text-[13px] text-[#6B7280] mb-3">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {task.location}
+                      </p>
+                      <button className="w-full py-2 px-3 bg-white border border-[#E5E7EB] text-[13px] font-medium text-[#1F2937] rounded-md hover:bg-[#2563EB] hover:text-white hover:border-[#2563EB] transition-all">
+                        Mark Complete
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -333,119 +345,93 @@ const NGO = () => {
         </div>
       </div>
 
-      {/* Premium Footer */}
-      <div className="relative z-30 fixed bottom-0 left-0 right-0 backdrop-blur-xl bg-gray-900/70 border-t border-gray-700/30 shadow-2xl shadow-black/30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shadow-lg shadow-emerald-300/50"></div>
-            <span className="text-sm font-semibold text-gray-300">Connected</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">
-              Last updated: {lastRefresh ? lastRefresh.toLocaleTimeString() : 'Never'}
-            </span>
-            <div className="w-1 h-1 rounded-full bg-gray-600"></div>
-            <span className="text-sm text-gray-500">
-              Relief Force International © 2024
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Premium Modal */}
+      {/* Modal - Homepage Style */}
       {selectedCrisis && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-700/50 animate-in zoom-in-95 duration-300">
-            <div className="sticky top-0 bg-gradient-to-br from-gray-900 to-gray-950/95 backdrop-blur-sm border-b border-gray-700/50 px-8 py-6 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-white">Crisis Details</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedCrisis(null)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-[#E5E7EB] px-6 py-5 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-[22px] font-bold text-[#1F2937]">{selectedCrisis.type}</h2>
               <button 
                 onClick={() => setSelectedCrisis(null)}
-                className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-[#F3F4F6] rounded-lg transition-colors"
               >
-                <X className="w-6 h-6 text-gray-400 hover:text-gray-300" />
+                <X className="w-6 h-6 text-[#6B7280]" />
               </button>
             </div>
-            
-            <div className="p-8 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className={`p-4 rounded-xl ${getSeverityColor(selectedCrisis.severity).bg} border ${getSeverityColor(selectedCrisis.severity).border}`}>
-                  {getCrisisIcon(selectedCrisis.type)}
+
+            <div className="p-6 space-y-6">
+              <div className="flex gap-3">
+                <div 
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide"
+                  style={{ 
+                    backgroundColor: getSeverityColor(selectedCrisis.severity).bg, 
+                    color: getSeverityColor(selectedCrisis.severity).text 
+                  }}
+                >
+                  {selectedCrisis.severity} PRIORITY
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white">{selectedCrisis.type}</h3>
-                  <div className="flex items-center gap-2 text-gray-400 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm font-medium">{selectedCrisis.location}</span>
-                  </div>
+                <div 
+                  className="text-[13px] font-semibold"
+                  style={{ color: getTrustBadge(selectedCrisis.trust).color }}
+                >
+                  Trust Score: {Math.round(selectedCrisis.trust * 100)}%
                 </div>
-                <span className={`px-4 py-2 text-sm font-bold rounded-full ${getSeverityColor(selectedCrisis.severity).badge}`}>
-                  {selectedCrisis.severity}
-                </span>
               </div>
-              
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-800/30 to-gray-900/30 border border-gray-600/30">
-                <p className="text-gray-300 leading-relaxed">{selectedCrisis.description}</p>
-              </div>
-              
+
               <div>
-                <label className="text-sm font-bold text-gray-300 mb-3 block">Resources Needed</label>
+                <h3 className="text-sm font-semibold text-[#6B7280] uppercase tracking-wide mb-2">Description</h3>
+                <p className="text-[15px] text-[#1F2937] leading-relaxed">{selectedCrisis.description}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-[#6B7280] uppercase tracking-wide mb-2">Location</h3>
+                <p className="text-[15px] text-[#1F2937]">{selectedCrisis.location}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-[#6B7280] uppercase tracking-wide mb-3">Required Resources</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedCrisis.resources.map((resource, idx) => (
-                    <span key={idx} className="px-4 py-2 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 text-blue-200 text-sm font-semibold rounded-lg border border-blue-700/30">
+                    <span key={idx} className="px-4 py-2 bg-[#F3F4F6] text-[#4B5563] text-[15px] font-medium rounded-md">
                       {resource}
                     </span>
                   ))}
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-900/20 to-green-900/20 border border-emerald-700/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="w-5 h-5 text-emerald-400" />
-                    <label className="text-sm font-bold text-emerald-300">Trust Level</label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex gap-3 items-center">
+                  <Users className="w-5 h-5 text-[#6B7280]" />
+                  <div>
+                    <div className="text-lg font-bold text-[#1F2937]">{selectedCrisis.affectedCount}</div>
+                    <div className="text-[13px] text-[#6B7280]">People Affected</div>
                   </div>
-                  <div className="relative h-3 bg-emerald-900/30 rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="absolute h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full shadow-lg"
-                      style={{ width: `${selectedCrisis.trust * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-2xl font-bold text-emerald-300">
-                    {Math.round(selectedCrisis.trust * 100)}%
-                  </span>
                 </div>
-                
-                <div className="p-6 rounded-xl bg-gradient-to-br from-blue-900/20 to-indigo-900/20 border border-blue-700/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-5 h-5 text-blue-400" />
-                    <label className="text-sm font-bold text-blue-300">Verified Sources</label>
-                  </div>
-                  <div className="text-4xl font-bold bg-gradient-to-br from-blue-300 to-indigo-300 bg-clip-text text-transparent">
-                    {selectedCrisis.sources}
+                <div className="flex gap-3 items-center">
+                  <Clock className="w-5 h-5 text-[#6B7280]" />
+                  <div>
+                    <div className="text-lg font-bold text-[#1F2937]">{selectedCrisis.timestamp}</div>
+                    <div className="text-[13px] text-[#6B7280]">Reported</div>
                   </div>
                 </div>
               </div>
-              
-              <div className="p-6 rounded-xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-700/30">
-                <p className="text-sm text-amber-300 font-medium leading-relaxed">
-                  <strong>Note:</strong> By accepting this crisis, your organization commits to providing the requested resources and support. Please ensure you have the capacity before accepting.
-                </p>
-              </div>
-              
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={() => setSelectedCrisis(null)}
-                  className="flex-1 px-6 py-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 text-gray-300 font-bold rounded-xl hover:from-gray-700/50 hover:to-gray-800/50 transition-all duration-300 border border-gray-600/30 hover:border-gray-500/40"
-                >
-                  Decline
-                </button>
-                <button
-                  onClick={() => handleAcceptCrisis(selectedCrisis)}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:from-blue-600 hover:to-indigo-600 shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
-                >
-                  Accept Responsibility
-                </button>
-              </div>
+            </div>
+
+            <div className="flex gap-3 p-4 border-t border-[#E5E7EB]">
+              <button
+                onClick={() => setSelectedCrisis(null)}
+                className="flex-1 px-6 py-3 bg-white border border-[#E5E7EB] text-[15px] font-semibold text-[#6B7280] rounded-lg hover:bg-[#F9FAFB] transition-all flex items-center justify-center gap-2"
+              >
+                <X className="w-5 h-5" />
+                Decline
+              </button>
+              <button
+                onClick={() => handleAcceptCrisis(selectedCrisis)}
+                className="flex-2 px-6 py-3 bg-[#EA580C] text-white text-[15px] font-semibold rounded-lg hover:bg-[#DC2626] transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <CheckCircle className="w-5 h-5" />
+                Accept & Respond 
+              </button>
             </div>
           </div>
         </div>
