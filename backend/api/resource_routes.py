@@ -18,7 +18,7 @@ def _read_json(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 
@@ -190,3 +190,66 @@ def get_volunteer_requests(page: int = 1, per_page: int = 20):
     total = len(data)
     start = (page - 1) * per_page
     return { 'items': data[start:start+per_page], 'page': page, 'per_page': per_page, 'total': total }
+
+
+@router.post('/volunteer_requests')
+def create_volunteer_request(payload: dict, token: str = Header(None)):
+    try:
+        user = require_role(token, ["authority", "admin"])
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    path = _data_path('volunteer_requests.json')
+    requests = _read_json(path)
+
+    new_req = {
+        "request_id": f"req_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+        "crisis_id": payload.get('crisis_id'),
+        "crisis_type": payload.get('crisis_type'),
+        "location": payload.get('location'),
+        "message": payload.get('message'),
+        "skills_required": payload.get('skills', []),
+        "volunteers_needed": int(payload.get('count', 1)),
+        "fulfilled_count": 0,
+        "status": "OPEN",
+        "created_at": datetime.utcnow().isoformat(),
+        "created_by": user.get('user_id')
+    }
+    
+    requests.insert(0, new_req)
+    _write_json(path, requests)
+    return {"status": "ok", "request": new_req}
+
+
+@router.post('/volunteer_requests/{request_id}/accept')
+def accept_volunteer_request(request_id: str, payload: dict, token: str = Header(None)):
+    try:
+        user = require_role(token, ["volunteer"])
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    req_path = _data_path('volunteer_requests.json')
+    requests = _read_json(req_path)
+    
+    req = next((r for r in requests if r.get('request_id') == request_id), None)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.get('status') != 'OPEN':
+        raise HTTPException(status_code=400, detail="Request is not open")
+
+    # Determine volunteer ID (prefer volunteer profile ID, fallback to user_id)
+    vol_id = user.get('user_id')
+    if user.get('volunteer') and user['volunteer'].get('id'):
+        vol_id = user['volunteer']['id']
+
+    accepted = req.get('accepted_volunteers', [])
+    if vol_id not in accepted:
+        accepted.append(vol_id)
+        req['accepted_volunteers'] = accepted
+        req['fulfilled_count'] = len(accepted)
+
+    if req['fulfilled_count'] >= req.get('volunteers_needed', 1):
+        req['status'] = 'FULFILLED'
+        
+    _write_json(req_path, requests)
+    return {"status": "ok", "message": "Request accepted"}

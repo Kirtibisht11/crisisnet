@@ -132,6 +132,7 @@ const SignupAuthority = () => {
       // Store JWT token and user info in localStorage
       const token = data.access_token || data.token || data.token_type || null;
       if (token) localStorage.setItem('crisisnet_token', token);
+      if (token) localStorage.setItem('access_token', token);
       if (data.user) localStorage.setItem('crisisnet_current_user', JSON.stringify(data.user));
 
       // Show success message
