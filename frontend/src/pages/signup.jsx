@@ -273,7 +273,7 @@ export default function Signup() {
             {role !== "volunteer" && (
               <button
                 type="button"
-                onClick={() => navigate("/signup_volunteer")}
+                onClick={() => navigate("/volunteer")}
                 className="w-full mt-3 py-3 rounded-lg border border-blue-600 text-blue-600 font-medium hover:bg-blue-50"
               >
                 Sign up as Volunteer

@@ -23,7 +23,6 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import ResourceDashboard from "./pages/resource_dashboard";
 import Resources from "./pages/Resources";
-import SignupVolunteer from "./pages/signup_volunteer";
 export default function App() {
   return (
     <BrowserRouter>
@@ -42,12 +41,13 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/signup_volunteer" element={<SignupVolunteer />} />
+ 
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/resource" element={<ResourceDashboard />} />
        <Route path="/resources" element={<Resources />} />
+
       </Routes>
     </BrowserRouter>
   );

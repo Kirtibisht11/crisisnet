@@ -83,6 +83,11 @@ const useVolunteerStore = create(
 
         clearNotifications: () => set({ notifications: [] }),
 
+        getUnreadNotificationCount: () => {
+          const state = get();
+          return (state.notifications || []).filter((n) => !n.read).length;
+        },
+
         setAvailability: (available) => set({ availability: available }),
 
         toggleAvailability: () =>
