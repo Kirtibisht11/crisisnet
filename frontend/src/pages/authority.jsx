@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 
-
 import AgentStatusPanel from '../components/AgentStatusPanel';
 import { 
   formatTrustScore, 
@@ -23,10 +22,15 @@ const AuthorityDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const navigate = useNavigate();
+
   // Fetch alerts from backend
   useEffect(() => {
+    let isMounted = true; // Prevent state updates on unmounted component
+
     const fetchAlerts = async () => {
       try {
+        if (!isMounted) return;
         setLoading(true);
         setError(null);
         
@@ -37,24 +41,37 @@ const AuthorityDashboard = () => {
         }
         
         const data = await response.json();
- 
-        setAlerts(data.alerts || []);
+        
+        if (isMounted) {
+          setAlerts(data.alerts || []);
+        }
         
       } catch (err) {
         console.error('Error fetching alerts:', err);
-        setError(err.message);
+        if (isMounted) {
+          setError(err.message);
+          // Set mock data on error so page doesn't break
+          setAlerts([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAlerts();
     
     // Refresh alerts every 30 seconds
-    const interval = setInterval(fetchAlerts, 30000);
+    const interval = setInterval(() => {
+      if (isMounted) fetchAlerts();
+    }, 30000);
     
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   const filteredAlerts = alerts.filter(alert => {
     if (filterStatus === 'all') return true;
@@ -74,89 +91,94 @@ const AuthorityDashboard = () => {
   };
 
   const counts = getAlertCounts();
-  const navigate = useNavigate();
-const handleApproveAlert = async (alertData) => {
 
-  if (!window.confirm('Approve this alert and send to Resource Agent?')) return;
+  const handleApproveAlert = async (alertData) => {
+    if (!window.confirm('Approve this alert and send to Resource Agent?')) return;
 
-  setActionLoading(true);
-  try {
-    const currentUser = JSON.parse(
-      localStorage.getItem('crisisnet_current_user') || '{}'
-    );
+    setActionLoading(true);
+    try {
+      const currentUser = JSON.parse(
+        localStorage.getItem('crisisnet_current_user') || '{}'
+      );
 
-    const approvedCrisis = {
-      ...alertData,
-      approved_by: currentUser.name || 'Authority',
-      approved_at: new Date().toISOString(),
-      crisis_status: 'APPROVED',
-      requires_resources: true,
-      priority:
-        alertData.trust_score > 0.5
-          ? 'HIGH'
-          : alertData.trust_score > 0.3
-          ? 'MEDIUM'
-          : 'LOW'
-    };
+      const approvedCrisis = {
+        ...alertData,
+        approved_by: currentUser.name || 'Authority',
+        approved_at: new Date().toISOString(),
+        crisis_status: 'APPROVED',
+        requires_resources: true,
+        priority:
+          alertData.trust_score > 0.5
+            ? 'HIGH'
+            : alertData.trust_score > 0.3
+            ? 'MEDIUM'
+            : 'LOW'
+      };
 
-    const approvedCrises = JSON.parse(
-      localStorage.getItem('approved_crises') || '[]'
-    );
-    approvedCrises.push(approvedCrisis);
-    localStorage.setItem('approved_crises', JSON.stringify(approvedCrises));
+      const approvedCrises = JSON.parse(
+        localStorage.getItem('approved_crises') || '[]'
+      );
+      approvedCrises.push(approvedCrisis);
+      localStorage.setItem('approved_crises', JSON.stringify(approvedCrises));
 
-    setAlerts(prev =>
-      prev.map(a =>
-        a.alert_id === alertData.alert_id ? approvedCrisis : a
-      )
-    );
+      // Update local state
+      setAlerts(prev =>
+        prev.map(a =>
+          a.alert_id === alertData.alert_id ? approvedCrisis : a
+        )
+      );
 
-    window.alert('Crisis Approved! Sent to Resource Agent for volunteer assignment.');
-    navigate("/resource", { replace: true });
-    setSelectedAlert(null);
+      // Close modal first
+      setSelectedAlert(null);
+      
+      // Show success message
+      alert('Crisis Approved! Redirecting to Resource Agent...');
+      
+      // Navigate after a brief delay
+      setTimeout(() => {
+        navigate("/resource", { replace: true });
+      }, 100);
 
-  } catch (err) {
-    console.error('Error approving:', err);
-    window.alert('Failed to approve');
-  } finally {
-    setActionLoading(false);
-  }
-};
+    } catch (err) {
+      console.error('Error approving:', err);
+      alert('Failed to approve: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-const handleRejectAlert = async (alertData) => {
-  if (!window.confirm('Reject this alert? It will not be processed further.')) return;
+  const handleRejectAlert = async (alertData) => {
+    if (!window.confirm('Reject this alert? It will not be processed further.')) return;
 
-  setActionLoading(true);
-  try {
-    const currentUser = JSON.parse(
-      localStorage.getItem('crisisnet_current_user') || '{}'
-    );
+    setActionLoading(true);
+    try {
+      const currentUser = JSON.parse(
+        localStorage.getItem('crisisnet_current_user') || '{}'
+      );
 
-    const rejectedAlert = {
-      ...alertData,
-      rejected_by: currentUser.name || 'Authority',
-      rejected_at: new Date().toISOString(),
-      crisis_status: 'REJECTED'
-    };
+      const rejectedAlert = {
+        ...alertData,
+        rejected_by: currentUser.name || 'Authority',
+        rejected_at: new Date().toISOString(),
+        crisis_status: 'REJECTED'
+      };
 
-    setAlerts(prev =>
-      prev.map(a =>
-        a.alert_id === alertData.alert_id ? rejectedAlert : a
-      )
-    );
+      setAlerts(prev =>
+        prev.map(a =>
+          a.alert_id === alertData.alert_id ? rejectedAlert : a
+        )
+      );
 
-    window.alert('Alert Rejected');
-    setSelectedAlert(null);
+      setSelectedAlert(null);
+      alert('Alert Rejected');
 
-  } catch (err) {
-    console.error('Error rejecting:', err);
-    window.alert('Failed to reject');
-  } finally {
-    setActionLoading(false);
-  }
-};
-
-
+    } catch (err) {
+      console.error('Error rejecting:', err);
+      alert('Failed to reject: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -166,7 +188,7 @@ const handleRejectAlert = async (alertData) => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">Authority Dashboard</h1>
-              <p className="text-blue-100 text-lg">AI-Powered Crisis Alert Verification </p>
+              <p className="text-blue-100 text-lg">AI-Powered Crisis Alert Verification</p>
             </div>
             <div className="text-right">
               <div className="text-sm text-blue-100">System Status</div>
@@ -185,6 +207,7 @@ const handleRejectAlert = async (alertData) => {
               <div>
                 <div className="font-bold text-red-800">Unable to load alerts</div>
                 <div className="text-sm text-red-600">Error: {error}</div>
+                <div className="text-xs text-red-500 mt-1">Check that backend is running at http://localhost:8000</div>
               </div>
             </div>
           </div>
@@ -279,9 +302,7 @@ const handleRejectAlert = async (alertData) => {
                           <div className="text-4xl">{crisis.emoji}</div>
                           <div>
                             <h3 className="font-bold text-gray-800 text-lg">{crisis.label}</h3>
-                            <p className="text-sm text-gray-600 flex items-center gap-1">
-                              {alert.location}
-                            </p>
+                            <p className="text-sm text-gray-600">{alert.location}</p>
                           </div>
                         </div>
                         
@@ -347,9 +368,7 @@ const handleRejectAlert = async (alertData) => {
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                    Alert Details
-                  </h2>
+                  <h2 className="text-3xl font-bold text-gray-800">Alert Details</h2>
                   <button
                     onClick={() => setSelectedAlert(null)}
                     className="text-gray-500 hover:text-gray-700 text-3xl font-bold hover:bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center transition-all"
@@ -365,8 +384,7 @@ const handleRejectAlert = async (alertData) => {
                       <h3 className="text-2xl font-bold text-gray-800">
                         {formatCrisisType(selectedAlert.crisis_type).label}
                       </h3>
-                      <p className="text-gray-600 flex items-center gap-2 mt-1">
-                      </p>
+                      <p className="text-gray-600 mt-1">{selectedAlert.location}</p>
                       {selectedAlert.lat && selectedAlert.lon && (
                         <p className="text-sm text-gray-500 mt-1">
                           Coordinates: {selectedAlert.lat.toFixed(4)}, {selectedAlert.lon.toFixed(4)}
@@ -377,46 +395,41 @@ const handleRejectAlert = async (alertData) => {
                   {selectedAlert.message && (
                     <div className="bg-white bg-opacity-70 p-4 rounded-lg">
                       <div className="font-semibold text-gray-700 mb-2">Message:</div>
-                      <p className="text-gray-800">{sanitizeText(selectedAlert.message)}</p>
+                      <p className="text-gray-800">{sanitizeText(selectedAlert.message, 500)}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Trust Score Breakdown */}
-                <div className="mb-6">
-                  <h3 className="font-bold text-gray-800 mb-4 text-xl flex items-center gap-2">
-                    Trust Analysis
-                  </h3>
-                  <div className="space-y-3">
-                    {formatScoreBreakdown(selectedAlert.components).map((component, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: component.color }}
-                          ></div>
-                          <span className="font-semibold text-gray-800">{component.label}</span>
-                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                            Weight: {component.weight}
+                {selectedAlert.components && (
+                  <div className="mb-6">
+                    <h3 className="font-bold text-gray-800 mb-4 text-xl">Trust Analysis</h3>
+                    <div className="space-y-3">
+                      {formatScoreBreakdown(selectedAlert.components).map((component, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: component.color }}
+                            ></div>
+                            <span className="font-semibold text-gray-800">{component.label}</span>
+                          </div>
+                          <span 
+                            className="font-bold text-lg"
+                            style={{ color: component.color }}
+                          >
+                            {component.value >= 0 ? '+' : ''}{(component.value * 100).toFixed(1)}%
                           </span>
                         </div>
-                        <span 
-                          className="font-bold text-lg"
-                          style={{ color: component.color }}
-                        >
-                          {component.value >= 0 ? '+' : ''}{(component.value * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* User Reputation */}
                 {selectedAlert.reputation != null && (
                   <div className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
-                    <h4 className="font-bold text-purple-800 mb-3 text-lg flex items-center gap-2">
-                     Reporter Profile
-                    </h4>
+                    <h4 className="font-bold text-purple-800 mb-3 text-lg">Reporter Profile</h4>
                     <div className="flex items-center gap-4">
                       <div className="text-4xl">{formatReputation(selectedAlert.reputation).stars}</div>
                       <div>
@@ -434,9 +447,7 @@ const handleRejectAlert = async (alertData) => {
                 {/* Cross Verification Info */}
                 {selectedAlert.cross_verification && (
                   <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200">
-                    <h4 className="font-bold text-blue-800 mb-3 text-lg flex items-center gap-2">
-                     Cross-Verification
-                    </h4>
+                    <h4 className="font-bold text-blue-800 mb-3 text-lg">Cross-Verification</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-sm text-gray-600">Sources Found</div>
@@ -451,62 +462,64 @@ const handleRejectAlert = async (alertData) => {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 text-sm text-gray-700 bg-white bg-opacity-70 p-3 rounded-lg">
-                      {selectedAlert.cross_verification.details}
+                    {selectedAlert.cross_verification.details && (
+                      <div className="mt-3 text-sm text-gray-700 bg-white bg-opacity-70 p-3 rounded-lg">
+                        {selectedAlert.cross_verification.details}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                {!selectedAlert.approved_by && !selectedAlert.rejected_by && (
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => handleApproveAlert(selectedAlert)}
+                      disabled={actionLoading}
+                      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg ${
+                        actionLoading 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                      }`}
+                    >
+                      {actionLoading ? 'Processing...' : '✓ Approve & Send to Resources'}
+                    </button>
+                    <button 
+                      onClick={() => handleRejectAlert(selectedAlert)}
+                      disabled={actionLoading}
+                      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg ${
+                        actionLoading 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'
+                      }`}
+                    >
+                      {actionLoading ? 'Processing...' : '✕ Reject Alert'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Status messages */}
+                {selectedAlert.approved_by && (
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-800 font-bold">
+                      Approved by {selectedAlert.approved_by}
+                    </div>
+                    <div className="text-sm text-green-600 mt-1">
+                      {new Date(selectedAlert.approved_at).toLocaleString()}
                     </div>
                   </div>
                 )}
 
-                {/* Action Buttons - Show for all alerts except already approved/rejected */}
-{!selectedAlert.approved_by && !selectedAlert.rejected_by && (
-  <div className="flex gap-4">
-    <button 
-      onClick={() => handleApproveAlert(selectedAlert)}
-      disabled={actionLoading}
-      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl ${
-        actionLoading 
-          ? 'bg-gray-400 cursor-not-allowed' 
-          : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
-      }`}
-    >
-      {actionLoading ? 'Processing...' : 'Approve & Send to Resources'}
-    </button>
-    <button 
-      onClick={() => handleRejectAlert(selectedAlert)}
-      disabled={actionLoading}
-      className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl ${
-        actionLoading 
-          ? 'bg-gray-400 cursor-not-allowed' 
-          : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'
-      }`}
-    >
-      {actionLoading ? 'Processing...' : 'Reject Alert'}
-    </button>
-  </div>
-)}
-
-{/* Show status if already processed */}
-{selectedAlert.approved_by && (
-  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-    <div className="flex items-center gap-2 text-green-800 font-bold">
-      Approved 
-    </div>
-    <div className="text-sm text-green-600 mt-1">
-      {new Date(selectedAlert.approved_at).toLocaleString()}
-    </div>
-  </div>
-)}
-
-{selectedAlert.rejected_by && (
-  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-    <div className="flex items-center gap-2 text-red-800 font-bold">
-      Rejected
-    </div>
-    <div className="text-sm text-red-600 mt-1">
-      {new Date(selectedAlert.rejected_at).toLocaleString()}
-    </div>
-  </div>
-)}
+                {selectedAlert.rejected_by && (
+                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-800 font-bold">
+                      Rejected by {selectedAlert.rejected_by}
+                    </div>
+                    <div className="text-sm text-red-600 mt-1">
+                      {new Date(selectedAlert.rejected_at).toLocaleString()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
