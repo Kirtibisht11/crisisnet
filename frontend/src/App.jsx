@@ -23,7 +23,6 @@ import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import ResourceDashboard from "./pages/resource_dashboard";
-import Resources from "./pages/Resources";
 import SignupAuthority from "./pages/SignupAuthority";
 export default function App() {
   return (
@@ -49,8 +48,6 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/resource" element={<ResourceDashboard />} />
-       <Route path="/resources" element={<Resources />} />
-
       </Routes>
     </BrowserRouter>
   );

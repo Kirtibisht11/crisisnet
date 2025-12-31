@@ -154,7 +154,6 @@ export default function Signup() {
                 className="w-full px-4 py-3 border rounded-lg"
               >
                 <option value="citizen">Citizen / Resident</option>
-                <option value="authority">Authority</option>
               </select>
             </div>
 
@@ -302,6 +301,13 @@ export default function Signup() {
               className="w-full py-3 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-60"
             >
               {isSubmitting ? "Creating account…" : "Create Account"}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/signup_authority')}
+              className="w-full mt-3 py-3 rounded-lg bg-blue-600 text-white font-semibold"
+            >
+              Sign up as Authority
             </button>
           </form>
 

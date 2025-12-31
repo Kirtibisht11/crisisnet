@@ -1,36 +1,6 @@
 {
   "users": [
     {
-      "user_id": "u_001",
-      "name": "Demo Citizen",
-      "phone": "+917500900626",
-      "role": "citizen",
-      "latitude": 28.6139,
-      "longitude": 77.209,
-      "is_active": true,
-      "created_at": "2025-12-28T10:00:00Z"
-    },
-    {
-      "user_id": "u_002",
-      "name": "Demo Volunteer",
-      "phone": "+917500900627",
-      "role": "volunteer",
-      "latitude": 28.615,
-      "longitude": 77.21,
-      "is_active": true,
-      "created_at": "2025-12-28T10:01:00Z"
-    },
-    {
-      "user_id": "u_003",
-      "name": "Demo Authority",
-      "phone": "+917500900628",
-      "role": "authority",
-      "latitude": 28.616,
-      "longitude": 77.211,
-      "is_active": true,
-      "created_at": "2025-12-28T10:02:00Z"
-    },
-    {
       "user_id": "u_424859e7",
       "name": "kirti",
       "phone": "+9814341087",
@@ -64,17 +34,6 @@
       "created_at": "2025-12-30T14:30:23.978134Z"
     },
     {
-      "user_id": "u_979d0096",
-      "name": "tamanna",
-      "phone": "+6395303423",
-      "password_hash": "$2b$10$QU3JGIgUGmt0iktGRrBNFuz5zizMRCvjh9i6pWPFQC1f4lALVEzNu",
-      "role": "citizen",
-      "latitude": 30.3275,
-      "longitude": 78.0325,
-      "is_active": true,
-      "created_at": "2025-12-30T17:05:27.302062Z"
-    },
-    {
       "user_id": "u_4b288f99",
       "name": "disha ",
       "phone": "+8077865284",
@@ -101,7 +60,9 @@
         "available": true,
         "user_id": "u_4b288f99",
         "id": "vol_20251231112437_10",
-        "registered_at": "2025-12-31T11:24:37.318838"
+        "registered_at": "2025-12-31T11:24:37.318838",
+        "allocated_to": null,
+        "allocated_at": null
       },
       "is_volunteer": true
     },
@@ -115,6 +76,19 @@
       "longitude": 77.98881428935094,
       "is_active": true,
       "created_at": "2025-12-31T12:15:49.178749Z",
+      "organization_name": "Dehradun police",
+      "designation": "inspector"
+    },
+    {
+      "user_id": "u_44bdf70e",
+      "name": "anu",
+      "phone": "+918077865212",
+      "password_hash": "$2b$12$7XpgdLNLgQ8rriY.2Ma8uevV6eQe3.4SAS.WQBEcvz.mRRDGeggEC",
+      "role": "authority",
+      "latitude": 30.267344083094365,
+      "longitude": 77.98888788562991,
+      "is_active": true,
+      "created_at": "2025-12-31T12:34:16.546944Z",
       "organization_name": "Dehradun police",
       "designation": "inspector"
     }

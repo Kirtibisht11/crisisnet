@@ -1,122 +1,122 @@
 [
   {
-    "id": "msg_001",
-    "text": "Water level rising fast near bridge, people trapped",
-    "lat": 28.6139,
-    "lon": 77.2090,
-    "timestamp": "2025-07-19T10:15:00Z",
+    "id": "msg_101",
+    "text": "Water level rising rapidly near riverside, families stranded",
+    "lat": 30.2673,
+    "lon": 77.9888,
+    "timestamp": "2025-07-19T10:12:00Z",
     "source": "twitter"
   },
   {
-    "id": "msg_002",
-    "text": "Flood water entering houses in low lying area",
-    "lat": 28.6135,
-    "lon": 77.2088,
+    "id": "msg_102",
+    "text": "Flood water entering ground floor houses, need rescue boats",
+    "lat": 30.2681,
+    "lon": 77.9895,
+    "timestamp": "2025-07-19T10:14:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_103",
+    "text": "People stuck on rooftop due to flooding, urgent help required",
+    "lat": 30.2669,
+    "lon": 77.9879,
+    "timestamp": "2025-07-19T10:16:00Z",
+    "source": "sms"
+  },
+  {
+    "id": "msg_104",
+    "text": "Heavy rain but traffic moving normally",
+    "lat": 30.2658,
+    "lon": 77.9867,
     "timestamp": "2025-07-19T10:18:00Z",
     "source": "twitter"
   },
   {
-    "id": "msg_004",
-    "text": "Man unconscious and bleeding badly, urgent help needed",
-    "lat": 30.26733069602734,
-    "lon": 77.98888688423514,
-    "timestamp": "2025-07-19T10:22:00Z",
+    "id": "msg_105",
+    "text": "Man unconscious and bleeding near bus stand, medical emergency",
+    "lat": 30.2678,
+    "lon": 77.9899,
+    "timestamp": "2025-07-19T10:20:00Z",
     "source": "sms"
   },
   {
-    "id": "msg_005",
-    "text": "Massive fire with heavy smoke at warehouse",
-    "lat": 28.5355,
-    "lon": 77.3910,
-    "timestamp": "2025-07-19T10:25:00Z",
+    "id": "msg_106",
+    "text": "Fire broke out in small warehouse, thick smoke visible",
+    "lat": 30.2692,
+    "lon": 77.9908,
+    "timestamp": "2025-07-19T10:22:00Z",
     "source": "twitter"
   },
   {
-    "id": "msg_007",
-    "text": "Is anyone else feeling earthquake tremors?",
-    "lat": 30.26733069602734,
-    "lon":77.98888688423514,
+    "id": "msg_107",
+    "text": "Smell of gas leaking in apartment building, residents panicking",
+    "lat": 30.2686,
+    "lon": 77.9872,
+    "timestamp": "2025-07-19T10:24:00Z",
+    "source": "sms"
+  },
+  {
+    "id": "msg_108",
+    "text": "Is anyone else feeling mild earthquake tremors?",
+    "lat": 30.2671,
+    "lon": 77.9881,
+    "timestamp": "2025-07-19T10:26:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_109",
+    "text": "Just rain and power cut, nothing serious here",
+    "lat": 30.2649,
+    "lon": 77.9855,
+    "timestamp": "2025-07-19T10:28:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_110",
+    "text": "Road blocked due to landslide after heavy rainfall",
+    "lat": 30.2724,
+    "lon": 77.9931,
     "timestamp": "2025-07-19T10:30:00Z",
-    "source": "twitter"
-  },
-  {
-    "id": "msg_009",
-    "text": "Building collapsed after loud blast, people screaming",
-    "lat": 28.4595,
-    "lon": 77.0266,
-    "timestamp": "2025-07-19T10:35:00Z",
     "source": "manual"
   },
   {
-    "id": "msg_010",
-    "text": "Structure fell near construction site, injuries reported",
-    "lat": 28.4596,
-    "lon": 77.0268,
+    "id": "msg_111",
+    "text": "Mud and rocks falling continuously near highway curve",
+    "lat": 30.2731,
+    "lon": 77.9940,
+    "timestamp": "2025-07-19T10:32:00Z",
+    "source": "twitter"
+  },
+  {
+    "id": "msg_112",
+    "text": "Child having breathing issues, ambulance needed urgently",
+    "lat": 30.2662,
+    "lon": 77.9876,
+    "timestamp": "2025-07-19T10:34:00Z",
+    "source": "sms"
+  },
+  {
+    "id": "msg_113",
+    "text": "People sharing flood videos but not sure if current",
+    "lat": 30.2700,
+    "lon": 77.9920,
     "timestamp": "2025-07-19T10:36:00Z",
     "source": "twitter"
   },
   {
-    "id": "msg_011",
-    "text": "Heavy rain but everything seems normal",
-    "lat": 28.5350,
-    "lon": 77.3900,
+    "id": "msg_114",
+    "text": "Building wall collapsed near construction site, injuries reported",
+    "lat": 30.2689,
+    "lon": 77.9891,
     "timestamp": "2025-07-19T10:38:00Z",
-    "source": "twitter"
-  },
-  {
-    "id": "msg_012",
-    "text": "Storm winds tearing roofs off houses",
-    "lat": 29.0588,
-    "lon": 77.6856,
-    "timestamp": "2025-07-19T10:40:00Z",
-    "source": "twitter"
-  },
-  {
-    "id": "msg_014",
-    "text": "Landslide blocked highway, vehicles stuck",
-    "lat": 30.3165,
-    "lon": 78.0322,
-    "timestamp": "2025-07-19T10:45:00Z",
     "source": "manual"
   },
   {
-    "id": "msg_015",
-    "text": "Mud and rocks falling onto road after heavy rain",
-    "lat": 30.3166,
-    "lon": 78.0323,
-    "timestamp": "2025-07-19T10:47:00Z",
+    "id": "msg_115",
+    "text": "Normal office day, just cloudy weather",
+    "lat": 30.2637,
+    "lon": 77.9848,
+    "timestamp": "2025-07-19T10:40:00Z",
     "source": "twitter"
-  },
-  {
-    "id": "msg_016",
-    "text": "Just another normal day at office",
-    "lat": 28.7040,
-    "lon": 77.1024,
-    "timestamp": "2025-07-19T10:50:00Z",
-    "source": "twitter"
-  },
-  {
-    "id": "msg_017",
-    "text": "Need medical help, child having severe breathing issues",
-    "lat": 28.4089,
-    "lon": 77.3178,
-    "timestamp": "2025-07-19T10:52:00Z",
-    "source": "sms"
-  },
-  {
-    "id": "msg_019",
-    "text": "Power cut in area due to heavy rain",
-    "lat": 28.6130,
-    "lon": 77.2100,
-    "timestamp": "2025-07-19T10:56:00Z",
-    "source": "twitter"
-  },
-  {
-    "id": "msg_020",
-    "text": "Emergency: gas leak smell spreading in apartment",
-    "lat": 28.4800,
-    "lon": 77.3000,
-    "timestamp": "2025-07-19T10:58:00Z",
-    "source": "sms"
   }
 ]

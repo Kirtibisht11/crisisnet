@@ -5,7 +5,7 @@
     "available": true,
     "location": {
       "lat": 30.26733069602734,
-      "lon":77.98888688423514
+      "lon": 77.98888688423514
     },
     "capacity": 6,
     "allocated_to": null,
@@ -18,7 +18,7 @@
     "available": true,
     "location": {
       "lat": 30.26733069602734,
-      "lon":77.98888688423514
+      "lon": 77.98888688423514
     },
     "capacity": 4,
     "allocated_to": null,
@@ -31,7 +31,7 @@
     "available": true,
     "location": {
       "lat": 30.26733069602734,
-      "lon":77.98888688423514
+      "lon": 77.98888688423514
     },
     "capacity": 50,
     "allocated_to": null,
@@ -44,7 +44,7 @@
     "available": true,
     "location": {
       "lat": 30.26733069602734,
-      "lon":77.98888688423514
+      "lon": 77.98888688423514
     },
     "capacity": 2,
     "allocated_to": null,
