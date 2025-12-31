@@ -49,9 +49,9 @@ Frontend: http://localhost:5173
 Backend API: http://localhost:8000
 
 ## Prototype Status
-- Fully functional frontend  
-- Backend APIs integrated  
-- Crisis simulation enabled  
-- Role-based workflows implemented  
+✔ Fully functional frontend  
+✔ Backend APIs integrated  
+✔ Crisis simulation enabled  
+✔ Role-based workflows implemented  
 
 📄Detailed documentation is available in `/docs`.

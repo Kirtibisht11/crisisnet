@@ -413,6 +413,30 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(volunteerData || {});
   const [availability, setAvailability] = useState(volunteerData?.available || true);
+  const [stats, setStats] = useState({ active: 0, completed: 0, highPriority: 0, total: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!volunteerId) return;
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+        const res = await fetch(`${API_BASE}/api/resource/volunteer/tasks/${volunteerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const tasks = data.tasks || [];
+          
+          const active = tasks.filter(t => !['completed', 'fulfilled', 'resolved'].includes((t.status || '').toLowerCase())).length;
+          const completed = tasks.filter(t => ['completed', 'fulfilled', 'resolved'].includes((t.status || '').toLowerCase())).length;
+          const highPriority = tasks.filter(t => ['high', 'critical'].includes((t.priority || '').toLowerCase())).length;
+          
+          setStats({ active, completed, highPriority, total: tasks.length });
+        }
+      } catch (e) {
+        console.error("Failed to load stats", e);
+      }
+    };
+    fetchStats();
+  }, [volunteerId]);
 
   const skillOptions = [
     'first_aid', 'medical', 'rescue', 'swimming', 'firefighting',
@@ -528,7 +552,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
             <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.active}</div>
           <div className="text-xs sm:text-sm text-gray-500">Active Tasks</div>
         </div>
 
@@ -537,7 +561,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
             <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
             <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.completed}</div>
           <div className="text-xs sm:text-sm text-gray-500">Completed</div>
         </div>
 
@@ -545,7 +569,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
           <div className="flex items-center justify-between mb-2">
             <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.highPriority}</div>
           <div className="text-xs sm:text-sm text-gray-500">High Priority</div>
         </div>
 
@@ -553,7 +577,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
           <div className="flex items-center justify-between mb-2">
             <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.total}</div>
           <div className="text-xs sm:text-sm text-gray-500">Total Tasks</div>
         </div>
       </div>
