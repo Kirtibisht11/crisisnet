@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getBestLocation } from '../utils/location';
 import { Heart, MapPin, Phone, Mail, CheckCircle2 } from 'lucide-react';
@@ -24,16 +24,16 @@ const SignupVolunteer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const skillOptions = [
-    { id: 'first_aid', label: 'First Aid', icon: '🏥' },
-    { id: 'medical', label: 'Medical', icon: '⚕️' },
-    { id: 'rescue', label: 'Rescue Operations', icon: '🚁' },
-    { id: 'swimming', label: 'Swimming', icon: '🏊' },
-    { id: 'firefighting', label: 'Firefighting', icon: '🚒' },
-    { id: 'search_and_rescue', label: 'Search & Rescue', icon: '🔍' },
-    { id: 'logistics', label: 'Logistics', icon: '📦' },
-    { id: 'communication', label: 'Communication', icon: '📡' },
-    { id: 'driver', label: 'Driver/Transport', icon: '🚗' },
-    { id: 'counseling', label: 'Counseling', icon: '💬' }
+    { id: 'first_aid', label: 'First Aid' },
+    { id: 'medical', label: 'Medical' },
+    { id: 'rescue', label: 'Rescue Operations'},
+    { id: 'swimming', label: 'Swimming' },
+    { id: 'firefighting', label: 'Firefighting'},
+    { id: 'search_and_rescue', label: 'Search & Rescue'},
+    { id: 'logistics', label: 'Logistics'},
+    { id: 'communication', label: 'Communication'},
+    { id: 'driver', label: 'Driver/Transport' },
+    { id: 'counseling', label: 'Counseling'}
   ];
 
   const handleInputChange = (e) => {
@@ -106,40 +106,82 @@ const SignupVolunteer = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        'http://localhost:8000/resource/volunteer/register',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            location: formData.location,
-            address: formData.address,
-            skills: formData.skills,
-            experience: formData.experience,
-            availability: formData.availability,
-            emergency_contact: formData.emergencyContact,
-            available: true
-          })
+      const volunteerPayload = {
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.location,
+        address: formData.address,
+        skills: formData.skills,
+        experience: formData.experience,
+        availability: formData.availability,
+        emergency_contact: formData.emergencyContact,
+        available: true
+      };
+
+      // Check if a citizen is signed in
+      const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+      console.log('Current user:', currentUser);
+
+      if (currentUser && currentUser.user_id) {
+        // Attach to existing user
+        console.log('Attaching volunteer to existing user:', currentUser.user_id);
+        const attachPayload = { ...volunteerPayload, user_id: currentUser.user_id };
+
+        const attachResponse = await fetch(
+          'http://localhost:8000/api/volunteer/attach-to-user',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(attachPayload)
+          }
+        );
+
+        const attachData = await attachResponse.json();
+        console.log('Attach response:', attachData);
+
+        if (attachResponse.ok) {
+          const volunteerId = attachData.volunteer?.id || attachData.volunteer_id;
+          localStorage.setItem('volunteerId', volunteerId);
+          // Update user in localStorage with volunteer data
+          if (attachData.user) {
+            localStorage.setItem('user', JSON.stringify(attachData.user));
+          }
+          setTimeout(() => {
+            navigate('/volunteer', { state: { openTab: 'dashboard' } });
+          }, 800);
+          return;
+        } else {
+          setErrors({ submit: attachData.detail || 'Failed to attach volunteer profile' });
+          console.error('Attach failed:', attachData);
         }
-      );
-
-      let data = {};
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error('Invalid server response');
-      }
-
-      if (response.ok) {
-        localStorage.setItem('volunteerId', data.volunteer_id);
-        setTimeout(() => {
-          navigate('/volunteer', { state: { openTab: 'dashboard' } });
-        }, 800);
       } else {
-        setErrors({ submit: data.detail || 'Registration failed' });
+        // No user signed in, create standalone volunteer
+        console.log('No user signed in, creating standalone volunteer profile');
+        const response = await fetch(
+          'http://localhost:8000/api/volunteer/profile',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(volunteerPayload)
+          }
+        );
+
+        let data = {};
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Invalid server response');
+        }
+
+        if (response.ok) {
+          localStorage.setItem('volunteerId', data.volunteer_id || data.id);
+          setTimeout(() => {
+            navigate('/volunteer', { state: { openTab: 'dashboard' } });
+          }, 800);
+        } else {
+          setErrors({ submit: data.detail || 'Registration failed' });
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -149,9 +191,25 @@ const SignupVolunteer = () => {
     }
   };
 
+  useEffect(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('crisisnet_user') || '{}');
+      if (storedUser) {
+        setFormData(prev => ({
+          ...prev,
+          fullName: prev.fullName || storedUser.name || storedUser.fullName || storedUser.username || '',
+          email: prev.email || storedUser.email || '',
+          phone: prev.phone || storedUser.phone || storedUser.phone_number || ''
+        }));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   /* ---------- UI CODE--------------*/
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
@@ -458,12 +516,12 @@ const SignupVolunteer = () => {
                 >
                   Next
                 </button>
-              ) : (
+                ) : (
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="ml-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-50"
+                  className="ml-auto px-8 py-3 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition disabled:opacity-50"
                 >
                   {isSubmitting ? 'Registering...' : 'Complete Registration'}
                 </button>
