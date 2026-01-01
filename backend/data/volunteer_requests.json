@@ -1,56 +1,62 @@
 [
   {
-    "request_id": "vreq_001",
-    "crisis_id": "crisis_001",
+    "request_id": "req_20251231160132",
+    "crisis_id": "DET_a96f4dc2",
     "crisis_type": "flood",
-    "location": {
-      "name": "Ward 12, Riverside",
-      "lat": 13.0821,
-      "lon": 80.2710
-    },
-    "requested_skills": ["rescue", "swimming", "first_aid"],
-    "volunteers_needed": 5,
-    "fulfilled_count": 2,
-    "assigned_volunteers": ["vol_002", "vol_004"],
-    "priority_label": "high",
-    "priority_score": 8,
-    "status": "partially_fulfilled",
-    "created_at": "2024-12-26T08:30:00"
-  },
-  {
-    "request_id": "vreq_002",
-    "crisis_id": "crisis_002",
-    "crisis_type": "medical_emergency",
-    "location": {
-      "name": "Central Hospital Area",
-      "lat": 13.0852,
-      "lon": 80.2761
-    },
-    "requested_skills": ["medical", "paramedic", "first_aid"],
-    "volunteers_needed": 3,
+    "location": "Unknown",
+    "message": "Flood water entering ground floor houses, need rescue boats",
+    "skills_required": [
+      "rescue",
+      "swimming",
+      "first_aid",
+      "logistics"
+    ],
+    "volunteers_needed": 8,
     "fulfilled_count": 1,
-    "assigned_volunteers": ["vol_001"],
-    "priority_label": "critical",
-    "priority_score": 10,
-    "status": "partially_fulfilled",
-    "created_at": "2024-12-26T09:15:00"
+    "status": "OPEN",
+    "created_at": "2025-12-31T16:01:32.210998",
+    "created_by": "u_44bdf70e",
+    "accepted_volunteers": [
+      "u_4b288f99"
+    ]
   },
   {
-    "request_id": "vreq_003",
-    "crisis_id": "crisis_003",
-    "crisis_type": "fire",
-    "location": {
-      "name": "Industrial Zone B",
-      "lat": 13.0705,
-      "lon": 80.2553
-    },
-    "requested_skills": ["firefighting", "rescue", "first_aid"],
-    "volunteers_needed": 4,
+    "request_id": "req_20251231155212",
+    "crisis_id": "DET_a96f4dc2",
+    "crisis_type": "flood",
+    "location": "Unknown",
+    "message": "Flood water entering ground floor houses, need rescue boats",
+    "skills_required": [
+      "rescue",
+      "swimming",
+      "first_aid",
+      "logistics"
+    ],
+    "volunteers_needed": 7,
     "fulfilled_count": 0,
-    "assigned_volunteers": [],
-    "priority_label": "high",
-    "priority_score": 8,
-    "status": "open",
-    "created_at": "2024-12-26T10:00:00"
+    "status": "OPEN",
+    "created_at": "2025-12-31T15:52:12.673222",
+    "created_by": "u_44bdf70e"
+  },
+  {
+    "request_id": "req_20251231155201",
+    "crisis_id": "DET_63e25a3c",
+    "crisis_type": "fire",
+    "location": "Unknown",
+    "message": "Fire broke out in small warehouse, thick smoke visible",
+    "skills_required": [
+      "firefighting",
+      "first_aid",
+      "rescue",
+      "medical"
+    ],
+    "volunteers_needed": 6,
+    "fulfilled_count": 1,
+    "status": "OPEN",
+    "created_at": "2025-12-31T15:52:01.080982",
+    "created_by": "u_44bdf70e",
+    "accepted_volunteers": [
+      "u_4b288f99"
+    ]
   }
 ]

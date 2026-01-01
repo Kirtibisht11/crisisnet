@@ -62,7 +62,7 @@ const VolunteerTasks = ({ volunteerId }) => {
         return;
       }
 
-      const endpoint = `${API_BASE}/resource/volunteer/tasks/${volunteerId}`;
+      const endpoint = `${API_BASE}/api/resource/volunteer/tasks/${volunteerId}`;
 
       const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       const response = await fetch(endpoint, {

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { getBestLocation } from '../utils/location';
 
 const SignupAuthority = () => {
   const navigate = useNavigate();
@@ -13,46 +14,38 @@ const SignupAuthority = () => {
     confirmPassword: '',
     organizationName: '',
     designation: '',
-    latitude: 0.0,
-    longitude: 0.0
+    address: '', // human-readable display only
+    latitude: null,
+    longitude: null
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationEditable, setLocationEditable] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Get current location
-  const getCurrentLocation = () => {
+  // Get current human-readable location (address)
+  const getCurrentLocation = async () => {
     setLocationLoading(true);
     setError('');
-
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
+    try {
+      const best = await getBestLocation();
+      const human = best.humanLocation || (best.lat && best.lon ? `${best.lat.toFixed(4)}, ${best.lon.toFixed(4)}` : 'Unknown location');
+      setFormData(prev => ({
+        ...prev,
+        address: human, // display only
+        latitude: best.lat,
+        longitude: best.lon
+      }));
+      setLocationEditable(false);
+    } catch (err) {
+      console.error('Error getting location:', err);
+      setError('Unable to detect address. You can enter it manually.');
+      setLocationEditable(true);
+    } finally {
       setLocationLoading(false);
-      return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData(prev => ({
-          ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        }));
-        setLocationEditable(false);
-        setLocationLoading(false);
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-        if (error && error.code === 1) {
-          setError('Location permission denied. You can edit coordinates manually or continue with default (0,0).');
-        } else {
-          setError('Unable to retrieve location. You can edit coordinates manually or continue with default (0,0).');
-        }
-        setLocationEditable(true);
-        setLocationLoading(false);
-      }
-    );
   };
 
   const handleChange = (e) => {
@@ -123,8 +116,8 @@ const SignupAuthority = () => {
           phone: formData.phone.replace(/\s/g, ''),
           password: formData.password,
           role: 'authority',
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          latitude: formData.latitude || 0.0,
+          longitude: formData.longitude || 0.0,
           organization_name: formData.organizationName.trim(),
           designation: formData.designation.trim()
         }),
@@ -137,8 +130,10 @@ const SignupAuthority = () => {
       }
 
       // Store JWT token and user info in localStorage
-      localStorage.setItem('crisisnet_token', data.token);
-      localStorage.setItem('crisisnet_current_user', JSON.stringify(data.user));
+      const token = data.access_token || data.token || data.token_type || null;
+      if (token) localStorage.setItem('crisisnet_token', token);
+      if (token) localStorage.setItem('access_token', token);
+      if (data.user) localStorage.setItem('crisisnet_current_user', JSON.stringify(data.user));
 
       // Show success message
       alert('Authority account created successfully! 🎉\n\nRedirecting to Authority Dashboard...');
@@ -155,42 +150,52 @@ const SignupAuthority = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="text-6xl">🛡️</div>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Authority Registration
-          </h1>
-          <p className="text-gray-600">
-            Join CrisisNet as an authorized emergency responder
-          </p>
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
+      {/* HEADER - Professional Dark Theme */}
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div className="w-full px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="font-bold text-xl tracking-tight">CrisisNet</Link>
+          <Link 
+            to="/login" 
+            className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition"
+          >
+            Sign In
+          </Link>
         </div>
+      </header>
 
-        {/* Signup Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+      {/* MAIN CONTENT */}
+      <div className="w-[96%] mx-auto py-12">
+        <div className="max-w-3xl mx-auto">
+          {/* PAGE HEADER */}
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+              Authority Registration
+            </h1>
+            <p className="text-slate-600 text-lg">
+              Join CrisisNet as an authorized emergency responder
+            </p>
+          </div>
+
+          {/* SIGNUP FORM */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <p className="text-red-800 font-semibold">{error}</p>
-                </div>
+              <div className="p-4 bg-red-50 border border-red-300 rounded-lg">
+                <p className="text-red-800 font-semibold">{error}</p>
               </div>
             )}
 
             {/* Personal Information Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 Personal Information
               </h3>
 
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Full Name *
                 </label>
                 <input
@@ -199,14 +204,14 @@ const SignupAuthority = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Enter your full name"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                   required
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -215,24 +220,24 @@ const SignupAuthority = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+919876543210"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Format: +91 followed by 10 digits
                 </p>
               </div>
             </div>
 
             {/* Organization Information Section */}
-            <div className="space-y-4 pt-4 border-t-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 Organization Details
               </h3>
 
               {/* Organization Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Organization Name *
                 </label>
                 <input
@@ -241,14 +246,14 @@ const SignupAuthority = () => {
                   value={formData.organizationName}
                   onChange={handleChange}
                   placeholder="e.g., Delhi Police, NDRF, Fire Department"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                   required
                 />
               </div>
 
               {/* Designation */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Designation *
                 </label>
                 <input
@@ -257,159 +262,176 @@ const SignupAuthority = () => {
                   value={formData.designation}
                   onChange={handleChange}
                   placeholder="e.g., Inspector, Deputy Commissioner, Chief Officer"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                   required
                 />
               </div>
             </div>
 
-            {/* Security Section */}
-            <div className="space-y-4 pt-4 border-t-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                Security
+            {/* Address Section */}
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                Location (Address)
               </h3>
 
-              {/* Password */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password *
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Address
                 </label>
                 <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter password (min 6 characters)"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
-                  required
-                  minLength={6}
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, address: e.target.value }));
+                    setError('');
+                  }}
+                  className={`w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors ${
+                    locationEditable ? 'bg-white' : 'bg-slate-50'
+                  }`}
+                  readOnly={!locationEditable}
                 />
               </div>
 
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password *
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Re-enter password"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors"
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-
-            {/* Location Section */}
-            <div className="space-y-4 pt-4 border-t-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                Location
-              </h3>
-
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Latitude
-                  </label>
-                  <input
-                    type="number"
-                    name="latitude"
-                    value={formData.latitude}
-                    onChange={handleChange}
-                    step="any"
-                    className={`w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors ${
-                      locationEditable ? 'bg-white' : 'bg-gray-50'
-                    }`}
-                    readOnly={!locationEditable}
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Longitude
-                  </label>
-                  <input
-                    type="number"
-                    name="longitude"
-                    value={formData.longitude}
-                    onChange={handleChange}
-                    step="any"
-                    className={`w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors ${
-                      locationEditable ? 'bg-white' : 'bg-gray-50'
-                    }`}
-                    readOnly={!locationEditable}
-                  />
-                </div>
-              </div>
-
-              {/* Location Buttons */}
+              {/* Address Buttons */}
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={getCurrentLocation}
                   disabled={locationLoading}
-                  className="flex-1 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded-lg transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:bg-slate-300 disabled:text-slate-500"
                 >
-                  {locationLoading ? '🔄 Getting Location...' : 'Use Current Location'}
+                  {locationLoading ? '🔄 Detecting address...' : 'Detect Address'}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setLocationEditable(prev => !prev)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
+                  className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold rounded-lg transition-colors"
                 >
-                  {locationEditable ? 'Lock Coordinates' : 'Edit Coordinates'}
+                  {locationEditable ? 'Lock Address' : 'Edit Address'}
                 </button>
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Security Section */}
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                Security
+              </h3>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter password (min 6 characters)"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors pr-12"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter password"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors pr-12"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                  >
+                    {showConfirmPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
+              className={`w-full py-3 rounded-lg font-bold text-lg shadow-sm transition-all ${
                 loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white hover:shadow-xl'
+                  ? 'bg-slate-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md'
               }`}
             >
               {loading ? 'Creating Account...' : 'Register as Authority'}
             </button>
           </form>
 
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          {/* Footer Links */}
+          <div className="mt-6 text-center space-y-3">
+            <p className="text-slate-600">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="text-indigo-600 font-semibold hover:text-indigo-700 hover:underline"
+                className="text-blue-600 font-semibold hover:text-blue-700"
               >
-                Login here
+                Sign in
               </Link>
             </p>
-          </div>
-
-          {/* Back to Home */}
-          <div className="mt-4 text-center">
             <Link
               to="/"
-              className="text-gray-500 text-sm hover:text-gray-700 hover:underline"
+              className="block text-slate-500 text-sm hover:text-slate-700"
             >
               Back to Home
             </Link>
           </div>
-        </div>
 
-        {/* Info Notice */}
-        <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <span className="font-bold">Note:</span> Authority accounts require verification. 
-            Your credentials will be reviewed by the system administrator before activation.
-          </p>
+          {/* Info Notice */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded-lg">
+            <p className="text-sm text-blue-900">
+              <span className="font-semibold">Note:</span> Authority accounts require verification. 
+              Your credentials will be reviewed by the system administrator before activation.
+            </p>
+          </div>
+          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,12 @@ import {
   Save, Phone, Mail, Calendar, TrendingUp, Zap, 
   MessageCircle, User, Flame, AlertCircle
 } from 'lucide-react';
+import { formatPriority } from '../utils/formatter';
+
+/* ================= ICON COMPONENTS ================= */
+const FlameIcon = () => <Flame className="w-5 h-5" />;
+const AlertCircleIcon = () => <AlertCircle className="w-5 h-5" />;
+const ActivityIcon = () => <Activity className="w-5 h-5" />;
 
 /* ================= LOCATION HELPERS ================= */
 const getBrowserLocation = () =>
@@ -37,33 +43,202 @@ const PRIORITY_STYLES = {
   critical: {
     border: 'border-red-500',
     bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: <Flame className="w-5 h-5" />
+    text: 'text-red-800',
+    icon: <FlameIcon />
   },
   high: {
-    border: 'border-red-500',
-    bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: <Flame className="w-5 h-5" />
-  },
-  medium: {
     border: 'border-orange-500',
     bg: 'bg-orange-100',
-    text: 'text-orange-700',
-    icon: <AlertCircle className="w-5 h-5" />
+    text: 'text-orange-800',
+    icon: <FlameIcon />
+  },
+  medium: {
+    border: 'border-yellow-500',
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    icon: <AlertCircleIcon />
   },
   low: {
-    border: 'border-blue-500',
-    bg: 'bg-blue-100',
-    text: 'text-blue-700',
-    icon: <Activity className="w-5 h-5" />
+    border: 'border-green-500',
+    bg: 'bg-green-100',
+    text: 'text-green-800',
+    icon: <ActivityIcon />
   },
   default: {
     border: 'border-gray-400',
     bg: 'bg-gray-100',
     text: 'text-gray-700',
-    icon: <Activity className="w-5 h-5" />
+    icon: <ActivityIcon />
   }
+};
+
+/* ================= LOCATION RENDERER ================= */
+const LocationRenderer = ({ location, lat, lon }) => {
+  const [displayLocation, setDisplayLocation] = useState(() => {
+    // If we have a descriptive string that isn't "Unknown Location" or "Location not specified" or coordinates, use it
+    if (location && location !== 'Unknown Location' && location !== 'Location not specified' && !/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim())) {
+      return location;
+    }
+    // If we have explicit lat/lon, we will resolve it
+    if (lat || lon) return null;
+    // If we have a coordinate string, we will resolve it
+    if (location && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim())) return null;
+
+    return location || 'Location not specified';
+  });
+
+  useEffect(() => {
+    const isCoordinates = location && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(String(location).trim());
+    let queryLat = lat;
+    let queryLon = lon;
+
+    if (isCoordinates && (!queryLat || !queryLon)) {
+      const parts = String(location).split(',').map(s => s.trim());
+      queryLat = parts[0];
+      queryLon = parts[1];
+    }
+
+    if (!queryLat || !queryLon) {
+      if (location && !isCoordinates && location !== 'Unknown Location' && location !== 'Location not available') {
+        setDisplayLocation(location);
+      }
+      return;
+    }
+
+    // Show coordinates immediately when location is unknown
+    if (location === 'Unknown Location' || location === 'Location not available') {
+      setDisplayLocation(`${Number(queryLat).toFixed(4)}, ${Number(queryLon).toFixed(4)}`);
+      return;
+    }
+
+    let active = true;
+
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${queryLat}&lon=${queryLon}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!active) return;
+        if (data.address) {
+          const { road, suburb, city, town, village, county } = data.address;
+          const parts = [road, suburb || village || town, city || county].filter(Boolean);
+          if (parts.length > 0) setDisplayLocation(parts.join(', '));
+          else if (data.display_name) setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
+        } else if (data.display_name) {
+          setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
+        }
+      })
+      .catch(() => {
+        if (active) setDisplayLocation(`${queryLat}, ${queryLon}`);
+      });
+    return () => { active = false; };
+  }, [location, lat, lon]);
+
+  if (displayLocation === null) {
+    return <span className="text-slate-400 italic text-xs">Resolving location...</span>;
+  }
+
+  return <span>{displayLocation}</span>;
+};
+
+/* ================= VOLUNTEER OPPORTUNITIES COMPONENT ================= */
+const VolunteerOpportunities = ({ volunteerId }) => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/resource/volunteer_requests');
+      const data = await res.json();
+      
+      // Get current user ID to ensure we filter out requests accepted by this user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.user_id || user.id;
+
+      // Filter out requests already accepted by this volunteer
+      const openRequests = (data.items || []).filter(r => 
+        r.status === 'OPEN' && 
+        (!r.accepted_volunteers || (!r.accepted_volunteers.includes(volunteerId) && (!userId || !r.accepted_volunteers.includes(userId))))
+      );
+      setRequests(openRequests);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async (reqId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`http://localhost:8000/api/resource/volunteer_requests/${reqId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'token': token },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        alert('Request accepted! Check "My Tasks" for details.');
+        fetchRequests();
+      } else {
+        const d = await res.json();
+        alert(d.detail || 'Failed to accept');
+      }
+    } catch (e) {
+      alert('Error accepting request');
+    }
+  };
+
+  useEffect(() => { fetchRequests(); }, [volunteerId]);
+
+  if (loading) return <div className="p-8 text-center">Loading opportunities...</div>;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Open Volunteer Opportunities</h2>
+      {requests.length === 0 ? (
+        <div className="p-8 bg-white rounded-lg shadow text-center text-gray-500">
+          No open requests at the moment.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {requests.map(req => {
+            const priorityInfo = formatPriority(req.trust_score, req.crisis_type);
+            const priorityKey = priorityInfo.level.toLowerCase();
+            const style = PRIORITY_STYLES[priorityKey] || PRIORITY_STYLES.default;
+
+            return (
+              <div key={req.request_id} className={`bg-white p-5 rounded-lg shadow border-l-4 ${style.border}`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg text-gray-900">{req.crisis_type.toUpperCase()}</h3>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${style.bg} ${style.text}`}>
+                        {priorityInfo.level}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> <LocationRenderer location={req.location} lat={req.lat} lon={req.lon} /></p>
+                    <p className="text-gray-700 mb-3">{req.message}</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {req.skills_required.map(s => (
+                        <span key={s} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAccept(req.request_id)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                  >
+                    Accept
+                  </button>
+                </div>
+                <div className="mt-3 text-xs text-gray-500">
+                  Needed: {req.volunteers_needed} • Fulfilled: {req.fulfilled_count}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 /* ================= VOLUNTEER TASKS COMPONENT ================= */
@@ -81,8 +256,8 @@ const VolunteerTasks = ({ volunteerId }) => {
         return;
       }
 
-      const API_BASE = 'http://localhost:8000';
-      const endpoint = `${API_BASE}/resource/volunteer/tasks/${volunteerId}`;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+      const endpoint = `${API_BASE}/api/resource/volunteer/tasks/${volunteerId}`;
       const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       
       const response = await fetch(endpoint, {
@@ -151,17 +326,12 @@ const VolunteerTasks = ({ volunteerId }) => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Assigned Tasks</h2>
-        <button
-          onClick={fetchTasks}
-          className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm transition self-start sm:self-auto"
-        >
-          Refresh
-        </button>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+      <div className="flex flex-col gap-4">
         {tasks.map((task, idx) => {
-          const priorityKey = (task.priority || 'default').toLowerCase();
+          const priorityLevel = task.priority || 'default';
+          const priorityKey = priorityLevel.toLowerCase();
           const style = PRIORITY_STYLES[priorityKey] || PRIORITY_STYLES.default;
 
           return (
@@ -178,26 +348,22 @@ const VolunteerTasks = ({ volunteerId }) => {
                     <h3 className="font-bold text-base sm:text-lg break-words">
                       {task.task || 'Assigned Task'}
                     </h3>
-                    <p className="text-xs text-gray-500 truncate">
-                      ID: {task.task_id || 'N/A'}
-                    </p>
                   </div>
                 </div>
                 <span
                   className={`px-3 py-1 ${style.bg} ${style.text} rounded-full text-xs font-bold uppercase self-start sm:self-auto flex-shrink-0`}
                 >
-                  {task.priority || 'normal'}
+                  {priorityLevel}
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm">
-                {task.location && (
+              <div className="space-y-2">
+                {(task.location || (task.lat && task.lon)) && (
                   <div className="flex items-start gap-1">
                     <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span className="break-words">{task.location}</span>
+                    <span className="break-words"><LocationRenderer location={task.location} lat={task.lat} lon={task.lon} /></span>
                   </div>
                 )}
-
                 {task.description && (
                   <p className="bg-gray-50 p-2 sm:p-3 rounded text-sm break-words">{task.description}</p>
                 )}
@@ -247,6 +413,30 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(volunteerData || {});
   const [availability, setAvailability] = useState(volunteerData?.available || true);
+  const [stats, setStats] = useState({ active: 0, completed: 0, highPriority: 0, total: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!volunteerId) return;
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+        const res = await fetch(`${API_BASE}/api/resource/volunteer/tasks/${volunteerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const tasks = data.tasks || [];
+          
+          const active = tasks.filter(t => !['completed', 'fulfilled', 'resolved'].includes((t.status || '').toLowerCase())).length;
+          const completed = tasks.filter(t => ['completed', 'fulfilled', 'resolved'].includes((t.status || '').toLowerCase())).length;
+          const highPriority = tasks.filter(t => ['high', 'critical'].includes((t.priority || '').toLowerCase())).length;
+          
+          setStats({ active, completed, highPriority, total: tasks.length });
+        }
+      } catch (e) {
+        console.error("Failed to load stats", e);
+      }
+    };
+    fetchStats();
+  }, [volunteerId]);
 
   const skillOptions = [
     'first_aid', 'medical', 'rescue', 'swimming', 'firefighting',
@@ -278,27 +468,75 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
 
   const handleSaveProfile = async () => {
     try {
+      const dataToSave = { ...editForm, available: availability, id: volunteerId };
+      console.log('💾 Saving profile with data:', dataToSave);
+      
+      // Save to backend API
       const response = await fetch(
-        `http://localhost:8000/volunteer/profile/${volunteerId}`,
+        `http://localhost:8000/api/volunteer/update`,
         {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editForm)
+          body: JSON.stringify(dataToSave)
         }
       );
 
+      console.log('📡 Backend response status:', response.status);
+      const responseText = await response.text();
+      console.log('📡 Backend response:', responseText);
+
       if (response.ok) {
-        onUpdate && onUpdate(editForm);
+        const updatedData = responseText ? JSON.parse(responseText) : dataToSave;
+        console.log('✅ Profile saved successfully:', updatedData);
+        onUpdate && onUpdate(dataToSave);
+
+        // Also update localStorage
+        try {
+          const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+          if (currentUser && currentUser.volunteer) {
+            // Update nested volunteer data
+            currentUser.volunteer = { ...currentUser.volunteer, ...dataToSave };
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            console.log('✅ Updated user.volunteer in localStorage');
+          }
+          
+          // Update volunteers_list if it exists
+          const volunteersList = JSON.parse(localStorage.getItem('volunteers_list') || '[]');
+          const idx = volunteersList.findIndex(v => v.id === volunteerId || v.volunteer_id === volunteerId);
+          if (idx >= 0) {
+            volunteersList[idx] = { ...volunteersList[idx], ...dataToSave };
+            localStorage.setItem('volunteers_list', JSON.stringify(volunteersList));
+            console.log('✅ Updated volunteers_list in localStorage');
+          }
+        } catch (e) {
+          console.warn('❌ Failed to update local storage', e);
+        }
+
         setIsEditing(false);
+      } else {
+        console.error('❌ Backend error. Status:', response.status, 'Message:', responseText);
+        alert('Failed to save profile. Check console for details.');
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('❌ Error saving profile:', error);
+      alert('Error saving profile: ' + error.message);
     }
   };
 
-  const toggleAvailability = () => {
-    setAvailability(!availability);
-    // Update backend if needed
+  const toggleAvailability = async () => {
+    const newStatus = !availability;
+    setAvailability(newStatus);
+    try {
+      const token = localStorage.getItem('access_token');
+      await fetch(`http://localhost:8000/api/resource/volunteers/${volunteerId}/availability`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'token': token },
+        body: JSON.stringify({ available: newStatus })
+      });
+    } catch (e) {
+      console.error("Failed to update availability", e);
+      setAvailability(!newStatus);
+    }
   };
 
   const handleOpenTelegram = () => {
@@ -314,7 +552,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
             <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.active}</div>
           <div className="text-xs sm:text-sm text-gray-500">Active Tasks</div>
         </div>
 
@@ -323,7 +561,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
             <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
             <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.completed}</div>
           <div className="text-xs sm:text-sm text-gray-500">Completed</div>
         </div>
 
@@ -331,7 +569,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
           <div className="flex items-center justify-between mb-2">
             <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.highPriority}</div>
           <div className="text-xs sm:text-sm text-gray-500">High Priority</div>
         </div>
 
@@ -339,7 +577,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
           <div className="flex items-center justify-between mb-2">
             <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900">0</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.total}</div>
           <div className="text-xs sm:text-sm text-gray-500">Total Tasks</div>
         </div>
       </div>
@@ -351,7 +589,11 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
           <div className="flex gap-2 w-full sm:w-auto">
             {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  setEditForm(volunteerData || {});
+                  setAvailability(volunteerData?.available ?? true);
+                  setIsEditing(true);
+                }}
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
               >
                 <Edit2 className="w-4 h-4" />
@@ -388,14 +630,39 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
                 <User className="w-4 h-4 inline mr-1" />
                 Full Name
               </label>
-              <input
-                type="text"
-                name="name"
-                value={isEditing ? editForm.name : volunteerData?.name}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 text-sm sm:text-base"
-              />
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.name || '—'}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Mail className="w-4 h-4 inline mr-1" />
+                Email
+              </label>
+              {isEditing ? (
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.email || '—'}
+                </div>
+              )}
             </div>
 
             <div>
@@ -403,14 +670,39 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
                 <Phone className="w-4 h-4 inline mr-1" />
                 Phone
               </label>
-              <input
-                type="tel"
-                name="phone"
-                value={isEditing ? editForm.phone : volunteerData?.phone}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 text-sm sm:text-base"
-              />
+              {isEditing ? (
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editForm.phone || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.phone || '—'}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Phone className="w-4 h-4 inline mr-1" />
+                Emergency Contact
+              </label>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  name="emergency_contact"
+                  value={editForm.emergency_contact || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.emergency_contact || '—'}
+                </div>
+              )}
             </div>
 
             <div className="sm:col-span-2">
@@ -418,14 +710,49 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
                 <MapPin className="w-4 h-4 inline mr-1" />
                 Location
               </label>
-              <input
-                type="text"
-                name="location"
-                value={isEditing ? editForm.location?.manualLocation || editForm.location : volunteerData?.location?.manualLocation || volunteerData?.location}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 text-sm sm:text-base"
-              />
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="location"
+                  value={
+                    typeof editForm.location === 'string'
+                      ? editForm.location
+                      : editForm.location?.manualLocation || editForm.location?.manual || ''
+                  }
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {typeof volunteerData?.location === 'string'
+                    ? volunteerData.location
+                    : volunteerData?.location?.manualLocation ||
+                      volunteerData?.location?.manual ||
+                      (volunteerData?.location?.lat && volunteerData?.location?.lon
+                        ? `GPS: ${Number(volunteerData.location.lat).toFixed(4)}, ${Number(volunteerData.location.lon).toFixed(4)}`
+                        : '—')}
+                </div>
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MapPin className="w-4 h-4 inline mr-1" />
+                Address
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="address"
+                  value={editForm.address || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.address || '—'}
+                </div>
+              )}
             </div>
           </div>
 
@@ -434,57 +761,97 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
               <Award className="w-4 h-4 inline mr-1" />
               Skills
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {skillOptions.map(skill => {
-                const hasSkill = isEditing 
-                  ? editForm.skills?.includes(skill)
-                  : volunteerData?.skills?.includes(skill);
-                
-                return (
-                  <button
-                    key={skill}
-                    type="button"
-                    onClick={() => isEditing && handleSkillToggle(skill)}
-                    disabled={!isEditing}
-                    className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
-                      hasSkill
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700'
-                    } ${!isEditing && 'cursor-default'} ${isEditing && 'hover:opacity-80'}`}
-                  >
-                    {skill.replace('_', ' ')}
-                  </button>
-                );
-              })}
+            {isEditing ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {skillOptions.map(skill => {
+                  const hasSkill = editForm.skills?.includes(skill);
+                  return (
+                    <button
+                      key={skill}
+                      type="button"
+                      onClick={() => handleSkillToggle(skill)}
+                      className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                        hasSkill ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
+                      } hover:opacity-80`}
+                    >
+                      {skill.replace('_', ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(volunteerData?.skills || []).length > 0 ? (
+                  (volunteerData.skills || []).map((s) => (
+                    <span key={s} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
+                      {s.replace('_', ' ')}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-500">No skills listed</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Zap className="w-4 h-4 inline mr-1" />
+                Experience Level
+              </label>
+              {isEditing ? (
+                <select
+                  name="experience"
+                  value={editForm.experience || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                >
+                  <option value="">Select experience level</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                </select>
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.experience ? volunteerData.experience.charAt(0).toUpperCase() + volunteerData.experience.slice(1) : '—'}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-1" />
+                Availability
+              </label>
+              {isEditing ? (
+                <select
+                  name="availability"
+                  value={editForm.availability || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                >
+                  <option value="">Select availability</option>
+                  <option value="weekdays">Weekdays Only</option>
+                  <option value="weekends">Weekends Only</option>
+                  <option value="anytime">Anytime</option>
+                  <option value="evenings">Evenings Only</option>
+                  <option value="weekday_evenings">Weekday Evenings</option>
+                </select>
+              ) : (
+                <div className="w-full px-3 sm:px-4 py-2 rounded-lg bg-gray-50 text-sm sm:text-base text-gray-900">
+                  {volunteerData?.availability ? volunteerData.availability.replace('_', ' ').charAt(0).toUpperCase() + volunteerData.availability.replace('_', ' ').slice(1) : '—'}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="pt-4 sm:pt-6 border-t">
-            <h3 className="font-semibold text-gray-900 mb-4 text-base sm:text-lg">Account Information</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-gray-600">Volunteer ID:</span>
-                <span className="font-mono text-gray-900 break-all">{volunteerId}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-gray-600">Member Since:</span>
-                <span className="text-gray-900">
-                  {volunteerData?.registered_at 
-                    ? new Date(volunteerData.registered_at).toLocaleDateString()
-                    : 'N/A'
-                  }
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-gray-600">Account Status:</span>
-                <span className="text-green-600 font-medium">Active</span>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
 
-      {/* Telegram Integration */}
+{/* Telegram Integration */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex flex-col sm:flex-row items-start gap-3">
         <MessageCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
@@ -510,232 +877,130 @@ const VolunteerPage = () => {
   const { user, setUser } = useUserStore();
   const loc = useLocation();
   
-  const [activeTab, setActiveTab] = useState(() => loc?.state?.openTab || 'signup');
-  const [submitStatus, setSubmitStatus] = useState(null);
-  const [volunteerId, setVolunteerId] = useState(null);
+  const [activeTab, setActiveTab] = useState(() => {
+    if (loc?.state?.openTab) return loc.state.openTab;
+    return 'dashboard';
+  });
+  const [volunteerId, setVolunteerId] = useState(() => localStorage.getItem('volunteerId'));
   const [volunteerData, setVolunteerData] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  /* -------- LOCATION STATE -------- */
-  const [askLocation, setAskLocation] = useState(false);
-  const [manualLocation, setManualLocation] = useState('');
+  useEffect(() => {
+    // load volunteer profile from nested user.volunteer field or localStorage
+    const loadLocal = () => {
+      try {
+        // First, try to get volunteer data from the signed-in user's nested volunteer field
+        const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+        if (currentUser && currentUser.volunteer) {
+          console.log('Loaded volunteer from user.volunteer:', currentUser.volunteer);
+          return currentUser.volunteer;
+        }
 
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    skills: [],
-    location: null,
-    available: true
-  });
+        // Fallback: check volunteers_list
+        const volunteers = JSON.parse(localStorage.getItem('volunteers_list') || '[]');
+        const found = volunteers.find(v => v.id === volunteerId || v.volunteer_id === volunteerId || v.user_id === volunteerId);
+        if (found) return found;
+
+        // Fallback: check crisisnet_users list
+        const users = JSON.parse(localStorage.getItem('crisisnet_users') || '[]');
+        const u = users.find(x => x.id === volunteerId || x.volunteer_id === volunteerId || x.user_id === volunteerId);
+        if (u && u.volunteer) return u.volunteer;
+      } catch (e) {
+        console.warn('Failed to parse local volunteer data', e);
+      }
+      return null;
+    };
+
+    const fetchRemote = async () => {
+      try {
+        const API_BASE = 'http://localhost:8000';
+        const res = await fetch(`${API_BASE}/api/resource/volunteers/${volunteerId}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data || null;
+      } catch (e) {
+        console.error('Failed to fetch remote volunteer data:', e);
+        return null;
+      }
+    };
+
+    (async () => {
+      if (!volunteerId) {
+        // Try to get volunteerId from user.volunteer.id
+        try {
+          const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+          if (currentUser && currentUser.volunteer && currentUser.volunteer.id) {
+            setVolunteerId(currentUser.volunteer.id);
+            setVolunteerData(currentUser.volunteer);
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to extract volunteerId from user', e);
+        }
+      }
+
+      if (!volunteerId || volunteerData) return;
+      
+      const local = loadLocal();
+      if (local) {
+        setVolunteerData(local);
+        return;
+      }
+
+      const remote = await fetchRemote();
+      if (remote) setVolunteerData(remote);
+    })();
+  }, [volunteerId]);
 
   const skillOptions = [
     'first_aid', 'medical', 'rescue', 'swimming', 'firefighting',
     'search_and_rescue', 'logistics', 'communication', 'driver'
   ];
 
-  /* ================= LOCATION FLOW ================= */
-  useEffect(() => {
-    if (!formData.location && activeTab === 'signup') {
-      setAskLocation(true);
-    }
-  }, [activeTab]);
 
-  const handleAllowLocation = async () => {
-    const loc = await getBrowserLocation();
-    const finalLocation = {
-      lat: loc.lat,
-      lon: loc.lon,
-      manualLocation: null,
-      source: loc.source
-    };
-    setFormData((prev) => ({ ...prev, location: finalLocation }));
-    setAskLocation(false);
-  };
 
-  const handleManualLocationSave = () => {
-    if (!manualLocation.trim()) return;
-    const finalLocation = {
-      lat: null,
-      lon: null,
-      manualLocation,
-      source: 'manual'
-    };
-    setFormData((prev) => ({ ...prev, location: finalLocation }));
-    setAskLocation(false);
-  };
 
-  /* ================= FORM HANDLERS ================= */
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
 
-  const handleSkillToggle = (skill) => {
-    setFormData((prev) => {
-      const skills = prev.skills.includes(skill)
-        ? prev.skills.filter((s) => s !== skill)
-        : [...prev.skills, skill];
-      return { ...prev, skills };
-    });
-  };
 
-  /* ================= SUBMIT ================= */
-  const handleSubmit = (e) => {
-    e.preventDefault();
 
-    if (!formData.name || formData.skills.length === 0 || !formData.location) {
-      setSubmitStatus({ type: 'error', message: 'Please complete all required fields' });
-      return;
-    }
 
-    const newVolunteerId = `VOL_${Date.now()}`;
 
-    const newVolunteer = {
-      id: newVolunteerId,
-      volunteer_id: newVolunteerId,
-      name: formData.name,
-      phone: formData.phone || 'Not provided',
-      skills: formData.skills,
-      location: formData.location,
-      available: formData.available,
-      role: 'volunteer',
-      registered_at: new Date().toISOString()
-    };
 
-    const users = JSON.parse(localStorage.getItem('crisisnet_users') || '[]');
-    users.push(newVolunteer);
-    localStorage.setItem('crisisnet_users', JSON.stringify(users));
-
-    const volunteers = JSON.parse(localStorage.getItem('volunteers_list') || '[]');
-    volunteers.push(newVolunteer);
-    localStorage.setItem('volunteers_list', JSON.stringify(volunteers));
-
-    setVolunteerId(newVolunteerId);
-    setVolunteerData(newVolunteer);
-    localStorage.setItem('volunteerId', newVolunteerId);
-    
-    setSubmitStatus({
-      type: 'success',
-      message: `Registered successfully! Volunteer ID: ${newVolunteerId}`
-    });
-
-    setTimeout(() => setActiveTab('dashboard'), 1500);
-  };
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* LOCATION MODAL */}
-      {askLocation && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-lg sm:text-xl font-bold mb-2 text-gray-900">Share your location</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              We use your location to assign nearby crisis tasks.
-            </p>
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
 
+
+      {/* HEADER - match Citizen style */}
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div className="w-full px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="font-bold text-xl tracking-tight flex items-center gap-2">CrisisNet</Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-slate-300 hidden sm:block">{volunteerData?.name || user?.name || 'Volunteer'}</span>
             <button
-              onClick={handleAllowLocation}
-              className="w-full mb-3 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base"
+              onClick={() => navigate('/citizen')}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
             >
-              Allow GPS Location
+              Citizen Dashboard
             </button>
-
-            <div className="text-center text-sm text-gray-500 mb-2">or</div>
-
-            <input
-              value={manualLocation}
-              onChange={(e) => setManualLocation(e.target.value)}
-              placeholder="Enter area manually"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg mb-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
-
             <button
-              onClick={handleManualLocationSave}
-              className="w-full border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 transition font-medium text-sm sm:text-base"
+              onClick={() => {
+                localStorage.clear();
+                navigate('/');
+              }}
+              className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition"
             >
-              Save Manual Location
+              Sign Out
             </button>
           </div>
-        </div>
-      )}
-
-      {/* HEADER */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex justify-between items-center">
-            <Link to="/" className="font-bold text-lg sm:text-xl text-gray-900 hover:text-blue-600 transition">
-              CrisisNet
-            </Link>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden sm:flex items-center gap-4">
-              {volunteerId && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-gray-700">ID: {volunteerId.slice(0, 12)}...</span>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  localStorage.clear();
-                  navigate('/');
-                }}
-                className="text-sm border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium"
-              >
-                Sign Out
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2 hover:bg-gray-100 rounded-lg transition"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="sm:hidden mt-3 pt-3 border-t space-y-2">
-              {volunteerId && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-gray-700">ID: {volunteerId}</span>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  localStorage.clear();
-                  navigate('/');
-                }}
-                className="w-full text-left px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
         </div>
       </header>
 
       {/* CONTENT */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <div className="w-[96%] mx-auto py-8">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 sm:mb-8">
-          <button 
-            onClick={() => setActiveTab('signup')} 
-            className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
-              activeTab === 'signup' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-            }`}
-          >
-            Sign Up
-          </button>
           <button 
             onClick={() => setActiveTab('dashboard')} 
             className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
@@ -756,108 +1021,17 @@ const VolunteerPage = () => {
           >
             My Tasks
           </button>
+          <button 
+            onClick={() => setActiveTab('opportunities')} 
+            className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
+              activeTab === 'opportunities' 
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            Opportunities
+          </button>
         </div>
-
-        {/* SIGNUP TAB */}
-        {activeTab === 'signup' && (
-          <div className="max-w-2xl mx-auto">
-            <form className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg border border-gray-100">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Volunteer Registration</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="w-4 h-4 inline mr-1" />
-                    Full Name *
-                  </label>
-                  <input 
-                    name="name" 
-                    placeholder="Enter your full name" 
-                    onChange={handleInputChange} 
-                    value={formData.name}
-                    required
-                    className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Phone className="w-4 h-4 inline mr-1" />
-                    Phone Number
-                  </label>
-                  <input 
-                    name="phone" 
-                    placeholder="Enter your phone number" 
-                    onChange={handleInputChange} 
-                    value={formData.phone}
-                    className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    <Award className="w-4 h-4 inline mr-1" />
-                    Select Your Skills *
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {skillOptions.map((s) => (
-                      <button
-                        type="button"
-                        key={s}
-                        onClick={() => handleSkillToggle(s)}
-                        className={`px-3 py-2 border-2 rounded-lg font-medium transition text-xs sm:text-sm ${
-                          formData.skills.includes(s) 
-                            ? 'bg-blue-600 text-white border-blue-600' 
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                        }`}
-                      >
-                        {s.replace('_', ' ')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Location
-                  </label>
-                  <div className="px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm sm:text-base">
-                    {formData.location?.manualLocation || 
-                     (formData.location?.lat && formData.location?.lon 
-                       ? `GPS: ${formData.location.lat.toFixed(4)}, ${formData.location.lon.toFixed(4)}` 
-                       : 'Not set')}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAskLocation(true)}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-800 transition"
-                  >
-                    Update location →
-                  </button>
-                </div>
-
-                <button 
-                  onClick={handleSubmit} 
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 sm:py-3.5 rounded-lg font-semibold hover:from-orange-700 hover:to-red-700 transition shadow-lg text-sm sm:text-base mt-6"
-                >
-                  Register as Volunteer
-                </button>
-
-                {submitStatus && (
-                  <div className={`p-4 rounded-lg text-sm sm:text-base ${
-                    submitStatus.type === 'success' 
-                      ? 'bg-green-50 text-green-700 border border-green-200' 
-                      : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}>
-                    {submitStatus.message}
-                  </div>
-                )}
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && (
@@ -872,12 +1046,12 @@ const VolunteerPage = () => {
               <div className="text-center py-12 bg-white rounded-xl shadow-lg">
                 <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Profile Yet</h3>
-                <p className="text-gray-500 mb-4">Please register first to view your dashboard</p>
+                <p className="text-gray-500 mb-4">No volunteer profile found.</p>
                 <button
-                  onClick={() => setActiveTab('signup')}
+                  onClick={() => navigate('/signup-volunteer')}
                   className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  Go to Registration
+                  Sign Up as Volunteer
                 </button>
               </div>
             )}
@@ -893,16 +1067,21 @@ const VolunteerPage = () => {
               <div className="text-center py-12">
                 <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Tasks Available</h3>
-                <p className="text-gray-500 mb-4">Please register first to view assigned tasks</p>
+                <p className="text-gray-500 mb-4">No volunteer profile found.</p>
                 <button
-                  onClick={() => setActiveTab('signup')}
+                  onClick={() => navigate('/signup-volunteer')}
                   className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  Go to Registration
+                  Sign Up as Volunteer
                 </button>
               </div>
             )}
           </div>
+        )}
+
+        {/* OPPORTUNITIES TAB */}
+        {activeTab === 'opportunities' && (
+          <VolunteerOpportunities volunteerId={volunteerId} />
         )}
       </div>
     </div>
