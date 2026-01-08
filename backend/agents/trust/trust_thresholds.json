@@ -1,29 +1,97 @@
 {
   "verification_levels": {
-    "auto_verify": 0.65,
-    "needs_review": 0.45,
-    "reject": 0.30
+    "auto_verify": 0.75,
+    "needs_review": 0.60,
+    "reject": 0.40
   },
   "scoring_weights": {
     "cross_verification": 0.40,
-    "source_reputation": 0.25,
-    "duplicate_check": 0.20,
-    "rate_limit_penalty": 0.15
+    "source_reputation": 0.35,
+    "duplicate_check": 0.15,
+    "rate_limit_penalty": 0.10
   },
-  "rate_limits": {
-    "max_reports_per_hour": 5,
-    "max_reports_per_day": 15,
-    "cooldown_minutes": 10
+  "crisis_severity_adjustments": {
+    "CRITICAL": {
+      "types": ["earthquake", "fire", "explosion", "terrorist", "nuclear"],
+      "threshold_adjustment": -0.15,
+      "description": "Life-threatening emergencies - lower thresholds for faster response"
+    },
+    "HIGH": {
+      "types": ["flood", "landslide", "tsunami", "cyclone", "hurricane"],
+      "threshold_adjustment": -0.10,
+      "description": "Major disasters - slightly lower thresholds"
+    },
+    "MEDIUM": {
+      "types": ["storm", "accident", "medical", "infrastructure"],
+      "threshold_adjustment": 0.0,
+      "description": "Standard emergencies - normal thresholds"
+    },
+    "LOW": {
+      "types": ["traffic", "power_outage", "water_supply", "other"],
+      "threshold_adjustment": 0.10,
+      "description": "Minor incidents - higher thresholds for accuracy"
+    }
+  },
+  "historical_settings": {
+    "decay_factor": 0.95,
+    "window_days": 30,
+    "min_samples_required": 5,
+    "boost_range": {
+      "min": -0.10,
+      "max": 0.10
+    }
+  },
+  "rate_limiting": {
+    "max_reports_per_hour": 10,
+    "max_reports_per_day": 50,
+    "block_threshold": 20,
+    "block_duration_minutes": 60
+  },
+  "duplicate_detection": {
+    "time_window_minutes": 30,
+    "location_radius_km": 5,
+    "similarity_threshold": 0.85
   },
   "cross_verification": {
-    "min_sources": 2,
-    "time_window_minutes": 30,
-    "location_radius_km": 5
+    "min_sources_for_high_confidence": 3,
+    "min_sources_for_medium_confidence": 2,
+    "time_window_minutes": 60,
+    "location_radius_km": 10
   },
-  "reputation": {
-    "new_user_score": 0.5,
+  "reputation_settings": {
+    "initial_score": 0.5,
     "max_score": 1.0,
-    "min_score": 0.1,
+    "min_score": 0.0,
+    "accurate_report_boost": 0.05,
+    "false_report_penalty": 0.10,
     "decay_factor": 0.95
+  },
+  "bonus_signals": {
+    "has_image": 0.05,
+    "has_location": 0.03,
+    "sentiment_urgent": 0.02,
+    "verified_source": 0.04
+  },
+  "agent_performance_tracking": {
+    "tracking_enabled": true,
+    "window_days": 7,
+    "min_tasks_for_modifier": 10,
+    "success_rate_thresholds": {
+      "excellent": 0.90,
+      "good": 0.70,
+      "acceptable": 0.50,
+      "poor": 0.30
+    }
+  },
+  "audit_settings": {
+    "log_all_decisions": true,
+    "log_cross_verifications": true,
+    "log_performance": true,
+    "retention_days": 90
+  },
+  "notes": {
+    "version": "2.0",
+    "last_updated": "2025-01-09",
+    "description": "Round 2 enhanced configuration with historical tracking and dynamic thresholds"
   }
 }
