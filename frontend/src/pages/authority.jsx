@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { MapPin } from 'lucide-react';
+import { subscribe } from "../services/socket";
+
 
 import AgentStatusPanel from '../components/AgentStatusPanel';
 import { 
@@ -15,6 +17,45 @@ import {
   sanitizeText,
   getUserTypeBadge
 } from '../utils/formatter';
+
+useEffect(() => {
+  try {
+    const u = JSON.parse(localStorage.getItem('crisisnet_current_user') || localStorage.getItem('user') || '{}');
+    if (u && (u.name || u.username)) setCurrentUserName(u.name || u.username);
+  } catch (e) {}
+}, []);
+
+/* ================= REAL-TIME ALERTS (WEBSOCKET) ================= */
+useEffect(() => {
+  const unsubscribe = subscribe((event) => {
+    if (!event || event.event !== "NEW_CRISIS") return;
+
+    const p = event.payload;
+
+    const liveAlert = {
+      alert_id: `ws-${Date.now()}`,
+      crisis_type: p.type,
+      message: p.message || "New crisis detected",
+      trust_score: p.trust_score ?? 0.85,
+      decision: "REVIEW",
+      timestamp: p.timestamp || new Date().toISOString(),
+      location: p.location,
+      lat: p.lat,
+      lon: p.lon,
+      cross_verification: p.cross_verification,
+      reputation: p.reputation,
+      user_id: p.user_id || "system"
+    };
+
+    setAlerts(prev => {
+      if (prev.some(a => a.alert_id === liveAlert.alert_id)) return prev;
+      return [liveAlert, ...prev];
+    });
+  });
+
+  return () => unsubscribe();
+}, []);
+
 
 const LocationRenderer = ({ alert }) => {
   const [displayLocation, setDisplayLocation] = useState(() => {
