@@ -38,8 +38,7 @@ def init_db():
     Initialize database - create all tables
     Call this on app startup
     """
-    from .models import User, Crisis, Task, PerformanceMetric
-    
+    from .models import User, Crisis, Task, PerformanceMetric, SocialSignal  
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created successfully")
 
