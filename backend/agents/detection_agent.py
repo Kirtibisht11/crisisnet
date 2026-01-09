@@ -36,7 +36,7 @@ def _load_alerts_log():
     if not os.path.exists(path):
         return {"alerts": [], "total_count": 0, "statistics": {}}
     try:
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
         print(f"[Detection] Warning: Could not load alerts log: {e}")
@@ -167,4 +167,3 @@ if __name__ == "__main__":
     print("[Detection] Running manually...")
     result = run_detection_pipeline()
     print("[Detection] Result:", result)
-

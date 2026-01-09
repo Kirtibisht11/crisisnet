@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
 import { connectTelegram } from "../services/telegramUtils";
 import {
-  MapPin, Clock, Bell, CheckCircle, Navigation
+  MapPin, Clock, Bell, CheckCircle, Navigation, UserPlus
 } from 'lucide-react';
 
 import EmergencyPanel from '../components/EmergencyPanel';
@@ -14,13 +14,58 @@ import CrisisCompanion from '../components/crisisCompanion';
 /* ------------------ Crisis Styling ------------------ */
 const getCrisisStyle = (type) => {
   const styles = {
-    flood: { label: 'Flood Alert', emoji: '🌊', color: 'border-blue-400' },
-    fire: { label: 'Fire Alert', emoji: '🔥', color: 'border-orange-400' },
-    medical: { label: 'Medical Emergency', emoji: '🏥', color: 'border-red-400' },
-    earthquake: { label: 'Earthquake', emoji: '🏚️', color: 'border-amber-400' },
-    landslide: { label: 'Landslide', emoji: '⛰️', color: 'border-stone-400' }
+    flood: { label: 'Flood Alert', color: 'border-blue-400' },
+    fire: { label: 'Fire Alert', color: 'border-orange-400' },
+    medical: { label: 'Medical Emergency', color: 'border-red-400' },
+    earthquake: { label: 'Earthquake', color: 'border-amber-400' },
+    landslide: { label: 'Landslide', color: 'border-stone-400' }
   };
-  return styles[type?.toLowerCase()] || { label: 'Alert', emoji: '⚠️', color: 'border-slate-300' };
+  return styles[type?.toLowerCase()] || { label: 'Alert', color: 'border-slate-300' };
+};
+
+/* ------------------ Location Renderer ------------------ */
+const LocationRenderer = ({ alert }) => {
+  const [displayLocation, setDisplayLocation] = useState(() => {
+    const loc = alert.location;
+    const isUnknown = !loc || ['unknown', 'unknown location', 'location not available'].includes(loc?.toLowerCase()) || loc?.trim() === '';
+    // Check if location looks like "12.34, 56.78" (raw coordinates)
+    const isCoordinates = loc && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(loc.trim());
+
+    if (!isUnknown && !isCoordinates) {
+      return loc;
+    }
+    if (alert.lat != null && alert.lon != null) {
+      return null;
+    }
+    return 'Location not available';
+  });
+
+  useEffect(() => {
+    const loc = alert.location;
+    const isUnknown = !loc || ['unknown', 'unknown location', 'location not specified', 'location not available'].includes(loc?.toLowerCase()) || loc?.trim() === '';
+    const isCoordinates = loc && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(loc?.trim());
+
+    if (!isUnknown && !isCoordinates) {
+      setDisplayLocation(loc);
+    } else if (alert.lat != null && alert.lon != null) {
+      // Show coordinates immediately when location is unknown
+      setDisplayLocation(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
+    }
+  }, [alert.location, alert.lat, alert.lon]);
+
+  if (displayLocation === null) {
+    if (alert.lat != null && alert.lon != null) {
+      return (
+        <span>
+          {Number(alert.lat).toFixed(4)}, {Number(alert.lon).toFixed(4)}
+          <span className="text-slate-400 italic text-xs ml-2">(Resolving...)</span>
+        </span>
+      );
+    }
+    return <span className="text-slate-400 italic text-xs">Resolving location...</span>;
+  }
+
+  return <span>{displayLocation}</span>;
 };
 
 /* ------------------ Alert Card ------------------ */
@@ -32,7 +77,6 @@ const AlertCard = ({ alert }) => {
     <div className={`p-6 rounded-xl border-l-4 ${style.color} bg-white mb-6`}>
       <div className="flex justify-between">
         <div className="flex gap-3">
-          <span className="text-4xl">{style.emoji}</span>
           <div>
             <h2 className="font-bold uppercase">Active Crisis</h2>
             <p className="text-lg">{style.label}</p>
@@ -53,7 +97,7 @@ const AlertCard = ({ alert }) => {
 
       <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
         <MapPin size={14} />
-        {alert.location || 'Nearby area'}
+        <LocationRenderer alert={alert} />
       </div>
     </div>
   );
@@ -158,6 +202,21 @@ export default function Citizen() {
           <Link to="/" className="font-bold text-xl tracking-tight flex items-center gap-2">CrisisNet</Link>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-slate-300 hidden sm:block">{user?.name || "Citizen"}</span>
+            {(user?.role === 'volunteer' || user?.volunteer || localStorage.getItem('volunteerId')) ? (
+              <button 
+                onClick={() => navigate('/volunteer')}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+              >
+                <UserPlus size={16} /> Volunteer Dashboard
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/signup-volunteer')}
+                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+              >
+                <UserPlus size={16} /> Become Volunteer
+              </button>
+            )}
             <button onClick={logout} className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition">
               Sign Out
             </button>
@@ -170,7 +229,7 @@ export default function Citizen() {
         {/* LOCATION PROMPT */}
         {!location && (
           <div className="mb-6 bg-yellow-50 border border-yellow-300 p-4 rounded">
-            <p className="font-medium mb-2">📍 Share your location for accurate alerts</p>
+            <p className="font-medium mb-2">Share your location for accurate alerts</p>
             <input
               value={manualLocation}
               onChange={(e) => setManualLocation(e.target.value)}
@@ -206,7 +265,9 @@ export default function Citizen() {
             {loading ? (
               <p>Loading alerts…</p>
             ) : alerts.length ? (
-              <AlertCard alert={alerts[0]} />
+              alerts.map((alert) => (
+                <AlertCard key={alert.alert_id} alert={alert} />
+              ))
             ) : (
               <div className="bg-green-50 border border-green-300 p-6 rounded text-center">
                 <CheckCircle className="mx-auto mb-2 text-green-600" />

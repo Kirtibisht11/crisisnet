@@ -18,8 +18,7 @@ const ngoApi = {
           trust: 0.87,
           description: "Severe flooding affecting 200+ families. Immediate evacuation and shelter needed. Water levels rising rapidly.",
           sources: 15,
-          timestamp: "2 hours ago",
-          affectedCount: 200
+          timestamp: "2 hours ago"
         },
         {
           id: "CR-203",
@@ -30,8 +29,7 @@ const ngoApi = {
           trust: 0.72,
           description: "Factory fire contained but workers need medical attention and temporary support.",
           sources: 8,
-          timestamp: "4 hours ago",
-          affectedCount: 45
+          timestamp: "4 hours ago"
         },
         {
           id: "CR-204",
@@ -42,8 +40,7 @@ const ngoApi = {
           trust: 0.91,
           description: "Disease outbreak reported. Mobile medical unit urgently required.",
           sources: 12,
-          timestamp: "30 minutes ago",
-          affectedCount: 80
+          timestamp: "30 minutes ago"
         },
         {
           id: "CR-205",
@@ -54,8 +51,7 @@ const ngoApi = {
           trust: 0.68,
           description: "Minor landslide blocking road. 20 families temporarily displaced.",
           sources: 5,
-          timestamp: "6 hours ago",
-          affectedCount: 20
+          timestamp: "6 hours ago"
         }
       ]
     };
@@ -94,12 +90,40 @@ const NGO = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [crisesData, tasksData] = await Promise.all([
-        ngoApi.getActiveCrises(),
-        ngoApi.getAcceptedTasks()
-      ]);
-      setActiveCrises(crisesData.crises);
-      setAcceptedTasks(tasksData.tasks);
+      const res = await fetch('http://localhost:8000/api/alerts');
+      const data = await res.json();
+      const alerts = data.alerts || [];
+      
+      // Filter verified alerts
+      const verified = alerts.filter(a => a.decision === 'VERIFIED');
+
+      // Get accepted IDs from local storage
+      const acceptedIds = JSON.parse(localStorage.getItem('ngo_accepted_ids') || '[]');
+
+      // Map to view model
+      const mappedCrises = verified.map(a => ({
+        id: a.alert_id,
+        type: a.crisis_type.charAt(0).toUpperCase() + a.crisis_type.slice(1),
+        location: a.location || (a.lat ? `${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}` : 'Unknown Location'),
+        severity: calculateSeverity(a.trust_score),
+        resources: getRequiredResources(a.crisis_type),
+        trust: a.trust_score,
+        description: a.message,
+        sources: a.cross_verification?.sources || 1,
+        timestamp: formatTimeAgo(a.timestamp),
+        affectedCount: 'Unknown',
+        rawTimestamp: a.timestamp
+      })).sort((a, b) => new Date(b.rawTimestamp) - new Date(a.rawTimestamp));
+
+      const active = mappedCrises.filter(c => !acceptedIds.includes(c.id));
+      const accepted = mappedCrises.filter(c => acceptedIds.includes(c.id)).map(c => ({
+        ...c,
+        status: 'active',
+        acceptedAt: new Date().toISOString().split('T')[0]
+      }));
+
+      setActiveCrises(active);
+      setAcceptedTasks(accepted);
       setLastRefresh(new Date());
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -110,12 +134,18 @@ const NGO = () => {
 
   const handleAcceptCrisis = async (crisis) => {
     try {
-      await ngoApi.acceptCrisis(crisis.id);
+      // Persist to localStorage
+      const acceptedIds = JSON.parse(localStorage.getItem('ngo_accepted_ids') || '[]');
+      if (!acceptedIds.includes(crisis.id)) {
+        acceptedIds.push(crisis.id);
+        localStorage.setItem('ngo_accepted_ids', JSON.stringify(acceptedIds));
+      }
+
       const newTask = {
         id: crisis.id,
         type: crisis.type,
         location: crisis.location,
-        status: 'active',
+        status: 'Pending',
         acceptedAt: new Date().toISOString().split('T')[0]
       };
       setAcceptedTasks([newTask, ...acceptedTasks]);
@@ -131,9 +161,11 @@ const NGO = () => {
       'Flood': Droplets,
       'Fire': Flame,
       'Medical Emergency': Activity,
+      'Medical': Activity,
       'Landslide': Mountain
     };
-    const Icon = icons[type] || AlertCircle;
+    const key = Object.keys(icons).find(k => type?.includes(k)) || 'Other';
+    const Icon = icons[key] || AlertCircle;
     return <Icon className="w-5 h-5" />;
   };
 
@@ -414,23 +446,27 @@ const NGO = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-3 p-4 border-t border-[#E5E7EB]">
-              <button
-                onClick={() => setSelectedCrisis(null)}
-                className="flex-1 px-6 py-3 bg-white border border-[#E5E7EB] text-[15px] font-semibold text-[#6B7280] rounded-lg hover:bg-[#F9FAFB] transition-all flex items-center justify-center gap-2"
-              >
-                <X className="w-5 h-5" />
-                Decline
-              </button>
-              <button
-                onClick={() => handleAcceptCrisis(selectedCrisis)}
-                className="flex-2 px-6 py-3 bg-[#EA580C] text-white text-[15px] font-semibold rounded-lg hover:bg-[#DC2626] transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <CheckCircle className="w-5 h-5" />
-                Accept & Respond
-              </button>
+              
+              <div className="p-6 rounded-xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-700/30">
+                <p className="text-sm text-amber-300 font-medium leading-relaxed">
+                  <strong>Note:</strong> By accepting this crisis, your organization commits to providing the requested resources and support. Please ensure you have the capacity before accepting.
+                </p>
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => setSelectedCrisis(null)}
+                  className="flex-1 px-6 py-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 text-gray-300 font-bold rounded-xl hover:from-gray-700/50 hover:to-gray-800/50 transition-all duration-300 border border-gray-600/30 hover:border-gray-500/40"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleAcceptCrisis(selectedCrisis)}
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:from-blue-600 hover:to-indigo-600 shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
+                >
+                  Accept Responsibility
+                </button>
+              </div>
             </div>
           </div>
         </div>

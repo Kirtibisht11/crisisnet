@@ -17,12 +17,13 @@ import NGO from "./pages/ngo";
 import AuthorityDashboard from "./pages/authority";
 import Login from "./pages/Login";
 import Signup from "./pages/signup";
+import SignupVolunteer from "./pages/signup_volunteer";
 import VolunteerPage from "./pages/volunteer";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import ResourceDashboard from "./pages/resource_dashboard";
-import Resources from "./pages/Resources";
+import SignupAuthority from "./pages/SignupAuthority";
 export default function App() {
   return (
     <BrowserRouter>
@@ -35,19 +36,18 @@ export default function App() {
 
         {/* NGO Dashboard */}
         <Route path="/ngo" element={<NGO />} />
-
+      <Route path="/signup_authority" element={<SignupAuthority />} />
         {/* Authority Dashboard */}
         <Route path="/authority" element={<AuthorityDashboard />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup-volunteer" element={<SignupVolunteer />} />
  
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/resource" element={<ResourceDashboard />} />
-       <Route path="/resources" element={<Resources />} />
-
       </Routes>
     </BrowserRouter>
   );

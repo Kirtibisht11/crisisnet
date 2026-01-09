@@ -3,6 +3,11 @@ from typing import Optional
 import json
 import os
 
+import sys
+# Add project root to path to allow imports from backend
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from backend.agents.detection_agent import run_detection_pipeline
+
 router = APIRouter(prefix="/api", tags=["Alerts"])
 
 
@@ -23,6 +28,14 @@ def load_alerts_log():
         return {"alerts": [], "total_count": 0, "statistics": {}}
     except Exception as e:
         raise RuntimeError(f"Failed reading alerts_log.json: {e}")
+
+
+def save_alerts_log(data):
+    path = os.path.join(_project_root(), "data", "alerts_log.json")
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, path)
 
 
 def load_mock_scenarios():
@@ -83,6 +96,30 @@ async def get_alert_by_id(alert_id: str):
     return {"success": True, "alert": alert}
 
 
+@router.put("/alerts/{alert_id}/decision")
+async def update_alert_decision(alert_id: str, payload: dict):
+    data = load_alerts_log()
+    alerts = data.get("alerts", [])
+    
+    alert = next((a for a in alerts if a.get("alert_id") == alert_id), None)
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    
+    if "decision" in payload:
+        alert["decision"] = payload["decision"]
+    if "approved_by" in payload:
+        alert["approved_by"] = payload["approved_by"]
+    if "approved_at" in payload:
+        alert["approved_at"] = payload["approved_at"]
+    if "rejected_by" in payload:
+        alert["rejected_by"] = payload["rejected_by"]
+    if "rejected_at" in payload:
+        alert["rejected_at"] = payload["rejected_at"]
+        
+    save_alerts_log(data)
+    return {"success": True, "alert": alert}
+
+
 @router.get("/alerts/stats")
 async def get_alert_statistics():
     data = load_alerts_log()
@@ -92,6 +129,15 @@ async def get_alert_statistics():
         "total_count": data.get("total_count", 0),
         "last_updated": data.get("last_updated"),
     }
+
+
+@router.post("/run-pipeline")
+async def trigger_pipeline():
+    try:
+        result = run_detection_pipeline()
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/mock-scenarios")
