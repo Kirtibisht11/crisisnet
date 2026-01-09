@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, func
 from datetime import datetime, timedelta
 import bcrypt
 from typing import List, Optional
-from .models import User, Crisis, Task, PerformanceMetric
+from .models import User, Crisis, Task, PerformanceMetric, SocialSignal
 
 
 # ============= USER OPERATIONS =============
@@ -369,4 +369,157 @@ def get_system_metrics(
         "avg_response_time_minutes": float(avg_response) if avg_response else 0,
         "period_start": start_date.isoformat(),
         "period_end": end_date.isoformat()
+    }
+
+# ============= SOCIAL SIGNAL OPERATIONS =============
+
+def create_social_signal(
+    db: Session,
+    source: str,
+    external_id: str,
+    text: str,
+    timestamp: datetime,
+    author: Optional[str] = None,
+    author_verified: bool = False,
+    location: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    has_image: bool = False,
+    image_url: Optional[str] = None,
+    media_urls: Optional[list] = None,
+    engagement_score: float = 0.0,
+    follower_count: int = 0,
+    raw_data: Optional[dict] = None
+) -> SocialSignal:
+    """Create new social media signal"""
+    
+    # Check if already exists
+    existing = db.query(SocialSignal).filter(
+        SocialSignal.external_id == external_id
+    ).first()
+    
+    if existing:
+        return existing
+    
+    signal = SocialSignal(
+        source=source,
+        external_id=external_id,
+        text=text,
+        author=author,
+        author_verified=author_verified,
+        location=location,
+        latitude=latitude,
+        longitude=longitude,
+        has_image=has_image,
+        image_url=image_url,
+        media_urls=media_urls,
+        engagement_score=engagement_score,
+        follower_count=follower_count,
+        timestamp=timestamp,
+        raw_data=raw_data,
+        processed=False
+    )
+    
+    db.add(signal)
+    db.commit()
+    db.refresh(signal)
+    return signal
+
+
+def get_unprocessed_signals(
+    db: Session,
+    limit: int = 50
+) -> List[SocialSignal]:
+    """Get signals that haven't been processed yet"""
+    return db.query(SocialSignal).filter(
+        SocialSignal.processed == False
+    ).order_by(SocialSignal.timestamp.desc()).limit(limit).all()
+
+
+def mark_signal_processed(
+    db: Session,
+    signal_id: int,
+    detection_result: Optional[dict] = None
+) -> Optional[SocialSignal]:
+    """Mark a signal as processed"""
+    signal = db.query(SocialSignal).filter(SocialSignal.id == signal_id).first()
+    if signal:
+        signal.processed = True
+        signal.processed_at = datetime.utcnow()
+        if detection_result:
+            signal.detection_result = detection_result
+        db.commit()
+        db.refresh(signal)
+        return signal
+    return None
+
+
+def get_signals_by_timerange(
+    db: Session,
+    start_time: datetime,
+    end_time: datetime,
+    source: Optional[str] = None
+) -> List[SocialSignal]:
+    """Get signals within a time range"""
+    query = db.query(SocialSignal).filter(
+        SocialSignal.timestamp >= start_time,
+        SocialSignal.timestamp <= end_time
+    )
+    
+    if source:
+        query = query.filter(SocialSignal.source == source)
+    
+    return query.order_by(SocialSignal.timestamp.desc()).all()
+
+
+def get_signals_by_location(
+    db: Session,
+    latitude: float,
+    longitude: float,
+    radius_km: float = 50.0
+) -> List[SocialSignal]:
+    """Get signals near a location (simplified - use PostGIS for production)"""
+    from math import radians, sin, cos, sqrt, atan2
+    
+    def haversine_distance(lat1, lon1, lat2, lon2):
+        R = 6371  # Earth radius in km
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return R * c
+    
+    all_signals = db.query(SocialSignal).filter(
+        SocialSignal.latitude.isnot(None),
+        SocialSignal.longitude.isnot(None)
+    ).all()
+    
+    nearby = [
+        s for s in all_signals
+        if haversine_distance(latitude, longitude, s.latitude, s.longitude) <= radius_km
+    ]
+    
+    return nearby
+
+
+def get_social_signal_stats(db: Session) -> dict:
+    """Get statistics about social signals"""
+    from sqlalchemy import func
+    
+    total = db.query(func.count(SocialSignal.id)).scalar()
+    processed = db.query(func.count(SocialSignal.id)).filter(
+        SocialSignal.processed == True
+    ).scalar()
+    
+    by_source = db.query(
+        SocialSignal.source,
+        func.count(SocialSignal.id)
+    ).group_by(SocialSignal.source).all()
+    
+    return {
+        "total_signals": total or 0,
+        "processed": processed or 0,
+        "pending": (total or 0) - (processed or 0),
+        "by_source": {source: count for source, count in by_source}
     }

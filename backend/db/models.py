@@ -145,3 +145,50 @@ class PerformanceMetric(Base):
     __table_args__ = (
         {'extend_existing': True}
     )
+
+class SocialSignal(Base):
+    """Social Media Signal - Raw data from Twitter/Reddit/Telegram"""
+    __tablename__ = "social_signals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Source information
+    source = Column(String(50), nullable=False)  # 'twitter', 'reddit', 'telegram', 'manual'
+    external_id = Column(String(255), unique=True)  # Tweet ID, Reddit post ID, etc.
+    
+    # Content
+    text = Column(Text, nullable=False)
+    author = Column(String(100))  # Username/handle
+    author_verified = Column(Boolean, default=False)  # Is verified account?
+    
+    # Location
+    location = Column(String(200))
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    # Media
+    has_image = Column(Boolean, default=False)
+    image_url = Column(String(500))
+    media_urls = Column(JSON)  # List of media URLs
+    
+    # Metadata
+    engagement_score = Column(Float, default=0.0)  # Likes + Retweets + Comments
+    follower_count = Column(Integer, default=0)
+    timestamp = Column(DateTime, nullable=False)  # When posted on social media
+    
+    # Processing
+    processed = Column(Boolean, default=False)
+    processed_at = Column(DateTime)
+    detection_result = Column(JSON)  # Store detection agent output
+    
+    # Raw data
+    raw_data = Column(JSON)  # Full API response
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Indexes for fast queries
+    __table_args__ = (
+        {'extend_existing': True}
+    )
