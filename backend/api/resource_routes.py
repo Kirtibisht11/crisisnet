@@ -206,7 +206,8 @@ def create_volunteer_request(payload: dict, token: str = Header(None)):
     # Fetch trust_score from alerts if crisis_id is provided
     trust_score = payload.get('trust_score', 0.5)  # default fallback
     if payload.get('crisis_id'):
-        alerts_log = _read_json(_data_path('alerts_log.json'))
+        alerts_data = _read_json(_data_path('alerts_log.json'))
+        alerts_log = alerts_data.get('alerts', []) if isinstance(alerts_data, dict) else alerts_data
         alert = next((a for a in alerts_log if a.get('alert_id') == payload.get('crisis_id')), None)
         if alert and alert.get('trust_score') is not None:
             trust_score = alert.get('trust_score')
@@ -320,7 +321,8 @@ def get_volunteer_tasks(volunteer_id: str):
             alert_lat = None
             alert_lon = None
             if a.get('crisis_id'):
-                alerts_log = _read_json(_data_path('alerts_log.json'))
+                alerts_data = _read_json(_data_path('alerts_log.json'))
+                alerts_log = alerts_data.get('alerts', []) if isinstance(alerts_data, dict) else alerts_data
                 alert = next((al for al in alerts_log if al.get('alert_id') == a.get('crisis_id')), None)
                 if alert:
                     trust_score = alert.get('trust_score', 0.5)

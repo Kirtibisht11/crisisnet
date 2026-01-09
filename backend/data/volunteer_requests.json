@@ -1,5 +1,46 @@
 [
   {
+    "request_id": "req_20251231195333",
+    "crisis_id": "DET_2fe36c92",
+    "crisis_type": "landslide",
+    "trust_score": 0.417,
+    "location": "Location not available",
+    "lat": 30.2724,
+    "lon": 77.9931,
+    "message": "Road blocked due to landslide after heavy rainfall",
+    "skills_required": [
+      "rescue",
+      "first_aid",
+      "search_and_rescue"
+    ],
+    "volunteers_needed": 6,
+    "fulfilled_count": 0,
+    "status": "OPEN",
+    "created_at": "2025-12-31T19:53:33.171153",
+    "created_by": "u_44bdf70e"
+  },
+  {
+    "request_id": "req_20251231195324",
+    "crisis_id": "DET_a96f4dc2",
+    "crisis_type": "flood",
+    "trust_score": 0.417,
+    "location": "Location not available",
+    "lat": 30.2681,
+    "lon": 77.9895,
+    "message": "Flood water entering ground floor houses, need rescue boats",
+    "skills_required": [
+      "rescue",
+      "swimming",
+      "first_aid",
+      "logistics"
+    ],
+    "volunteers_needed": 6,
+    "fulfilled_count": 0,
+    "status": "OPEN",
+    "created_at": "2025-12-31T19:53:24.989070",
+    "created_by": "u_44bdf70e"
+  },
+  {
     "request_id": "req_20251231160132",
     "crisis_id": "DET_a96f4dc2",
     "crisis_type": "flood",
