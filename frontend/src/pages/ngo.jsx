@@ -3,38 +3,67 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
 import { MapPin, Shield, Users, X, CheckCircle, Clock, AlertCircle, Droplets, Flame, Activity, Mountain, RefreshCw, TrendingUp } from 'lucide-react';
 
-// Helper functions
-const getRequiredResources = (type) => {
-  const map = {
-    'flood': ['Food', 'Shelter', 'Medical', 'Boats'],
-    'fire': ['Medical', 'Shelter', 'Water'],
-    'medical': ['Medical', 'Transport', 'PPE'],
-    'landslide': ['Shelter', 'Excavators', 'Food'],
-    'earthquake': ['Search & Rescue', 'Medical', 'Shelter'],
-    'violence': ['Security', 'Medical']
-  };
-  const key = type?.toLowerCase().split(' ')[0];
-  return map[key] || ['General Aid', 'Volunteers'];
-};
-
-const calculateSeverity = (trust) => {
-  if (trust >= 0.8) return 'HIGH';
-  if (trust >= 0.5) return 'MEDIUM';
-  return 'LOW';
-};
-
-const formatTimeAgo = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
-  
-  if (seconds < 60) return 'Just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+// Mock API with data
+const ngoApi = {
+  getActiveCrises: async () => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return {
+      crises: [
+        {
+          id: "CR-202",
+          type: "Flood",
+          location: "Sector 21, North District",
+          severity: "HIGH",
+          resources: ["Food", "Shelter", "Medical"],
+          trust: 0.87,
+          description: "Severe flooding affecting 200+ families. Immediate evacuation and shelter needed. Water levels rising rapidly.",
+          sources: 15,
+          timestamp: "2 hours ago"
+        },
+        {
+          id: "CR-203",
+          type: "Fire",
+          location: "Industrial Area B",
+          severity: "MEDIUM",
+          resources: ["Medical", "Food"],
+          trust: 0.72,
+          description: "Factory fire contained but workers need medical attention and temporary support.",
+          sources: 8,
+          timestamp: "4 hours ago"
+        },
+        {
+          id: "CR-204",
+          type: "Medical Emergency",
+          location: "Rural Village - Sector 45",
+          severity: "HIGH",
+          resources: ["Medical", "Transport"],
+          trust: 0.91,
+          description: "Disease outbreak reported. Mobile medical unit urgently required.",
+          sources: 12,
+          timestamp: "30 minutes ago"
+        },
+        {
+          id: "CR-205",
+          type: "Landslide",
+          location: "Mountain Road, Highway 7",
+          severity: "LOW",
+          resources: ["Food", "Shelter"],
+          trust: 0.68,
+          description: "Minor landslide blocking road. 20 families temporarily displaced.",
+          sources: 5,
+          timestamp: "6 hours ago"
+        }
+      ]
+    };
+  },
+  acceptCrisis: async (crisisId) => {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    return { success: true, crisisId };
+  },
+  getAcceptedTasks: async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { tasks: [] };
+  }
 };
 
 const NGO = () => {
@@ -113,8 +142,10 @@ const NGO = () => {
       }
 
       const newTask = {
-        ...crisis,
-        status: 'active',
+        id: crisis.id,
+        type: crisis.type,
+        location: crisis.location,
+        status: 'Pending',
         acceptedAt: new Date().toISOString().split('T')[0]
       };
       setAcceptedTasks([newTask, ...acceptedTasks]);
@@ -415,23 +446,27 @@ const NGO = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-3 p-4 border-t border-[#E5E7EB]">
-              <button
-                onClick={() => setSelectedCrisis(null)}
-                className="flex-1 px-6 py-3 bg-white border border-[#E5E7EB] text-[15px] font-semibold text-[#6B7280] rounded-lg hover:bg-[#F9FAFB] transition-all flex items-center justify-center gap-2"
-              >
-                <X className="w-5 h-5" />
-                Decline
-              </button>
-              <button
-                onClick={() => handleAcceptCrisis(selectedCrisis)}
-                className="flex-2 px-6 py-3 bg-[#EA580C] text-white text-[15px] font-semibold rounded-lg hover:bg-[#DC2626] transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <CheckCircle className="w-5 h-5" />
-                Accept & Respond 
-              </button>
+              
+              <div className="p-6 rounded-xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-700/30">
+                <p className="text-sm text-amber-300 font-medium leading-relaxed">
+                  <strong>Note:</strong> By accepting this crisis, your organization commits to providing the requested resources and support. Please ensure you have the capacity before accepting.
+                </p>
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => setSelectedCrisis(null)}
+                  className="flex-1 px-6 py-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 text-gray-300 font-bold rounded-xl hover:from-gray-700/50 hover:to-gray-800/50 transition-all duration-300 border border-gray-600/30 hover:border-gray-500/40"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleAcceptCrisis(selectedCrisis)}
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:from-blue-600 hover:to-indigo-600 shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
+                >
+                  Accept Responsibility
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCrisisStore } from '../state/crisisStore';
+import { subscribe } from "../services/socket";
+
 
 /* ---------- ICONS ---------- */
 
@@ -20,6 +22,36 @@ const crisisIcon = createIcon('red');
 const resourceIcon = createIcon('blue');
 const volunteerIcon = createIcon('green');
 const userIcon = createIcon('grey');
+const [userLocation, setUserLocation] = useState(null);
+
+/* ---------- REAL-TIME CRISIS UPDATES (WEBSOCKET) ---------- */
+useEffect(() => {
+  const unsubscribe = subscribe((event) => {
+    if (!event || event.event !== "NEW_CRISIS") return;
+
+    const p = event.payload;
+
+    const liveCrisis = {
+      id: `ws-${Date.now()}`,
+      type: p.type,
+      priority_score: p.priority_score ?? 5,
+      affected_radius: p.affected_radius ?? 500,
+      affected_population: p.affected_population,
+      location: {
+        lat: p.lat,
+        lon: p.lon
+      }
+    };
+
+    // Push directly into store (preferred)
+    if (store?.addCrisis) {
+      store.addCrisis(liveCrisis);
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
 
 const getResourceIcon = (type) => {
   const t = type?.toLowerCase() || '';
