@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-# Import routers
+# =========================
+# API Routers
+# =========================
 from .api.users import router as users_router
 from .api.crisis import router as crisis_router
 from .api.trust_routes import router as trust_router
@@ -16,8 +18,11 @@ from .api.system import router as system_router
 from .api.simulate import router as simulate_router
 from .api.orchestrator import router as orchestrator_router
 from .api.resource_routes import router as resource_api_router
-from .api.auth import router as auth_router
 
+# =========================
+# 🔥 NEW: WebSocket Manager
+# =========================
+from .ws.connection_manager import ConnectionManager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -27,11 +32,11 @@ app = FastAPI(
     title="CrisisNet - Disaster Alert System",
     description="Real-time crisis alerts for citizens and volunteers",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
 )
 
-# CORS middleware
+# =========================
+# CORS
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,10 +45,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# =========================
+# Register Routers
+# =========================
 app.include_router(users_router)
 app.include_router(crisis_router)
-app.include_router(alert_router)      # /api/alerts, /api/mock-scenarios
+app.include_router(alert_router)
 app.include_router(trust_router)
 app.include_router(auth_router)
 app.include_router(geo_router)
@@ -54,88 +61,52 @@ app.include_router(system_router)
 app.include_router(simulate_router)
 app.include_router(orchestrator_router)
 app.include_router(resource_api_router)
-app.include_router(auth_router)
+
+# =========================
+# 🔥 NEW: WebSocket Manager Instance
+# =========================
+manager = ConnectionManager()
+
+# =========================
+# 🔥 NEW: WebSocket Endpoint
+# =========================
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, role: str = "citizen"):
+    """
+    WebSocket endpoint for frontend real-time updates
+    Example:
+    ws://localhost:8000/ws?role=citizen
+    """
+    await manager.connect(websocket, role)
+    logger.info(f"🔌 WebSocket connected | Role: {role}")
+
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, role)
+        logger.info(f"❌ WebSocket disconnected | Role: {role}")
+
+# =========================
+# Root Endpoint
+# =========================
 @app.get("/")
 def root():
     return {
         "system": "CrisisNet Disaster Alert System",
         "version": "1.0.0",
-        "description": "Real-time alerts for citizens and volunteers during disasters",
-        "endpoints": {
-            "register": "POST /users/register",
-            "detect_crisis": "POST /crisis/detect",
-            "user_stats": "GET /users/stats",
-            "active_crises": "GET /crisis/active"
-        },
         "features": [
-            "User registration (citizens/volunteers/authorities)",
-            "Location-based crisis detection",
-            "Role-based alert messaging",
-            "Bulk WhatsApp notifications",
-            "Real-time coordination"
+            "Role-based alerts",
+            "Telegram + WebSocket notifications",
+            "Real-time dashboards",
         ]
     }
 
-@app.get("/demo-setup")
-def demo_setup():
-    """Setup demo data"""
-    import json
-    import os
-    
-    users_file = "users.json"
-    
-    demo_users = [
-        {
-            'user_id': 'demo_citizen_1',
-            'phone': '+917500900626',  # Your number
-            'name': 'Demo Citizen',
-            'role': 'citizen',
-            'latitude': 28.6139,
-            'longitude': 77.2090,
-            'is_active': True
-        },
-        {
-            'user_id': 'demo_volunteer_1',
-            'phone': '+917500900626',
-            'name': 'Demo Volunteer',
-            'role': 'volunteer',
-            'latitude': 28.6140,
-            'longitude': 77.2091,
-            'is_active': True
-        },
-        {
-            'user_id': 'demo_authority_1',
-            'phone': '+917500900626',
-            'name': 'Demo Authority',
-            'role': 'authority',
-            'latitude': 28.6150,
-            'longitude': 77.2100,
-            'is_active': True
-        }
-    ]
-    
-    data = {"users": demo_users}
-    with open(users_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    
-    return {
-        "message": "Demo data created",
-        "users_added": len(demo_users),
-        "test_phone": "+917500900626",
-        "note": "All demo users use your phone number for testing"
-    }
-
+# =========================
+# Run Server
+# =========================
 if __name__ == "__main__":
     import uvicorn
-    
-    logger.info("=" * 60)
-    logger.info("CRISISNET - DISASTER ALERT SYSTEM")
-    logger.info("=" * 60)
-    logger.info("Messaging: WhatsApp via pywhatkit")
-    logger.info("Features: Location-based alerts")
-    logger.info("Roles: Citizens, Volunteers, Authorities")
-    logger.info("API: http://localhost:8000/docs")
-    logger.info("Demo: http://localhost:8000/demo-setup")
-    logger.info("=" * 60)
-    
+    logger.info("🚀 CrisisNet backend running")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

@@ -1,6 +1,19 @@
+"""
+Communication Agent
+-------------------
+Responsible for sending alerts via:
+1. Telegram (existing)
+2. WebSockets (NEW - for frontend dashboards)
+"""
+
 import requests
 from datetime import datetime
 from typing import Dict
+
+# 🔥 NEW
+from backend.ws.events import EventType, build_event
+from backend.main import manager   # shared WebSocket manager
+
 
 # ============================================================
 # 🔑 TELEGRAM BOT CONFIG
@@ -8,27 +21,29 @@ from typing import Dict
 BOT_TOKEN = "8EGW7WFCGERWXER952927HFV"
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
+
 # ============================================================
-# 👥 IN-MEMORY USER REGISTRY
+# 👥 IN-MEMORY USER REGISTRY (Telegram)
 # ============================================================
 VOLUNTEER_IDS = set()
 CITIZEN_IDS = set()
 AUTHORITY_IDS = set()
 
+
 # ============================================================
-# 📤 LOW LEVEL SENDER
+# 📤 TELEGRAM SENDER
 # ============================================================
 def send_telegram_message(chat_id: int, message: str):
     url = f"{API}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
-    res = requests.post(url, json=payload)
-    if res.status_code != 200:
-        print(f"❌ Failed to send to {chat_id}: {res.text}")
-    else:
-        print(f"✅ Message sent to {chat_id}")
+    try:
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"❌ Telegram send failed: {e}")
+
 
 # ============================================================
-# 🧠 LOGIN / REGISTRATION HANDLER
+# 🧠 TELEGRAM LOGIN HANDLER
 # ============================================================
 def handle_start(message: Dict):
     chat_id = message["chat"]["id"]
@@ -43,7 +58,7 @@ def handle_start(message: Dict):
         return
 
     payload = parts[1]
-    user_id, role = payload.split("_", 1)
+    _, role = payload.split("_", 1)
     role = role.lower()
 
     if role == "citizen":
@@ -53,92 +68,93 @@ def handle_start(message: Dict):
     elif role == "authority":
         AUTHORITY_IDS.add(chat_id)
 
-    intro_message = (
-        "✅ Connection Successful\n\n"
-        "👋 Welcome to CrisisNet Alert Bot\n\n"
-        f"👤 Your role: {role.capitalize()}\n\n"
-        "You are now connected and will receive alerts when needed."
+    send_telegram_message(
+        chat_id,
+        f"✅ CrisisNet connected\nRole: {role.capitalize()}\nYou will receive alerts."
     )
 
-    send_telegram_message(chat_id, intro_message)
-
-    print({
-        "user_id": user_id,
-        "role": role,
-        "chat_id": chat_id
-    })
 
 # ============================================================
-# 🚨 MESSAGE BUILDERS
+# 🧱 MESSAGE BUILDERS
 # ============================================================
-def build_citizen_flood_message(zone: str):
-    return (
-        "⚠️ FLOOD EMERGENCY ALERT ⚠️\n\n"
-        f"📍 Affected Zone: {zone}\n\n"
-        "Evacuate to higher ground and avoid flooded roads.\n"
-        "Follow official instructions."
-    )
+def build_flood_message(role: str, zone: str):
+    if role == "citizen":
+        return (
+            "⚠️ FLOOD ALERT\n\n"
+            f"📍 Area: {zone}\n\n"
+            "Move to higher ground and follow instructions."
+        )
 
-def build_volunteer_flood_message(zone: str):
-    return (
-        "🚨 VOLUNTEER DEPLOYMENT ALERT 🚨\n\n"
-        f"📍 Deployment Zone: {zone}\n\n"
-        "Report immediately and assist with evacuation."
-    )
+    if role == "volunteer":
+        return (
+            "🚨 VOLUNTEER ALERT\n\n"
+            f"📍 Deployment Zone: {zone}\n\n"
+            "Report immediately."
+        )
+
+    return f"📢 Flood reported in {zone}. Monitoring ongoing."
+
 
 # ============================================================
-# 🚨 ALERT SENDER
+# 🔔 MAIN ENTRYPOINT (USED BY OTHER AGENTS)
 # ============================================================
-def send_flood_alert(zone: str):
-    print("\n📢 Sending FLOOD alerts...")
-    print(f"🕒 {datetime.now()}  Zone: {zone}")
+async def notify(allocation: Dict):
+    """
+    Called when a crisis is verified / assigned.
+    Sends alerts via:
+    - Telegram
+    - WebSocket (NEW)
+    """
 
+    crisis = allocation.get("crisis", {})
+    zone = crisis.get("location", "Unknown Zone")
+    ctype = crisis.get("type", "other").lower()
+
+    print(f"[CommunicationAgent] Crisis: {ctype} @ {zone}")
+
+    # =====================
+    # 1️⃣ TELEGRAM ALERTS
+    # =====================
     for cid in CITIZEN_IDS:
-        send_telegram_message(cid, build_citizen_flood_message(zone))
+        send_telegram_message(cid, build_flood_message("citizen", zone))
 
     for vid in VOLUNTEER_IDS:
-        send_telegram_message(vid, build_volunteer_flood_message(zone))
+        send_telegram_message(vid, build_flood_message("volunteer", zone))
 
     for aid in AUTHORITY_IDS:
-        send_telegram_message(aid, f"📢 Flood reported in {zone}. Monitoring in progress.")
+        send_telegram_message(aid, f"📢 Crisis detected in {zone}")
+
+    # =====================
+    # 2️⃣ 🔥 WEBSOCKET EVENT
+    # =====================
+    event = build_event(
+        event_type=EventType.NEW_CRISIS,
+        payload={
+            "type": ctype,
+            "location": zone,
+            "timestamp": datetime.utcnow().isoformat(),
+            "source": "CommunicationAgent"
+        },
+        target="all"
+    )
+
+    # Broadcast to dashboards
+    await manager.broadcast(event)
+
 
 # ============================================================
-# 🔔 BACKEND ENTRYPOINT (used by Resource Agent)
-# ============================================================
-def notify(allocation: Dict):
-    try:
-        crisis = allocation.get("crisis", {})
-        zone = crisis.get("location", "Unknown Zone")
-        ctype = crisis.get("type", "other").lower()
-
-        print(f"[Communication] Crisis detected: {ctype} @ {zone}")
-
-        if ctype == "flood":
-            send_flood_alert(zone)
-        else:
-            for cid in CITIZEN_IDS:
-                send_telegram_message(cid, f"⚠️ Crisis detected in {zone}. Please stay alert.")
-            for vid in VOLUNTEER_IDS:
-                send_telegram_message(vid, f"🚨 Crisis response needed in {zone}.")
-
-    except Exception as e:
-        print(f"[Communication] Failed to notify: {e}")
-
-# ============================================================
-# 👂 LONG POLLING LISTENER (for Telegram login)
+# 👂 TELEGRAM LONG POLLING (UNCHANGED)
 # ============================================================
 def listen():
     offset = 0
     print("🤖 Telegram bot listening...")
-    while True:
-        res = requests.get(f"{API}/getUpdates", params={"offset": offset}).json()
-        for update in res.get("result", []):
-            offset = update["update_id"] + 1
-            if "message" in update:
-                handle_start(update["message"])
 
-# ============================================================
-# ▶️ RUN BOT
-# ============================================================
-if __name__ == "__main__":
-    listen()
+    while True:
+        try:
+            res = requests.get(f"{API}/getUpdates", params={"offset": offset}).json()
+            for update in res.get("result", []):
+                offset = update["update_id"] + 1
+                if "message" in update:
+                    handle_start(update["message"])
+        except Exception as e:
+            print("Telegram polling error:", e)
