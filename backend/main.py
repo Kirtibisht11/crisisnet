@@ -18,6 +18,7 @@ from .api.system import router as system_router
 from .api.simulate import router as simulate_router
 from .api.orchestrator import router as orchestrator_router
 from .api.resource_routes import router as resource_api_router
+from .api.social_media_routes import router as social_media_router
 
 # =========================
 # 🔥 NEW: WebSocket Manager
@@ -61,6 +62,7 @@ app.include_router(system_router)
 app.include_router(simulate_router)
 app.include_router(orchestrator_router)
 app.include_router(resource_api_router)
+app.include_router(social_media_router)
 
 # =========================
 # 🔥 NEW: WebSocket Manager Instance
