@@ -135,8 +135,8 @@ class PerformanceMetric(Base):
     crisis_id = Column(Integer, ForeignKey("crises.id"), nullable=True)
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
     
-    # Metadata
-    metadata = Column(JSON)  # Additional context
+    # Additional context
+    context_data = Column(JSON)  # Additional context
     
     # Timestamp
     recorded_at = Column(DateTime, default=datetime.utcnow)
