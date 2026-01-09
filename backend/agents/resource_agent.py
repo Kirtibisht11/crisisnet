@@ -71,6 +71,59 @@ class ResourceAgent:
         
         return R * c
     
+<<<<<<< HEAD
+    def release_resources(self, allocation_id: str):
+        self.availability_manager.release(allocation_id, self.resources, self.volunteers)
+        self.save_resources()
+
+agent = ResourceAgent()
+
+@router.post("/allocate")
+async def allocate_resources(crisis: Dict, token: str = Header(...)):
+    require_role(token, ["authority"])
+    try:
+        allocation = agent.allocate_resources(crisis)
+        return {"status": "success", "allocation": allocation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/reassign")
+async def reassign_resources(crisis: Dict, token: str = Header(...)):
+    require_role(token, ["authority"])
+    try:
+        reassignment = agent.handle_reassignment(crisis)
+        return {"status": "success", "reassignment": reassignment}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/release/{allocation_id}")
+async def release_resources(allocation_id: str, token: str = Header(...)):
+    require_role(token, ["authority"])
+    try:
+        agent.release_resources(allocation_id)
+        return {"status": "success", "message": "Resources released"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/status")
+async def get_status(token: str = Header(...)):
+    require_role(token, ["authority"])
+    available = len([r for r in agent.resources if r['available']])
+    total = len(agent.resources)
+    return {
+        "available_resources": available,
+        "total_resources": total,
+        "utilization": round((1 - available/total) * 100, 2) if total > 0 else 0
+    }
+
+@router.post("/volunteer/register")
+async def register_volunteer(volunteer: Dict, token: str = Header(None)):
+    # Allow anonymous registration from frontend for demo/dev flows.
+    # In production, re-enable role checks via require_role(token, ["volunteer"]).
+    try:
+        if not volunteer.get('name') or not volunteer.get('skills') or not volunteer.get('location'):
+            raise HTTPException(status_code=400, detail="Name, skills, and location are required")
+=======
     
     def calculate_eta(self, distance_km: float, severity: str) -> int:
         """Estimate arrival time in minutes"""
@@ -94,6 +147,7 @@ class ResourceAgent:
     ) -> Tuple[float, Dict]:
         """
         Score volunteer for task assignment
+>>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
         
         Factors:
         - Skill match: 40%
@@ -471,6 +525,17 @@ async def reassign_task(
 
 
 @router.get("/volunteer/tasks/{volunteer_id}")
+<<<<<<< HEAD
+async def get_volunteer_tasks(volunteer_id: str, token: str = Header(None)):
+    # Allow anonymous access in dev/demo mode. In production, enforce role checks:
+    # require_role(token, ["volunteer"])
+
+    try:
+        with open('data/assignments_log.json', 'r') as f:
+            assignments = json.load(f)
+    except FileNotFoundError:
+        assignments = []
+=======
 async def get_volunteer_tasks(
     volunteer_id: int,
     token: str = Header(...),
@@ -478,6 +543,7 @@ async def get_volunteer_tasks(
 ):
     """Get all tasks for a volunteer"""
     require_role(token, ["volunteer"])
+>>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
     
     tasks = crud.get_tasks_by_volunteer(db, volunteer_id)
     
@@ -507,6 +573,23 @@ async def get_volunteer_tasks(
     
     return {"status": "success", "tasks": result}
 
+<<<<<<< HEAD
+@router.get("/volunteer/profile/{volunteer_id}")
+async def get_volunteer_profile(volunteer_id: str, token: str = Header(None)):
+    # Allow anonymous access in dev/demo mode. In production, enforce role checks:
+    # require_role(token, ["volunteer"])
+
+    try:
+        volunteer = next((v for v in agent.volunteers if v['id'] == volunteer_id), None)
+        
+        if not volunteer:
+            raise HTTPException(status_code=404, detail="Volunteer not found")
+        
+        return {"status": "success", "volunteer": volunteer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+=======
+>>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
 
 @router.put("/volunteer/profile/{volunteer_id}")
 async def update_volunteer_profile(

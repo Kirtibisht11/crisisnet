@@ -23,6 +23,24 @@ const SignupVolunteer = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const renderSubmitError = (err) => {
+    if (!err) return null;
+    if (typeof err === 'string') return <p className="text-sm">{err}</p>;
+    if (Array.isArray(err)) {
+      return err.map((e, i) => (
+        <p key={i} className="text-sm">{e?.msg || e?.message || JSON.stringify(e)}</p>
+      ));
+    }
+    if (typeof err === 'object') {
+      if (err.detail) {
+        if (Array.isArray(err.detail)) return err.detail.map((d, i) => <p key={i} className="text-sm">{d.msg || JSON.stringify(d)}</p>);
+        return <p className="text-sm">{String(err.detail)}</p>;
+      }
+      return <p className="text-sm">{JSON.stringify(err)}</p>;
+    }
+    return <p className="text-sm">{String(err)}</p>;
+  };
+
   const skillOptions = [
     { id: 'first_aid', label: 'First Aid' },
     { id: 'medical', label: 'Medical' },
@@ -497,7 +515,7 @@ const SignupVolunteer = () => {
 
                 {errors.submit && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-                    {errors.submit}
+                    {renderSubmitError(errors.submit)}
                   </div>
                 )}
 
