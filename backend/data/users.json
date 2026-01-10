@@ -1,94 +1,26 @@
 {
   "users": [
     {
-      "user_id": "u_424859e7",
-      "name": "kirti",
-      "phone": "+9814341087",
-      "password_hash": "$2b$10$doQSW8FMN5U8HHDrM0H1medYyPJcO3.nqG6a.FMnFjRIl3waZT6YC",
-      "role": "citizen",
-      "latitude": 0.0,
-      "longitude": 0.0,
-      "is_active": true,
-      "created_at": "2025-12-30T10:07:46.000891Z"
-    },
-    {
-      "user_id": "u_ef1d7598",
-      "name": "Lavika Panwar",
-      "phone": "+91 1234567890",
-      "password_hash": "$2b$10$vzRJj1bYOJNImDpiIrMcyO1svrlgW6JHnoTwZqq3oChd7ygw0LUv2",
-      "role": "citizen",
-      "latitude": 0.0,
-      "longitude": 0.0,
-      "is_active": true,
-      "created_at": "2025-12-30T11:04:36.909504Z"
-    },
-    {
-      "user_id": "u_13865528",
-      "name": "simran",
-      "phone": "+9368553469",
-      "password_hash": "$2b$10$U.YDeYQpXtwFx6aYh6BOY.CReTiRbSg4pXWH/nrY0hb0L3DoYMf4q",
-      "role": "citizen",
-      "latitude": 0.0,
-      "longitude": 0.0,
-      "is_active": true,
-      "created_at": "2025-12-30T14:30:23.978134Z"
-    },
-    {
-      "user_id": "u_4b288f99",
+      "user_id": "u_78f3849d",
       "name": "disha ",
       "phone": "+8077865284",
-      "password_hash": "$2b$10$f8oSh0fhD6xUjzs9O3sRJuJ76TQUpYZ4PgLm7MCrbDwL2mlRXlse6",
+      "password_hash": "$2b$10$HMwZYY9viYYxC0Ahafo4luotg6RoUK6H8XZG.6pRbwqqBG5QKbjfe",
       "role": "citizen",
-      "latitude": 30.26733069602734,
-      "longitude": 77.98888688423514,
+      "latitude": 30.267423708613315,
+      "longitude": 77.989029,
       "is_active": true,
-      "created_at": "2025-12-31T11:15:05.793848Z",
-      "volunteer": {
-        "name": "disha ",
-        "email": "77negidisha@gmail.com",
-        "phone": "+8077865284",
-        "location": "Mohabbew\u0101la, Dehradun, Uttarakhand, 248001, India",
-        "address": "",
-        "skills": [
-          "medical",
-          "first_aid",
-          "rescue"
-        ],
-        "experience": "beginner",
-        "availability": "anytime",
-        "emergency_contact": "8077865284",
-        "available": true,
-        "user_id": "u_4b288f99",
-        "id": "vol_20251231112437_10",
-        "registered_at": "2025-12-31T11:24:37.318838",
-        "allocated_to": null,
-        "allocated_at": null
-      },
-      "is_volunteer": true
+      "created_at": "2026-01-10T19:42:23.643675Z"
     },
     {
-      "user_id": "u_2564aa2e",
+      "user_id": "u_3ecd3e3c",
       "name": "isha",
       "phone": "+918077865281",
-      "password_hash": "$2b$12$0vYpfHPdRO7Pzn6hnq611OBbcm6Xo0jlrI1fTrfbFj96I/yaLkT56",
+      "password_hash": "$2b$12$GFIcehmfMm0mb1oV7441qOwZanG1SvZfrexMWvEM5mcXtgpgW3Wq2",
       "role": "authority",
-      "latitude": 30.267314709774578,
-      "longitude": 77.98881428935094,
+      "latitude": 30.267420895170734,
+      "longitude": 77.98902739686865,
       "is_active": true,
-      "created_at": "2025-12-31T12:15:49.178749Z",
-      "organization_name": "Dehradun police",
-      "designation": "inspector"
-    },
-    {
-      "user_id": "u_44bdf70e",
-      "name": "anu",
-      "phone": "+918077865212",
-      "password_hash": "$2b$12$7XpgdLNLgQ8rriY.2Ma8uevV6eQe3.4SAS.WQBEcvz.mRRDGeggEC",
-      "role": "authority",
-      "latitude": 30.267344083094365,
-      "longitude": 77.98888788562991,
-      "is_active": true,
-      "created_at": "2025-12-31T12:34:16.546944Z",
+      "created_at": "2026-01-10T19:44:21.822076Z",
       "organization_name": "Dehradun police",
       "designation": "inspector"
     }

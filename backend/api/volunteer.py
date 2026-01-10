@@ -10,6 +10,19 @@ def _data_path(filename: str):
     base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     return os.path.join(base, "data", filename)
 
+def _save_json_atomically(path: str, data: any):
+    """Atomically writes JSON data to a file, creating the directory if needed."""
+    dir_path = os.path.dirname(path)
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
+    
+    tmp_path = path + '.tmp'
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path)
+
 
 @router.post("/profile")
 def create_profile(profile: dict):
@@ -27,11 +40,7 @@ def create_profile(profile: dict):
 
     data.append(profile)
     try:
-        tmp = path + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
-            f.flush(); os.fsync(f.fileno())
-        os.replace(tmp, path)
+        _save_json_atomically(path, data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -89,20 +98,11 @@ def attach_volunteer_to_user(profile: dict):
         user['is_volunteer'] = True
 
         # save users.json atomically
-        tmp_users = users_path + '.tmp'
-        with open(tmp_users, 'w', encoding='utf-8') as uf:
-            json.dump(users_data, uf, indent=2)
-            uf.flush(); os.fsync(uf.fileno())
-        os.replace(tmp_users, users_path)
+        _save_json_atomically(users_path, users_data)
 
         # append to volunteers.json for compatibility
         volunteers.append(profile)
-        tmp_vol = volunteers_path + '.tmp'
-        with open(tmp_vol, 'w', encoding='utf-8') as vf:
-            json.dump(volunteers, vf, indent=2)
-            vf.flush(); os.fsync(vf.fileno())
-        os.replace(tmp_vol, volunteers_path)
-
+        _save_json_atomically(volunteers_path, volunteers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -134,11 +134,7 @@ def update_volunteer_profile(profile: dict):
         vol_idx = next((i for i, v in enumerate(volunteers) if v.get('id') == volunteer_id or v.get('volunteer_id') == volunteer_id), -1)
         if vol_idx >= 0:
             volunteers[vol_idx].update(profile)
-            tmp_vol = volunteers_path + '.tmp'
-            with open(tmp_vol, 'w', encoding='utf-8') as f:
-                json.dump(volunteers, f, indent=2)
-                f.flush(); os.fsync(f.fileno())
-            os.replace(tmp_vol, volunteers_path)
+            _save_json_atomically(volunteers_path, volunteers)
         
         # Update users.json if nested
         try:
@@ -150,11 +146,7 @@ def update_volunteer_profile(profile: dict):
         user_idx = next((i for i, u in enumerate(users_data.get('users', [])) if u.get('volunteer', {}).get('id') == volunteer_id), -1)
         if user_idx >= 0:
             users_data['users'][user_idx]['volunteer'].update(profile)
-            tmp_users = users_path + '.tmp'
-            with open(tmp_users, 'w', encoding='utf-8') as f:
-                json.dump(users_data, f, indent=2)
-                f.flush(); os.fsync(f.fileno())
-            os.replace(tmp_users, users_path)
+            _save_json_atomically(users_path, users_data)
         
         return {"success": True, "volunteer": profile}
     except Exception as e:

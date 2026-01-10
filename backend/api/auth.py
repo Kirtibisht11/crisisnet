@@ -89,10 +89,15 @@ def get_users_list():
 def save_users(users):
     try:
         dirpath = os.path.dirname(USERS_FILE)
-        if dirpath and not os.path.exists(dirpath):
+        if dirpath:
             os.makedirs(dirpath, exist_ok=True)
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+
+        tmp_path = USERS_FILE + '.tmp'
+        with open(tmp_path, 'w', encoding='utf-8') as f:
             json.dump({'users': users}, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, USERS_FILE)
         return True
     except Exception as e:
         print(f"Error saving users: {e}")

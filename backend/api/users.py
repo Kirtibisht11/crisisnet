@@ -32,9 +32,16 @@ def load_users():
 
 def save_users(data):
     # atomic write to reduce partial writes
+    dir_path = os.path.dirname(USERS_FILE)
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
+
     tmp = USERS_FILE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
+        # Ensure data is written to disk before replacing
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, USERS_FILE)
 
 
