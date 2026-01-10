@@ -1,85 +1,74 @@
 import React, { useEffect, useState } from 'react'
-import api, { runPipeline } from '../services/api'
+import api from '../services/api'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore } from '../state/userStore'
-import { MapPin } from 'lucide-react'
-import { formatPriority } from '../utils/formatter'
+import { MapPin, RefreshCw } from 'lucide-react'
 
-const formatCrisisType = (type) => {
-  const types = {
-    'flood': { label: 'Flood Emergency' },
-    'fire': { label: 'Fire Emergency' },
-    'medical': { label: 'Medical Emergency' },
-    'earthquake': { label: 'Earthquake' },
-    'landslide': { label: 'Landslide' },
-    'collapse': { label: 'Building Collapse' }
-  };
-  return types[type] || { label: type };
+const CRISIS_LABELS = {
+  'flood': 'Flood Emergency',
+  'fire': 'Fire Emergency',
+  'medical': 'Medical Emergency',
+  'earthquake': 'Earthquake',
+  'landslide': 'Landslide',
+  'collapse': 'Building Collapse'
 };
 
-const getRequiredSkills = (crisisType) => {
-  const skillMap = {
-    'flood': ['rescue', 'swimming', 'first_aid', 'logistics'],
-    'fire': ['firefighting', 'first_aid', 'rescue', 'medical'],
-    'medical': ['medical', 'first_aid'],
-    'earthquake': ['rescue', 'first_aid', 'medical', 'search_and_rescue'],
-    'landslide': ['rescue', 'first_aid', 'search_and_rescue'],
-    'collapse': ['rescue', 'medical', 'first_aid', 'search_and_rescue']
-  };
-  return skillMap[crisisType] || ['first_aid', 'rescue'];
+const SKILL_MAP = {
+  'flood': ['rescue', 'swimming', 'first_aid', 'logistics'],
+  'fire': ['firefighting', 'first_aid', 'rescue', 'medical'],
+  'medical': ['medical', 'first_aid'],
+  'earthquake': ['rescue', 'first_aid', 'medical', 'search_and_rescue'],
+  'landslide': ['rescue', 'first_aid', 'search_and_rescue'],
+  'collapse': ['rescue', 'medical', 'first_aid', 'search_and_rescue']
 };
 
-const LocationRenderer = ({ alert }) => {
-  const [displayLocation, setDisplayLocation] = useState(() => {
-    const loc = alert.location;
-    const isUnknown = !loc || ['unknown', 'unknown location'].includes(loc.toLowerCase()) || loc.trim() === '';
-    const isCoordinates = loc && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(loc.trim());
+const LocationDisplay = ({ alert }) => {
+  const [loc, setLoc] = useState(() => {
+    const l = alert.location;
+    const unknown = !l || ['unknown', 'unknown location'].includes(l.toLowerCase()) || l.trim() === '';
+    const coords = l && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(l.trim());
 
-    if (!isUnknown && !isCoordinates) {
-      return loc;
-    }
-    if (alert.lat != null && alert.lon != null) {
-      return null;
-    }
+    if (!unknown && !coords) return l;
+    if (alert.lat != null && alert.lon != null) return null;
     return 'Location not available';
   });
 
   useEffect(() => {
-    const loc = alert.location;
-    const isUnknown = !loc || ['unknown', 'unknown location'].includes(loc.toLowerCase()) || loc.trim() === '';
-    const isCoordinates = loc && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(loc.trim());
+    const l = alert.location;
+    const unknown = !l || ['unknown', 'unknown location'].includes(l.toLowerCase()) || l.trim() === '';
+    const coords = l && /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(l.trim());
     
-    if (!isUnknown && !isCoordinates) {
-      setDisplayLocation(loc);
+    if (!unknown && !coords) {
+      setLoc(l);
     } else if (alert.lat != null && alert.lon != null) {
       let active = true;
-      // Reverse geocode if we only have coordinates
+      
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${alert.lat}&lon=${alert.lon}`)
-        .then(res => res.json())
-        .then(data => {
+        .then(r => r.json())
+        .then(d => {
           if (!active) return;
-          if (data.address) {
-            const { road, suburb, city, town, village, county, state_district } = data.address;
+          if (d.address) {
+            const { road, suburb, city, town, village, county, state_district } = d.address;
             const parts = [road, suburb || village || town, city || county || state_district].filter(Boolean);
-            if (parts.length > 0) setDisplayLocation(parts.join(', '));
-            else if (data.display_name) setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
-            else setDisplayLocation(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
-          } else if (data.display_name) {
-            setDisplayLocation(data.display_name.split(',').slice(0, 2).join(','));
+            if (parts.length > 0) setLoc(parts.join(', '));
+            else if (d.display_name) setLoc(d.display_name.split(',').slice(0, 2).join(','));
+            else setLoc(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
+          } else if (d.display_name) {
+            setLoc(d.display_name.split(',').slice(0, 2).join(','));
           } else {
-            setDisplayLocation(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
+            setLoc(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
           }
         })
-        .catch(err => {
+        .catch(e => {
           if (!active) return;
-          console.debug('Geocoding failed', err);
-          setDisplayLocation(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
+          setLoc(`${Number(alert.lat).toFixed(4)}, ${Number(alert.lon).toFixed(4)}`);
         });
+      
       return () => { active = false; };
     }
   }, [alert.location, alert.lat, alert.lon]);
 
-  if (displayLocation === null) {
+  if (loc === null) {
     if (alert.lat != null && alert.lon != null) {
       return (
         <span>
@@ -88,99 +77,106 @@ const LocationRenderer = ({ alert }) => {
         </span>
       );
     }
-    return <span className="text-slate-400 italic text-xs">Resolving location...</span>;
+    return <span className="text-slate-400 italic text-xs">Resolving...</span>;
   }
 
-  return <span>{displayLocation}</span>;
+  return <span>{loc}</span>;
 };
 
-export default function Resources() {
+export default function ResourceDashboard() {
   const navigate = useNavigate()
   const user = useUserStore((s) => s.user)
   const [resources, setResources] = useState([])
   const [volunteers, setVolunteers] = useState([])
-  const [vrequests, setVrequests] = useState([])
+  const [requests, setRequests] = useState([])
   const [crises, setCrises] = useState([])
   const [selectedCrisis, setSelectedCrisis] = useState(null)
-  const [selectedResource, setSelectedResource] = useState(null)
-  const [viewingRequest, setViewingRequest] = useState(null)
-  const [viewingAssignments, setViewingAssignments] = useState(null)
-  const [viewingResourceUsage, setViewingResourceUsage] = useState(null)
-  const [assignmentInputs, setAssignmentInputs] = useState({})
+  const [selectedForResource, setSelectedForResource] = useState(null)
+  const [viewAssignments, setViewAssignments] = useState(null)
+  const [viewResourceDetail, setViewResourceDetail] = useState(null)
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('alerts')
-  const [requestCount, setRequestCount] = useState(5)
+  const [tab, setTab] = useState('alerts')
+  const [volCount, setVolCount] = useState(5)
+  const [resAmounts, setResAmounts] = useState({})
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('user')
+    localStorage.clear()
     navigate('/')
   }
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => { loadAll() }, [])
 
-  async function fetchAll(){
+  async function loadAll() {
     setLoading(true)
-    try{
-      const r = await api.get('/api/resource/resources')
-      setResources(r.data.items || [])
-    }catch(e){ console.error(e) }
-    try{
-      const v = await api.get('/api/resource/volunteers')
-      setVolunteers(v.data.items || [])
-    }catch(e){ console.error(e) }
-    try{
-      const vr = await api.get('/api/resource/volunteer_requests')
-      setVrequests(vr.data.items || [])
-    }catch(e){ console.error(e) }
     
-    // Load verified crises from API
     try {
+      const [resData, volData, reqData] = await Promise.all([
+        api.get('/api/resource/resources').catch(() => ({ data: { items: [] }})),
+        api.get('/api/resource/volunteers').catch(() => ({ data: { items: [] }})),
+        api.get('/api/resource/volunteer_requests').catch(() => ({ data: { items: [] }}))
+      ]);
+
+      setResources(resData.data.items || [])
+      setVolunteers(volData.data.items || [])
+      setRequests(reqData.data.items || [])
+
       const alertsRes = await api.get('/api/alerts');
-      console.log('All alerts:', alertsRes.data);
       if (alertsRes.data && alertsRes.data.alerts) {
-        const verified = alertsRes.data.alerts.filter(a => a.decision && a.decision.toUpperCase() === 'VERIFIED');
+        const verified = alertsRes.data.alerts.filter(a => 
+          a.decision && a.decision.toUpperCase() === 'VERIFIED'
+        );
         
-        // Deduplicate alerts
-        const uniqueMap = new Map();
-        verified.forEach(a => uniqueMap.set(a.alert_id || a.id, a));
-        setCrises(Array.from(uniqueMap.values()));
+        const unique = new Map();
+        verified.forEach(a => unique.set(a.alert_id || a.id, a));
+        setCrises(Array.from(unique.values()));
       }
 
-      const assigns = JSON.parse(localStorage.getItem('resource_assignments') || '[]');
-      setAssignments(assigns);
-    } catch (err) {
-      console.error('Error loading crises:', err);
+      const stored = JSON.parse(localStorage.getItem('resource_assignments') || '[]');
+      setAssignments(stored);
+    } catch (e) {
+      console.error('Load error:', e);
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  async function toggleResource(id, current){
-    try{
+  async function toggleResourceAvail(id, current) {
+    try {
       const token = localStorage.getItem('access_token') || localStorage.getItem('crisisnet_token');
-      await api.put(`/api/resource/resources/${id}/availability`, { available: !current }, { headers: { 'token': token } })
-      fetchAll()
-    }catch(e){ console.error(e); alert('Failed to update') }
+      await api.put(`/api/resource/resources/${id}/availability`, 
+        { available: !current }, 
+        { headers: { 'token': token }}
+      )
+      loadAll()
+    } catch (e) {
+      console.error(e);
+      alert('Update failed')
+    }
   }
 
-  async function toggleVolunteer(id, current){
-    try{
+  async function toggleVolAvail(id, current) {
+    try {
       const token = localStorage.getItem('access_token') || localStorage.getItem('crisisnet_token');
-      await api.put(`/api/resource/volunteers/${id}/availability`, { available: !current }, { headers: { 'token': token } })
-      fetchAll()
-    }catch(e){ console.error(e); alert('Failed to update') }
+      await api.put(`/api/resource/volunteers/${id}/availability`, 
+        { available: !current }, 
+        { headers: { 'token': token }}
+      )
+      loadAll()
+    } catch (e) {
+      console.error(e);
+      alert('Update failed')
+    }
   }
 
-  const handlePostRequest = async (crisis) => {
+  const postVolRequest = async (crisis) => {
     try {
       const token = localStorage.getItem('access_token') || localStorage.getItem('crisisnet_token');
       if (!token) {
-        alert('Authentication token missing. Please log in again.');
+        alert('Authentication required. Please log in.');
         return;
       }
 
-      // Resolve location
       let loc = 'Unknown Location';
       let lat = null;
       let lon = null;
@@ -190,6 +186,8 @@ export default function Resources() {
       if (crisis.lon || crisis.longitude) lon = crisis.lon || crisis.longitude;
       if (loc === 'Unknown Location' && lat && lon) loc = `${lat}, ${lon}`;
 
+      const skills = SKILL_MAP[crisis.crisis_type] || ['first_aid', 'rescue'];
+
       await api.post('/api/resource/volunteer_requests', {
         crisis_id: crisis.alert_id || crisis.id,
         crisis_type: crisis.crisis_type,
@@ -197,43 +195,44 @@ export default function Resources() {
         lat: lat,
         lon: lon,
         message: crisis.message || 'Emergency assistance required',
-        skills: getRequiredSkills(crisis.crisis_type),
-        count: Number(requestCount) || 1
+        skills: skills,
+        count: Number(volCount) || 1
       }, {
         headers: { 'token': token }
       });
-      alert('Volunteer request posted successfully!');
+      
+      alert('Request posted!');
     } catch (e) {
       console.error(e);
       if (e.response && e.response.status === 403) {
-        alert('Permission denied. Your session may have expired or the user does not exist. Please log in again.');
+        alert('Permission denied. Session may be expired.');
       } else {
         alert('Failed to post request');
       }
     }
     setSelectedCrisis(null);
-    fetchAll();
+    loadAll();
   };
 
-  const handleAssignResource = (crisis, resource) => {
-    const amountToAssign = Number(assignmentInputs[resource.id]) || 0;
-    const stats = getResourceStats(resource);
+  const assignResource = (crisis, resource) => {
+    const amt = Number(resAmounts[resource.id]) || 0;
+    const stats = getResStats(resource);
 
-    if (amountToAssign <= 0) {
-      alert("Please enter a valid capacity amount to assign.");
+    if (amt <= 0) {
+      alert("Enter valid amount");
       return;
     }
-    if (amountToAssign > stats.remaining) {
-      alert(`Cannot assign ${amountToAssign}. Only ${stats.remaining} available.`);
+    if (amt > stats.remaining) {
+      alert(`Only ${stats.remaining} available`);
       return;
     }
 
-    const newAssignment = {
-      assignment_id: `RES_ASSIGN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    const newAssign = {
+      assignment_id: `RES_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       crisis_id: crisis.alert_id || crisis.id,
       resource_id: resource.id,
       resource_type: resource.type,
-      resource_capacity: amountToAssign,
+      resource_capacity: amt,
       crisis_type: crisis.crisis_type,
       location: crisis.location,
       message: crisis.message,
@@ -242,71 +241,71 @@ export default function Resources() {
       type: 'resource'
     };
 
-    const allAssignments = [...assignments, newAssignment];
-    localStorage.setItem('resource_assignments', JSON.stringify(allAssignments));
-    setAssignments(allAssignments);
+    const all = [...assignments, newAssign];
+    localStorage.setItem('resource_assignments', JSON.stringify(all));
+    setAssignments(all);
 
-    // Also add to volunteer tasks so it shows up in task board
-    const volunteerTasks = JSON.parse(localStorage.getItem('volunteer_tasks') || '[]');
-    volunteerTasks.push({
-      ...newAssignment,
+    const volTasks = JSON.parse(localStorage.getItem('volunteer_tasks') || '[]');
+    volTasks.push({
+      ...newAssign,
       volunteer_name: `Resource: ${resource.type}`,
       volunteer_phone: `Capacity: ${resource.capacity}`
     });
-    localStorage.setItem('volunteer_tasks', JSON.stringify(volunteerTasks));
+    localStorage.setItem('volunteer_tasks', JSON.stringify(volTasks));
 
-    // If fully used, mark unavailable
-    if (stats.remaining - amountToAssign <= 0 && resource.available) {
-      toggleResource(resource.id, true);
+    if (stats.remaining - amt <= 0 && resource.available) {
+      toggleResourceAvail(resource.id, true);
     }
 
-    alert(`Successfully assigned ${amountToAssign} of ${resource.type} to crisis!`);
-    setAssignmentInputs(prev => ({ ...prev, [resource.id]: '' }));
-    fetchAll();
+    alert(`Assigned ${amt} of ${resource.type}`);
+    setResAmounts(prev => ({ ...prev, [resource.id]: '' }));
+    loadAll();
   };
 
-  const getAssignedCount = (crisisId) => {
-    return assignments.filter(a => a.crisis_id === crisisId).length;
+  const getAssignCount = (cid) => {
+    return assignments.filter(a => a.crisis_id === cid).length;
   };
 
-  const getRequestForCrisis = (crisisId) => {
-    return vrequests.find(r => r.crisis_id === crisisId && r.status !== 'CANCELLED');
+  const getReqForCrisis = (cid) => {
+    return requests.find(r => r.crisis_id === cid && r.status !== 'CANCELLED');
   };
 
-  const getResourceStats = (resource) => {
-    const resourceAssignments = assignments.filter(a => a.resource_id === resource.id);
-    const used = resourceAssignments.reduce((sum, a) => sum + (Number(a.resource_capacity) || 0), 0);
-    const total = Number(resource.capacity) || 0;
+  const getResStats = (res) => {
+    const resAssigns = assignments.filter(a => a.resource_id === res.id);
+    const used = resAssigns.reduce((sum, a) => sum + (Number(a.resource_capacity) || 0), 0);
+    const total = Number(res.capacity) || 0;
     return { used, total, remaining: Math.max(0, total - used) };
   };
 
-  const getTotalVolunteers = (crisisId) => {
-    return vrequests
-      .filter(r => r.crisis_id === crisisId && r.status !== 'CANCELLED')
-      .reduce((acc, r) => acc + (r.fulfilled_count || 0), 0);
+  const getPriority = (trust, type) => {
+    const urgent = ['fire', 'medical', 'violence', 'earthquake'];
+    const isUrg = urgent.includes(type?.toLowerCase());
+    
+    if (trust >= 0.65 && isUrg) return { level: 'CRITICAL', color: 'bg-red-100 text-red-800' };
+    if (trust >= 0.65) return { level: 'HIGH', color: 'bg-orange-100 text-orange-800' };
+    if (trust >= 0.45) return { level: 'MEDIUM', color: 'bg-yellow-100 text-yellow-800' };
+    return { level: 'LOW', color: 'bg-green-100 text-green-800' };
   };
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
-      {/* Header - Professional Dark Theme */}
       <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div className="w-full px-6 py-4 flex justify-between items-center">
           <Link to="/" className="font-bold text-xl tracking-tight">CrisisNet</Link>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-slate-300">{user?.name || user?.username || "User"}</span>
-            <Link to="/authority" className="text-sm font-medium text-slate-300 hover:text-white transition">Authority Dashboard</Link>
+            <Link to="/authority" className="text-sm font-medium text-slate-300 hover:text-white transition">Authority</Link>
             <button
               onClick={handleLogout}
               className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition"
             >
-              Sign Out
+              Logout
             </button>
           </div>
         </div>
       </header>
 
       <div className="w-[96%] mx-auto py-8">
-        {/* Main Content */}
         <main>
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -314,99 +313,139 @@ export default function Resources() {
                 <h2 className="text-3xl font-bold text-slate-900">Resource Manager</h2>
                 <p className="text-slate-600 text-sm mt-1">Coordinate volunteers and assets</p>
               </div>
-              <div className="text-right">
-                <div className="text-sm text-slate-600">System Status</div>
-                <div className="text-2xl font-bold flex items-center gap-2 justify-end">
-                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                  OPERATIONAL
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={loadAll}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+                <div className="text-right">
+                  <div className="text-sm text-slate-600">Status</div>
+                  <div className="text-lg font-bold flex items-center gap-2 justify-end">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    ONLINE
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Tab Navigation */}
             <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b border-slate-200">
               <button
-                onClick={() => setActiveTab('alerts')}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all ${activeTab === 'alerts' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                onClick={() => setTab('alerts')}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${tab === 'alerts' ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
                 Crisis Alerts
               </button>
               <button
-                onClick={() => setActiveTab('resources')}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all ${activeTab === 'resources' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                onClick={() => setTab('resources')}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${tab === 'resources' ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
                 Resources
               </button>
             </div>
 
-            {/* Crisis Assignment Section */}
-            {activeTab === 'alerts' && (
-            <section className="mb-8">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Crisis Assignment Management</h3>
-              {crises.length === 0 ? (
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg text-center text-slate-600">
-                  No approved crises requiring assignment
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {crises.map((crisis) => {
-                    const crisisType = formatCrisisType(crisis.crisis_type);
-                    const assignedCount = getAssignedCount(crisis.alert_id || crisis.id);
-                    const activeRequest = getRequestForCrisis(crisis.alert_id || crisis.id);
-                    const priorityObj = formatPriority(crisis.trust_score, crisis.crisis_type);
-                    const priority = priorityObj.level;
-                    const totalVolunteers = getTotalVolunteers(crisis.alert_id || crisis.id);
-                    return (
-                      <div
-                        key={crisis.alert_id || crisis.id}
-                        className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all bg-white hover:border-blue-300"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-bold text-slate-900">{crisisType.label}</h3>
+            {tab === 'alerts' && (
+              <section className="mb-8">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Crisis Assignment</h3>
+                {crises.length === 0 ? (
+                  <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg text-center text-slate-600">
+                    No crises requiring assignment
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {crises.map((c) => {
+                      const label = CRISIS_LABELS[c.crisis_type] || c.crisis_type;
+                      const assignCnt = getAssignCount(c.alert_id || c.id);
+                      const req = getReqForCrisis(c.alert_id || c.id);
+                      const pri = getPriority(c.trust_score, c.crisis_type);
+                      
+                      return (
+                        <div
+                          key={c.alert_id || c.id}
+                          className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition bg-white hover:border-blue-300"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-bold text-slate-900">{label}</h3>
+                              </div>
+                              <div className="flex items-center gap-1 text-slate-600 mt-2">
+                                <MapPin size={16} />
+                                <LocationDisplay alert={c} />
+                              </div>
+                              {c.message && (
+                                <p className="text-sm text-slate-600 mt-1">{c.message}</p>
+                              )}
+                              <div className="mt-3 flex gap-2 flex-wrap">
+                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                  Trust: {(c.trust_score * 100).toFixed(0)}%
+                                </span>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${pri.color}`}>
+                                  {pri.level}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1 text-slate-600 mt-2">
-                              <MapPin size={16} />
-                              <LocationRenderer alert={crisis} />
-                            </div>
-                            {crisis.message && (
-                              <p className="text-sm text-slate-600 mt-1">{crisis.message}</p>
-                            )}
-                            <div className="mt-3 flex gap-2 flex-wrap">
-                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                Trust: {(crisis.trust_score * 100).toFixed(0)}%
-                              </span>
-                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                priority.toUpperCase() === 'CRITICAL' ? 'bg-red-100 text-red-800' :
-                                priority.toUpperCase() === 'HIGH' ? 'bg-orange-100 text-orange-800' :
-                                priority.toUpperCase() === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
-                                Priority: {priority}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {(activeRequest || assignedCount > 0) && (
+                            <div className="flex gap-2">
+                              {(req || assignCnt > 0) && (
+                                <button
+                                  onClick={() => setViewAssignments(c)}
+                                  className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg transition text-sm shadow-sm"
+                                >
+                                  View Assigned
+                                </button>
+                              )}
                               <button
-                                onClick={() => setViewingAssignments(crisis)}
-                                className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg transition text-sm shadow-sm"
-                              >
-                                Assigned Resources
-                              </button>
-                            )}
-                            <button
-                                onClick={() => setSelectedCrisis(crisis)}
+                                onClick={() => setSelectedCrisis(c)}
                                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm shadow-sm"
                               >
-                                {activeRequest ? 'Assign More Volunteers' : 'Assign Volunteers'}
+                                {req ? 'Add Volunteers' : 'Assign Volunteers'}
                               </button>
+                              <button
+                                onClick={() => setSelectedForResource(c)}
+                                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition shadow-sm"
+                              >
+                                Assign Resources
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {tab === 'resources' && (
+              <section className="mb-8">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Available Resources</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {resources.map(r => {
+                    const stats = getResStats(r);
+                    return (
+                      <div key={r.id} className="p-6 border border-slate-200 rounded-xl hover:shadow-md transition bg-white hover:border-blue-300">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-semibold text-slate-900">{r.id}</div>
+                            <div className="text-sm text-slate-600 mt-1">Type: <span className="font-medium">{r.type}</span></div>
+                            <div className="text-sm text-slate-600">Total: <span className="font-medium">{r.capacity}</span></div>
+                            <div className="text-sm text-slate-600">Used: <span className="font-medium text-orange-600">{stats.used}</span> / Avail: <span className="font-medium text-green-600">{stats.remaining}</span></div>
+                            <div className="flex items-center gap-1 text-sm text-slate-600 mt-1">
+                              <MapPin size={14} />
+                              <LocationDisplay alert={{ lat: r.location?.lat, lon: r.location?.lon, location: '' }} />
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col gap-2 items-end">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${r.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {r.available ? 'Available' : 'Allocated'}
+                            </span>
                             <button
-                              onClick={() => setSelectedResource(crisis)}
-                              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition shadow-sm"
+                              onClick={() => setViewResourceDetail(r)}
+                              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded border border-slate-300 transition"
                             >
-                              Assign Resources
+                              View Usage
                             </button>
                           </div>
                         </div>
@@ -414,58 +453,17 @@ export default function Resources() {
                     );
                   })}
                 </div>
-              )}
-            </section>
-            )}
-
-            {/* Resources Section */}
-            {activeTab === 'resources' && (
-            <section className="mb-8">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Available Resources</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {resources.map(r => {
-                  const stats = getResourceStats(r);
-                  return (
-                  <div key={r.id} className="p-6 border border-slate-200 rounded-xl hover:shadow-md transition-all bg-white hover:border-blue-300">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold text-slate-900">{r.id}</div>
-                        <div className="text-sm text-slate-600 mt-1">Type: <span className="font-medium">{r.type}</span></div>
-                        <div className="text-sm text-slate-600">Total Capacity: <span className="font-medium">{r.capacity}</span></div>
-                        <div className="text-sm text-slate-600">Used: <span className="font-medium text-orange-600">{stats.used}</span> / Available: <span className="font-medium text-green-600">{stats.remaining}</span></div>
-                        <div className="flex items-center gap-1 text-sm text-slate-600 mt-1">
-                          <MapPin size={14} />
-                          <LocationRenderer alert={{ lat: r.location?.lat, lon: r.location?.lon, location: '' }} />
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col gap-2 items-end">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${r.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {r.available ? 'Available' : 'Allocated'}
-                        </span>
-                        <button
-                          onClick={() => setViewingResourceUsage(r)}
-                          className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded border border-slate-300 transition"
-                        >
-                          View Usage
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-                })}
-              </div>
-            </section>
+              </section>
             )}
           </div>
         </main>
       </div>
 
-      {/* Volunteer Assignment Modal */}
       {selectedCrisis && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-slate-900">Assign Volunteers to Crisis</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Assign Volunteers</h2>
               <button
                 onClick={() => setSelectedCrisis(null)}
                 className="text-slate-500 hover:text-slate-700 text-3xl font-bold leading-none"
@@ -474,135 +472,110 @@ export default function Resources() {
               </button>
             </div>
 
-            {/* Crisis Details */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-4 mb-3">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">{formatCrisisType(selectedCrisis.crisis_type).label}</h3>
-                  <div className="flex items-center gap-1 text-slate-600">
-                    <MapPin size={16} />
-                    <LocationRenderer alert={selectedCrisis} />
-                  </div>
-                </div>
+              <h3 className="text-xl font-bold text-slate-900">{CRISIS_LABELS[selectedCrisis.crisis_type] || selectedCrisis.crisis_type}</h3>
+              <div className="flex items-center gap-1 text-slate-600">
+                <MapPin size={16} />
+                <LocationDisplay alert={selectedCrisis} />
               </div>
               {selectedCrisis.message && (
                 <p className="text-sm text-slate-700 mt-2">{selectedCrisis.message}</p>
               )}
             </div>
 
-            {/* Required Skills */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-900 mb-3">Required Skills:</h3>
               <div className="flex gap-2 flex-wrap">
-                {getRequiredSkills(selectedCrisis.crisis_type).map(skill => (
-                  <span key={skill} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                    {skill.replace('_', ' ').toUpperCase()}
+                {(SKILL_MAP[selectedCrisis.crisis_type] || ['first_aid', 'rescue']).map(s => (
+                  <span key={s} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    {s.replace('_', ' ').toUpperCase()}
                   </span>
                 ))}
               </div>
             </div>
 
-            {/* Request Form */}
             <div className="mb-6">
               <label className="block text-sm font-bold text-slate-900 mb-2">
-                Number of Volunteers Needed
+                Volunteers Needed
               </label>
               <input 
                 type="number" 
                 min="1" 
                 max="50"
-                value={requestCount}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  setRequestCount(isNaN(val) ? '' : val);
-                }}
+                value={volCount}
+                onChange={(e) => setVolCount(parseInt(e.target.value) || '')}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-sm text-slate-500 mt-2">This will broadcast a request to all eligible volunteers.</p>
             </div>
 
             <button
-              onClick={() => handlePostRequest(selectedCrisis)}
+              onClick={() => postVolRequest(selectedCrisis)}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition"
             >
-              Post Volunteer Request
+              Post Request
             </button>
           </div>
         </div>
       )}
 
-      {/* Resource Assignment Modal */}
-      {selectedResource && (
+      {selectedForResource && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Assign Resources to Crisis</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Assign Resources</h2>
               <button
-                onClick={() => setSelectedResource(null)}
+                onClick={() => setSelectedForResource(null)}
                 className="text-slate-500 hover:text-slate-700 text-3xl font-bold leading-none"
               >
                 ×
               </button>
             </div>
 
-            {/* Crisis Details */}
             <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center gap-4 mb-3">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">{formatCrisisType(selectedResource.crisis_type).label}</h3>
-                  <div className="flex items-center gap-1 text-slate-600">
-                    <MapPin size={16} />
-                    <LocationRenderer alert={selectedResource} />
-                  </div>
-                </div>
+              <h3 className="text-xl font-bold text-slate-900">{CRISIS_LABELS[selectedForResource.crisis_type] || selectedForResource.crisis_type}</h3>
+              <div className="flex items-center gap-1 text-slate-600">
+                <MapPin size={16} />
+                <LocationDisplay alert={selectedForResource} />
               </div>
-              {selectedResource.message && (
-                <p className="text-sm text-slate-700 mt-2">{selectedResource.message}</p>
-              )}
             </div>
 
-            {/* Available Resources */}
             <div className="mb-6">
               <h3 className="font-bold text-slate-900 mb-3">Available Resources</h3>
-              {resources.filter(r => getResourceStats(r).remaining > 0).length === 0 ? (
+              {resources.filter(r => getResStats(r).remaining > 0).length === 0 ? (
                 <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
-                  No available resources at this time
+                  No resources available
                 </div>
               ) : (
                 <div className="max-h-60 overflow-y-auto space-y-2 border border-slate-200 rounded-lg p-3">
-                  {resources.filter(r => getResourceStats(r).remaining > 0).map(resource => {
-                    const stats = getResourceStats(resource);
+                  {resources.filter(r => getResStats(r).remaining > 0).map(res => {
+                    const stats = getResStats(res);
                     return (
-                    <div key={resource.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold text-slate-900">{resource.id}</div>
-                        <div className="text-sm text-slate-600">Type: {resource.type}</div>
-                        <div className="text-sm text-slate-600">Available: <span className="font-bold text-green-600">{stats.remaining}</span> / {stats.total}</div>
-                        <div className="flex items-center gap-1 text-sm text-slate-600">
-                          <MapPin size={14} />
-                          <LocationRenderer alert={{ lat: resource.location?.lat, lon: resource.location?.lon, location: '' }} />
+                      <div key={res.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-semibold text-slate-900">{res.id}</div>
+                            <div className="text-sm text-slate-600">Type: {res.type}</div>
+                            <div className="text-sm text-slate-600">Available: <span className="font-bold text-green-600">{stats.remaining}</span> / {stats.total}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="number" 
+                            placeholder="Amount"
+                            className="w-24 px-2 py-1 text-sm border border-slate-300 rounded"
+                            min="1"
+                            max={stats.remaining}
+                            value={resAmounts[res.id] || ''}
+                            onChange={(e) => setResAmounts(prev => ({ ...prev, [res.id]: e.target.value }))}
+                          />
+                          <button
+                            onClick={() => assignResource(selectedForResource, res)}
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition"
+                          >
+                            Assign
+                          </button>
                         </div>
                       </div>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <input 
-                          type="number" 
-                          placeholder="Amount"
-                          className="w-24 px-2 py-1 text-sm border border-slate-300 rounded"
-                          min="1"
-                          max={stats.remaining}
-                          value={assignmentInputs[resource.id] || ''}
-                          onChange={(e) => setAssignmentInputs(prev => ({ ...prev, [resource.id]: e.target.value }))}
-                        />
-                      <button
-                        onClick={() => handleAssignResource(selectedResource, resource)}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition"
-                      >
-                        Assign
-                      </button>
-                      </div>
-                    </div>
                     );
                   })}
                 </div>
@@ -612,59 +585,16 @@ export default function Resources() {
         </div>
       )}
 
-      {/* Viewing Accepted Volunteers Modal */}
-      {viewingRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Accepted Volunteers</h2>
-              </div>
-              <button
-                onClick={() => setViewingRequest(null)}
-                className="text-slate-500 hover:text-slate-700 text-3xl font-bold leading-none"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {(!viewingRequest.accepted_volunteers || viewingRequest.accepted_volunteers.length === 0) ? (
-                <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
-                  No volunteers have accepted this request yet.
-                </div>
-              ) : (
-                volunteers
-                  .filter(v => viewingRequest.accepted_volunteers.includes(v.id))
-                  .map(v => (
-                    <div key={v.id} className="p-4 border border-slate-200 rounded-lg flex justify-between items-center bg-slate-50">
-                      <div>
-                        <div className="font-bold text-slate-900">{v.name}</div>
-                        <div className="text-sm text-slate-600">📱 {v.phone}</div>
-                        <div className="text-xs text-slate-500 mt-1">Skills: {v.skills?.join(', ')}</div>
-                      </div>
-                      <div className="text-right">
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">Accepted</span>
-                      </div>
-                    </div>
-                  ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Viewing Assigned Resources Modal */}
-      {viewingAssignments && (
+      {viewAssignments && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Assigned Resources</h2>
-                <p className="text-slate-600 text-sm mt-1">Crisis: {formatCrisisType(viewingAssignments.crisis_type).label}</p>
+                <p className="text-slate-600 text-sm mt-1">{CRISIS_LABELS[viewAssignments.crisis_type] || viewAssignments.crisis_type}</p>
               </div>
               <button
-                onClick={() => setViewingAssignments(null)}
+                onClick={() => setViewAssignments(null)}
                 className="text-slate-500 hover:text-slate-700 text-3xl font-bold leading-none"
               >
                 ×
@@ -672,60 +602,65 @@ export default function Resources() {
             </div>
 
             <div className="space-y-6">
-              {/* Volunteers Section */}
               <div>
                 {(() => {
-                   const req = getRequestForCrisis(viewingAssignments.alert_id || viewingAssignments.id);
-                   const count = req?.accepted_volunteers?.length || 0;
-                   return (
-                     <>
-                       <h3 className="text-lg font-bold text-slate-900 mb-3">Volunteers ({count}{req ? ` / ${req.volunteers_needed}` : ''})</h3>
-                       {count === 0 ? (
-                         <p className="text-slate-500 italic">No volunteers assigned yet.</p>
-                       ) : (
-                         <div className="space-y-2">
-                           {volunteers
-                             .filter(v => req.accepted_volunteers.includes(v.id))
-                             .map(v => (
-                               <div key={v.id} className="p-3 border border-slate-200 rounded-lg flex justify-between items-center bg-slate-50">
-                                 <div>
-                                   <div className="font-bold text-slate-900">{v.name}</div>
-                                   <div className="text-sm text-slate-600">📱 {v.phone}</div>
-                                 </div>
-                                 <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">Accepted</span>
-                               </div>
-                             ))}
-                         </div>
-                       )}
-                     </>
-                   );
+                  const req = getReqForCrisis(viewAssignments.alert_id || viewAssignments.id);
+                  const cnt = req?.accepted_volunteers?.length || 0;
+                  return (
+                    <>
+                      <h3 className="text-lg font-bold text-slate-900 mb-3">Volunteers ({cnt}{req ? ` / ${req.volunteers_needed}` : ''})</h3>
+                      {cnt === 0 ? (
+                        <p className="text-slate-500 italic">No volunteers assigned</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {volunteers
+                            .filter(v => req.accepted_volunteers.includes(v.id))
+                            .map(v => (
+                              <div key={v.id} className="p-3 border border-slate-200 rounded-lg flex justify-between items-center bg-slate-50">
+                                <div>
+                                  <div className="font-bold text-slate-900">{v.name}</div>
+                                  <div className="text-sm text-slate-600">📱 {v.phone}</div>
+                                </div>
+                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">Accepted</span>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </>
+                  );
                 })()}
               </div>
 
-              {/* Resources Section */}
               <div>
                 <h3 className="text-lg font-bold text-slate-900 mb-3">Equipment & Resources</h3>
                 {(() => {
-                   const crisisId = viewingAssignments.alert_id || viewingAssignments.id;
-                   const crisisAssignments = assignments.filter(a => a.crisis_id === crisisId);
-                   
-                   if (crisisAssignments.length === 0) {
-                     return <p className="text-slate-500 italic">No resources assigned yet.</p>;
-                   }
-                   
-                   return (
-                     <div className="space-y-2">
-                       {crisisAssignments.map((a, idx) => (
-                         <div key={idx} className="p-3 border border-slate-200 rounded-lg flex justify-between items-center bg-slate-50">
-                           <div>
-                             <div className="font-bold text-slate-900">{a.resource_type}</div>
-                             <div className="text-sm text-slate-600">Capacity: {a.resource_capacity}</div>
-                           </div>
-                           <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full font-medium">Assigned</span>
-                         </div>
-                       ))}
-                     </div>
-                   );
+                  const cid = viewAssignments.alert_id || viewAssignments.id;
+                  const crisisAssigns = assignments.filter(a => a.crisis_id === cid);
+                  
+                  if (crisisAssigns.length === 0) {
+                    return <p className="text-slate-500 italic">No resources assigned</p>;
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {crisisAssigns.map(a => (
+                        <div key={a.assignment_id} className="p-3 border border-slate-200 rounded-lg bg-slate-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-bold text-slate-900">{a.resource_type}</div>
+                              <div className="text-sm text-slate-600">Quantity: {a.resource_capacity}</div>
+                              <div className="text-xs text-slate-500 mt-1">
+                                Assigned: {new Date(a.assigned_at).toLocaleString()}
+                              </div>
+                            </div>
+                            <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-medium">
+                              {a.status || 'Assigned'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
                 })()}
               </div>
             </div>
@@ -733,45 +668,84 @@ export default function Resources() {
         </div>
       )}
 
-      {/* Viewing Resource Usage Modal */}
-      {viewingResourceUsage && (
+      {viewResourceDetail && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Resource Usage: {viewingResourceUsage.type}</h2>
-                <p className="text-slate-600 text-sm mt-1">ID: {viewingResourceUsage.id}</p>
-                <p className="text-slate-600 text-sm">Total Capacity: {viewingResourceUsage.capacity}</p>
+                <h2 className="text-2xl font-bold text-slate-900">Resource Usage Details</h2>
+                <p className="text-slate-600 text-sm mt-1">{viewResourceDetail.id} - {viewResourceDetail.type}</p>
               </div>
               <button
-                onClick={() => setViewingResourceUsage(null)}
+                onClick={() => setViewResourceDetail(null)}
                 className="text-slate-500 hover:text-slate-700 text-3xl font-bold leading-none"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-3">
-              {assignments.filter(a => a.resource_id === viewingResourceUsage.id).length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
-                  This resource has not been assigned to any crisis.
+            <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-sm text-slate-600">Total Capacity</div>
+                  <div className="text-2xl font-bold text-slate-900">{viewResourceDetail.capacity}</div>
                 </div>
-              ) : (
-                assignments.filter(a => a.resource_id === viewingResourceUsage.id).map((a, idx) => (
-                  <div key={idx} className="p-4 border border-slate-200 rounded-lg flex justify-between items-center bg-slate-50">
-                    <div>
-                      <div className="font-bold text-slate-900">{formatCrisisType(a.crisis_type).label}</div>
-                      <div className="text-sm text-slate-600">Assigned Amount: <span className="font-bold">{a.resource_capacity}</span></div>
-                      <div className="text-xs text-slate-500 mt-1">Date: {new Date(a.assigned_at).toLocaleString()}</div>
-                    </div>
-                    <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full font-medium">Active</span>
+                <div>
+                  <div className="text-sm text-slate-600">Used</div>
+                  <div className="text-2xl font-bold text-orange-600">{getResStats(viewResourceDetail).used}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-600">Available</div>
+                  <div className="text-2xl font-bold text-green-600">{getResStats(viewResourceDetail).remaining}</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3">Assignment History</h3>
+              {(() => {
+                const resAssigns = assignments.filter(a => a.resource_id === viewResourceDetail.id);
+                
+                if (resAssigns.length === 0) {
+                  return <p className="text-slate-500 italic text-center py-4">No assignments yet</p>;
+                }
+
+                return (
+                  <div className="space-y-2">
+                    {resAssigns.map(a => {
+                      const crisis = crises.find(c => (c.alert_id || c.id) === a.crisis_id);
+                      return (
+                        <div key={a.assignment_id} className="p-4 border border-slate-200 rounded-lg bg-white">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-bold text-slate-900">
+                              {crisis ? (CRISIS_LABELS[crisis.crisis_type] || crisis.crisis_type) : 'Crisis'}
+                            </div>
+                            <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-medium">
+                              {a.resource_capacity} units
+                            </span>
+                          </div>
+                          {a.location && (
+                            <div className="flex items-center gap-1 text-sm text-slate-600 mb-1">
+                              <MapPin size={14} />
+                              <span>{a.location}</span>
+                            </div>
+                          )}
+                          {a.message && (
+                            <p className="text-sm text-slate-600 mb-2">{a.message}</p>
+                          )}
+                          <div className="text-xs text-slate-500">
+                            Assigned: {new Date(a.assigned_at).toLocaleString()}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

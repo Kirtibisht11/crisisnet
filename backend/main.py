@@ -1,15 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-
-# =========================
-# 🆕 DATABASE IMPORTS (Round 2)
-# =========================
 from .db.database import init_db, close_db
-
-# =========================
-# API Routers (Existing)
-# =========================
 from .api.users import router as users_router
 from .api.crisis import router as crisis_router
 from .api.trust_routes import router as trust_router
@@ -23,31 +15,19 @@ from .api.system import router as system_router
 from .api.simulate import router as simulate_router
 from .api.orchestrator import router as orchestrator_router
 from .api.resource_routes import router as resource_api_router
-
-# =========================
-# 🆕 NEW API ROUTERS (Round 2)
-# =========================
 from .api.ngo_routes import router as ngo_router
 from .api.analytics_routes import router as analytics_router
+from .ws.manager import manager
 
-# =========================
-# WebSocket Manager
-# =========================
-from .ws.connection_manager import ConnectionManager
-
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CrisisNet - Disaster Alert System",
     description="Real-time crisis alerts for citizens and volunteers",
-    version="2.0.0",  # 🆕 Updated to v2.0.0 for Round 2
+    version="2.0.0",  
 )
 
-# =========================
-# CORS
-# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -56,9 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# 🆕 DATABASE LIFECYCLE (Round 2)
-# =========================
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on application startup"""
@@ -79,9 +56,7 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"❌ Database shutdown error: {e}")
 
-# =========================
-# Register Routers (Existing)
-# =========================
+
 app.include_router(users_router)
 app.include_router(crisis_router)
 app.include_router(alert_router)
@@ -95,22 +70,11 @@ app.include_router(system_router)
 app.include_router(simulate_router)
 app.include_router(orchestrator_router)
 app.include_router(resource_api_router)
-
-# =========================
-# 🆕 Register NEW Routers (Round 2)
-# =========================
 app.include_router(ngo_router)
 app.include_router(analytics_router)
 logger.info("✅ NGO and Analytics routes registered")
 
-# =========================
-# WebSocket Manager Instance
-# =========================
-manager = ConnectionManager()
 
-# =========================
-# WebSocket Endpoint
-# =========================
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, role: str = "citizen"):
     """
@@ -122,30 +86,27 @@ async def websocket_endpoint(websocket: WebSocket, role: str = "citizen"):
 
     try:
         while True:
-            # Keep connection alive
+          
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket, role)
         logger.info(f"❌ WebSocket disconnected | Role: {role}")
 
-# =========================
-# Root Endpoint
-# =========================
 @app.get("/")
 def root():
     return {
         "system": "CrisisNet Disaster Alert System",
-        "version": "2.0.0",  # 🆕 Round 2
+        "version": "2.0.0",  
         "features": [
             "Role-based alerts",
             "Telegram + WebSocket notifications",
             "Real-time dashboards",
-            "🆕 Database-backed storage (PostgreSQL/SQLite)",
-            "🆕 Learning Agent (AI-driven insights)",
-            "🆕 NGO crisis management",
-            "🆕 System-wide analytics",
+            " Database-backed storage (PostgreSQL/SQLite)",
+            " Learning Agent (AI-driven insights)",
+            " NGO crisis management",
+            " System-wide analytics",
         ],
-        "database": "Connected ✅",
+        "database": "Connected ",
         "endpoints": {
             "docs": "/docs",
             "ngo": "/ngo",
@@ -154,9 +115,6 @@ def root():
         }
     }
 
-# =========================
-# 🆕 Health Check Endpoint (Round 2)
-# =========================
 @app.get("/health")
 async def health_check():
     """Database and system health check"""
@@ -181,9 +139,6 @@ async def health_check():
             "version": "2.0.0"
         }
 
-# =========================
-# Run Server
-# =========================
 if __name__ == "__main__":
     import uvicorn
     logger.info("🚀 CrisisNet Round 2 backend starting...")
