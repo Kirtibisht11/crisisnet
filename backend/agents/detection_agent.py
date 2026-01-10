@@ -11,10 +11,9 @@ from .detection.event_classifier import classify_event
 from .detection.severity_estimator import estimate_severity
 from .detection.confidence_estimator import estimate_confidence
 from .detection.spike_detector import detect_spikes
-from backend.ws.connection_manager import ConnectionManager
+from backend.ws.manager import manager as ws_manager
 from backend.agents.trust_agent import TrustAgent
 trust_agent = TrustAgent()
-ws_manager = ConnectionManager()
 
 def _get_alerts_log_path():
     base_dir = os.path.dirname(os.path.dirname(__file__))  

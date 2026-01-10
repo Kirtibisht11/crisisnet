@@ -28,7 +28,7 @@ class AlertRequest(BaseModel):
     alert_id: Optional[int] = Field(None, description="Alert ID (optional)")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "user_id": "user_123",
                 "crisis_type": "earthquake",
@@ -49,7 +49,7 @@ class FeedbackRequest(BaseModel):
     alert_id: Optional[int] = Field(None, description="Alert ID being reviewed")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "user_id": "user_123",
                 "was_accurate": True,
@@ -64,7 +64,7 @@ class SourceTrackingRequest(BaseModel):
     source_name: Optional[str] = Field(None, description="Human-readable name")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "source_type": "twitter",
                 "source_id": "@emergency_alerts",
@@ -79,7 +79,7 @@ class SourceFeedbackRequest(BaseModel):
     was_accurate: bool
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "source_type": "news",
                 "source_id": "cnn_breaking",

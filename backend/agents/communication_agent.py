@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 from typing import Dict
 from backend.ws.events import EventType, build_event
-from backend.ws.connection_manager import ConnectionManager
+from backend.ws.manager import manager
   
 BOT_TOKEN = "8EGW7WFCGERWXER952927HFV"
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
