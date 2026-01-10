@@ -1,8 +1,3 @@
-"""
-CrisisNet - Resource Agent V2 (Database-Integrated)
-Upgrades existing resource agent to use database + intelligent matching
-"""
-
 from fastapi import APIRouter, HTTPException, Header, Depends
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional, Tuple
@@ -10,12 +5,8 @@ from datetime import datetime
 from math import radians, sin, cos, sqrt, atan2
 import json
 import logging
-
-# Database imports
 from db.database import get_db
 from db import crud, models
-
-# Keep existing modules for compatibility
 from .resource.matcher import ResourceMatcher
 from .resource.geo_optimizer import GeoOptimizer
 from .resource.availability_manager import AvailabilityManager
@@ -30,36 +21,23 @@ logger = logging.getLogger(__name__)
 
 
 class ResourceAgent:
-    """
-    Resource Agent V2 - Database + Intelligence
-    
-    Changes from Round 1:
-    - Uses PostgreSQL instead of JSON files
-    - Intelligent scoring algorithm
-    - Reliability tracking
-    - Distance + skill weighted matching
-    - Automatic reassignment on failure
-    """
-    
+
     def __init__(self, db: Session = None):
         self.db = db
         
-        # Keep Round 1 modules for backward compatibility
         self.matcher = ResourceMatcher()
         self.geo_optimizer = GeoOptimizer()
         self.availability_manager = AvailabilityManager()
         self.priority_engine = PriorityEngine()
         self.skill_matcher = SkillMatcher()
         self.reassignment_engine = ReassignmentEngine()
-        
-        # V2 configuration
         self.max_search_radius_km = 50.0
     
     
-    # ============= DISTANCE & ETA CALCULATIONS =============
+    #DISTANCE & ETA CALCULATIONS
     
     def calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculate haversine distance in km"""
+        
         R = 6371  # Earth radius
         
         lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
@@ -71,7 +49,6 @@ class ResourceAgent:
         
         return R * c
     
-<<<<<<< HEAD
     def release_resources(self, allocation_id: str):
         self.availability_manager.release(allocation_id, self.resources, self.volunteers)
         self.save_resources()
@@ -123,31 +100,6 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
     try:
         if not volunteer.get('name') or not volunteer.get('skills') or not volunteer.get('location'):
             raise HTTPException(status_code=400, detail="Name, skills, and location are required")
-=======
-    
-    def calculate_eta(self, distance_km: float, severity: str) -> int:
-        """Estimate arrival time in minutes"""
-        speed_map = {
-            "critical": 60,  # km/h
-            "high": 50,
-            "medium": 40,
-            "low": 35
-        }
-        speed = speed_map.get(severity, 40)
-        return int((distance_km / speed) * 60)
-    
-    
-    # ============= INTELLIGENT SCORING =============
-    
-    def score_volunteer(
-        self,
-        volunteer: models.User,
-        task: models.Task,
-        crisis: models.Crisis
-    ) -> Tuple[float, Dict]:
-        """
-        Score volunteer for task assignment
->>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
         
         Factors:
         - Skill match: 40%
@@ -268,7 +220,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
         
         Returns: List of assignments
         """
-        logger.info(f"🔍 [Resource Agent V2] Matching for crisis {crisis_id}")
+        logger.info(f" [Resource Agent V2] Matching for crisis {crisis_id}")
         
         if not self.db:
             raise Exception("Database session required")
@@ -297,7 +249,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
                 priority=template.get("priority", 5)
             )
             
-            logger.info(f"✅ Created task: {task.title}")
+            logger.info(f" Created task: {task.title}")
             
             # Find volunteers
             volunteers = crud.get_available_volunteers(
@@ -348,7 +300,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
             )
             
             logger.info(
-                f"✅ Assigned {volunteer.name} to {task.title} "
+                f" Assigned {volunteer.name} to {task.title} "
                 f"(score: {best['score']}, ETA: {eta}min)"
             )
             
@@ -393,7 +345,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
         2. Find new volunteer
         3. Assign and notify
         """
-        logger.info(f"🔄 Reassigning task {task_id} (reason: {reason})")
+        logger.info(f" Reassigning task {task_id} (reason: {reason})")
         
         task = crud.get_task_by_id(self.db, task_id)
         if not task:
@@ -405,7 +357,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
             if old_volunteer:
                 new_reliability = max(0.5, old_volunteer.reliability_score - 0.1)
                 crud.update_volunteer_reliability(self.db, old_volunteer.id, new_reliability)
-                logger.info(f"⬇️ Lowered {old_volunteer.name} reliability to {new_reliability}")
+                logger.info(f"⬇ Lowered {old_volunteer.name} reliability to {new_reliability}")
                 
                 # Record metric
                 crud.record_metric(
@@ -438,7 +390,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
         volunteers = [v for v in volunteers if v.id != old_volunteer_id]
         
         if not volunteers:
-            logger.warning(f"⚠️ No alternative volunteers for task {task_id}")
+            logger.warning(f" No alternative volunteers for task {task_id}")
             return None
         
         # Score and assign
@@ -452,7 +404,7 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
         
         crud.assign_task(self.db, task.id, best["volunteer"].id)
         
-        logger.info(f"✅ Reassigned to {best['volunteer'].name} (score: {best['score']})")
+        logger.info(f" Reassigned to {best['volunteer'].name} (score: {best['score']})")
         
         return {
             "task_id": task.id,
@@ -525,7 +477,6 @@ async def reassign_task(
 
 
 @router.get("/volunteer/tasks/{volunteer_id}")
-<<<<<<< HEAD
 async def get_volunteer_tasks(volunteer_id: str, token: str = Header(None)):
     # Allow anonymous access in dev/demo mode. In production, enforce role checks:
     # require_role(token, ["volunteer"])
@@ -535,15 +486,6 @@ async def get_volunteer_tasks(volunteer_id: str, token: str = Header(None)):
             assignments = json.load(f)
     except FileNotFoundError:
         assignments = []
-=======
-async def get_volunteer_tasks(
-    volunteer_id: int,
-    token: str = Header(...),
-    db: Session = Depends(get_db)
-):
-    """Get all tasks for a volunteer"""
-    require_role(token, ["volunteer"])
->>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
     
     tasks = crud.get_tasks_by_volunteer(db, volunteer_id)
     
@@ -573,7 +515,6 @@ async def get_volunteer_tasks(
     
     return {"status": "success", "tasks": result}
 
-<<<<<<< HEAD
 @router.get("/volunteer/profile/{volunteer_id}")
 async def get_volunteer_profile(volunteer_id: str, token: str = Header(None)):
     # Allow anonymous access in dev/demo mode. In production, enforce role checks:
@@ -588,8 +529,6 @@ async def get_volunteer_profile(volunteer_id: str, token: str = Header(None)):
         return {"status": "success", "volunteer": volunteer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-=======
->>>>>>> 60dbfc5995b4b89983f394658e1f53bdeaed0bc6
 
 @router.put("/volunteer/profile/{volunteer_id}")
 async def update_volunteer_profile(
