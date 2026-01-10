@@ -1,19 +1,12 @@
-"""
-Detection Agent Orchestrator
-Runs the full detection pipeline:
-- Ingests raw signals
-- Classifies crisis type
-- Estimates severity & confidence
-- Detects spikes
-- Logs alerts to alerts_log.json
-"""
 
 import json
 import os
 from datetime import datetime
 import uuid
 
-from .detection.signal_ingestion import ingest_signals
+from .detection.signal_ingestion import ingest_signals  
+from backend.db.database import SessionLocal
+from backend.db.crud import mark_signal_processed
 from .detection.event_classifier import classify_event
 from .detection.severity_estimator import estimate_severity
 from .detection.confidence_estimator import estimate_confidence
@@ -22,7 +15,7 @@ from backend.agents.trust_agent import TrustAgent
 trust_agent = TrustAgent()
 
 def _get_alerts_log_path():
-    base_dir = os.path.dirname(os.path.dirname(__file__))  # backend/
+    base_dir = os.path.dirname(os.path.dirname(__file__))  
     data_dir = os.path.join(base_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
     return os.path.join(data_dir, "alerts_log.json")
@@ -31,7 +24,6 @@ def _get_alerts_log_path():
 
 
 def _load_alerts_log():
-    """Load current alerts log."""
     path = _get_alerts_log_path()
     if not os.path.exists(path):
         return {"alerts": [], "total_count": 0, "statistics": {}}
@@ -61,7 +53,6 @@ def _save_alerts_log(data):
 
 
 def _format_alert_for_log(signal, event_type, severity, confidence):
-    """Format detection output as alert for alerts_log.json."""
     return {
         "alert_id": f"DET_{uuid.uuid4().hex[:8]}",
         "user_id": signal.get("source", "detection_system"),
@@ -90,14 +81,17 @@ def _format_alert_for_log(signal, event_type, severity, confidence):
 
 
 def run_detection_pipeline():
-    """Main entry point for Detection Agent."""
 
+    db = SessionLocal()
+    
     try:
-        signals = ingest_signals()
+        signals = ingest_signals(db)
         print(f"[Detection] Ingested {len(signals)} signals")
     except Exception as e:
         print(f"[Detection] Failed to ingest signals: {e}")
         return {"alerts": [], "spikes": []}
+    finally:
+        pass 
 
     alerts = []
     log_alerts = []
@@ -131,13 +125,26 @@ def run_detection_pipeline():
                 log_alert["decision"] = "ERROR"
                 log_alert["verified"] = False
 
-
             log_alerts.append(log_alert)
+            
+            if signal.get('id') and signal.get('source') != 'manual':
+                try:
+                    mark_signal_processed(
+                        db, 
+                        signal['id'],
+                        detection_result={
+                            'event_type': event_type,
+                            'severity': severity,
+                            'confidence': confidence
+                        }
+                    )
+                    print(f"[Detection] Marked signal {signal['id']} as processed")
+                except Exception as e:
+                    print(f"[Detection] Failed to mark signal as processed: {e}")
 
         except Exception as e:
             print(f"[Detection] Error processing signal {signal.get('id')}: {e}")
 
-    # Save detected alerts to log file
     if log_alerts:
         try:
             log_data = _load_alerts_log()
@@ -160,7 +167,9 @@ def run_detection_pipeline():
     except Exception as e:
         print(f"[Detection] Spike detection failed: {e}")
         spikes = []
-
+    
+    db.close()
+    
     return {"alerts": alerts, "spikes": spikes}
 
 if __name__ == "__main__":
