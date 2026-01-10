@@ -2,9 +2,13 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 import json
 import os
+from sqlalchemy.orm import Session
+from backend.db.database import get_db
+from backend.db.models import Crisis
+from backend.db.crud import get_available_crises
 
 import sys
-# Add project root to path to allow imports from backend
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from backend.agents.detection_agent import run_detection_pipeline
 
@@ -163,3 +167,39 @@ async def get_crisis_types():
 async def get_companion_guidance(ctype: str):
     data = load_companion_guidance()
     return {"success": True, "guidance": data.get(ctype.lower(), data.get("default"))}
+
+@router.get("/alerts/from-db")
+async def get_alerts_from_database(
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """Get alerts from database (Crisis table)"""
+    try:
+        crises = db.query(Crisis).order_by(Crisis.created_at.desc()).limit(limit).all()
+        
+        alerts = []
+        for crisis in crises:
+            alerts.append({
+                "alert_id": f"DB_{crisis.id}",
+                "crisis_type": crisis.crisis_type,
+                "severity": crisis.severity,
+                "location": crisis.location,
+                "lat": crisis.latitude,
+                "lon": crisis.longitude,
+                "message": crisis.description or crisis.title,
+                "trust_score": crisis.trust_score,
+                "confidence": crisis.confidence,
+                "status": crisis.status,
+                "timestamp": crisis.created_at.isoformat() if crisis.created_at else None,
+                "verified": crisis.verified
+            })
+        
+        return {
+            "success": True,
+            "source": "database",
+            "alerts": alerts,
+            "count": len(alerts)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
