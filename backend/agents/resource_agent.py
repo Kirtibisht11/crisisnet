@@ -101,14 +101,14 @@ async def register_volunteer(volunteer: Dict, token: str = Header(None)):
         if not volunteer.get('name') or not volunteer.get('skills') or not volunteer.get('location'):
             raise HTTPException(status_code=400, detail="Name, skills, and location are required")
         
-        Factors:
-        - Skill match: 40%
-        - Distance: 30%
-        - Reliability: 20%
-        - Availability: 10%
-        
-        Returns: (total_score, breakdown_dict)
-        """
+        # Factors:
+        # - Skill match: 40%
+        # - Distance: 30%
+        # - Reliability: 20%
+        # - Availability: 10%
+        # 
+        # Returns: (total_score, breakdown_dict)
+        # """
         breakdown = {}
         total_score = 0.0
         

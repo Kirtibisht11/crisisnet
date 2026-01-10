@@ -46,6 +46,11 @@ function connect() {
   };
 }
 
+export function connectSocket() {
+  connect();
+  return socket;
+}
+
 export function subscribe(eventType, callback) {
   connect();
 

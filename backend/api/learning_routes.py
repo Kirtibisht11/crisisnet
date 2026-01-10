@@ -22,7 +22,7 @@ class TaskStartRequest(BaseModel):
     task_type: Optional[str] = Field(None, description="Type of task (rescue, medical, etc.)")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "task_id": "task_001",
                 "volunteer_id": "vol_123",
@@ -40,7 +40,7 @@ class TaskCompleteRequest(BaseModel):
     notes: Optional[str] = None
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "task_id": "task_001",
                 "volunteer_id": "vol_123",
@@ -59,7 +59,7 @@ class ResponseTimeRequest(BaseModel):
     task_type: Optional[str] = None
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "volunteer_id": "vol_123",
                 "task_id": "task_001",
@@ -79,7 +79,7 @@ class CrisisOutcomeRequest(BaseModel):
     notes: Optional[str] = None
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "crisis_id": "crisis_001",
                 "crisis_type": "earthquake",

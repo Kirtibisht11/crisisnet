@@ -20,51 +20,11 @@ const createIcon = (color) =>
     shadowSize: [41, 41]
   });
 
-  const heatPoints = useMemo(() => {
-  return crises
-    .filter(c => c.location?.lat && c.location?.lon)
-    .map(c => ({
-      lat: c.location.lat,
-      lon: c.location.lon,
-      intensity: Math.min((c.priority_score || 5) / 10, 1),
-    }));
-}, [crises]);
-
 
 const crisisIcon = createIcon('red');
 const resourceIcon = createIcon('blue');
 const volunteerIcon = createIcon('green');
 const userIcon = createIcon('grey');
-const [userLocation, setUserLocation] = useState(null);
-
-/* ---------- REAL-TIME CRISIS UPDATES (WEBSOCKET) ---------- */
-useEffect(() => {
-  const unsubscribe = subscribe((event) => {
-    if (!event || event.event !== "NEW_CRISIS") return;
-
-    const p = event.payload;
-
-    const liveCrisis = {
-      id: `ws-${Date.now()}`,
-      type: p.type,
-      priority_score: p.priority_score ?? 5,
-      affected_radius: p.affected_radius ?? 500,
-      affected_population: p.affected_population,
-      location: {
-        lat: p.lat,
-        lon: p.lon
-      }
-    };
-
-    // Push directly into store (preferred)
-    if (store?.addCrisis) {
-      store.addCrisis(liveCrisis);
-    }
-  });
-
-  return () => unsubscribe();
-}, []);
-
 
 const getResourceIcon = (type) => {
   const t = type?.toLowerCase() || '';
@@ -92,10 +52,47 @@ const MapUpdater = ({ center }) => {
 const MapView = ({ crises: propCrises, resources: propResources, userLocation: propUserLocation }) => {
   const store = useCrisisStore();
   
+  /* ---------- REAL-TIME CRISIS UPDATES (WEBSOCKET) ---------- */
+  useEffect(() => {
+    const unsubscribe = subscribe((event) => {
+      if (!event || event.event !== "NEW_CRISIS") return;
+
+      const p = event.payload;
+
+      const liveCrisis = {
+        id: `ws-${Date.now()}`,
+        type: p.type,
+        priority_score: p.priority_score ?? 5,
+        affected_radius: p.affected_radius ?? 500,
+        affected_population: p.affected_population,
+        location: {
+          lat: p.lat,
+          lon: p.lon
+        }
+      };
+
+      if (store?.addCrisis) {
+        store.addCrisis(liveCrisis);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [store]);
+
   const crises = propCrises || store.crises;
   const resources = propResources || store.resources;
   const volunteers = store.volunteers; // Usually from store
   const allocations = store.allocations; // Usually from store
+
+  const heatPoints = useMemo(() => {
+    return crises
+      .filter(c => c.location?.lat && c.location?.lon)
+      .map(c => ({
+        lat: c.location.lat,
+        lon: c.location.lon,
+        intensity: Math.min((c.priority_score || 5) / 10, 1),
+      }));
+  }, [crises]);
 
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // India default
   const [selectedCrisis, setSelectedCrisis] = useState(null);

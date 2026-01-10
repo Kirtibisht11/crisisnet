@@ -1,6 +1,6 @@
 // frontend/src/services/ngoApi.js
 
-const API_BASE_URL = '/api/ngo';
+const API_BASE_URL = 'http://localhost:8000/ngo';
 
 export const ngoApi = {
   /**
@@ -9,7 +9,7 @@ export const ngoApi = {
    */
   getActiveCrises: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/active-crises`, {
+      const response = await fetch(`${API_BASE_URL}/crises/available`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
