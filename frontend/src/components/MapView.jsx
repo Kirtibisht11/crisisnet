@@ -4,6 +4,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCrisisStore } from '../state/crisisStore';
 import { subscribe } from "../services/socket";
+import CrisisHeatmap from "./CrisisHeatmap";
+
 
 
 /* ---------- ICONS ---------- */
@@ -17,6 +19,17 @@ const createIcon = (color) =>
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
   });
+
+  const heatPoints = useMemo(() => {
+  return crises
+    .filter(c => c.location?.lat && c.location?.lon)
+    .map(c => ({
+      lat: c.location.lat,
+      lon: c.location.lon,
+      intensity: Math.min((c.priority_score || 5) / 10, 1),
+    }));
+}, [crises]);
+
 
 const crisisIcon = createIcon('red');
 const resourceIcon = createIcon('blue');
