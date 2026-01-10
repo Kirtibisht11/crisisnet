@@ -80,6 +80,58 @@ def _format_alert_for_log(signal, event_type, severity, confidence):
     }
 
 
+def _is_duplicate_signal(signal, existing_alerts, time_window_minutes=30, distance_km=5):
+    from datetime import datetime, timedelta
+    from backend.core.geo import haversine_distance
+    
+    signal_text = signal.get('text', '').lower()
+    signal_time = signal.get('timestamp')
+    signal_lat = signal.get('lat')
+    signal_lon = signal.get('lon')
+    
+    if not signal_time:
+        return False
+    
+    if isinstance(signal_time, str):
+        try:
+            signal_time = datetime.fromisoformat(signal_time.replace('Z', '+00:00'))
+        except:
+            return False
+    
+    cutoff_time = datetime.utcnow() - timedelta(minutes=time_window_minutes)
+    
+    for alert in existing_alerts:
+        alert_time = alert.get('timestamp')
+        
+        if isinstance(alert_time, str):
+            try:
+                alert_time = datetime.fromisoformat(alert_time.replace('Z', '+00:00'))
+            except:
+                continue
+        
+        if alert_time < cutoff_time:
+            continue
+        
+        alert_text = alert.get('text', '').lower()
+        if len(set(signal_text.split()) & set(alert_text.split())) > 5:
+
+            if signal_lat and signal_lon and alert.get('location'):
+                alert_loc = alert['location']
+                if isinstance(alert_loc, dict):
+                    alert_lat = alert_loc.get('lat')
+                    alert_lon = alert_loc.get('lon')
+                    
+                    if alert_lat and alert_lon:
+                        distance = haversine_distance(
+                            signal_lat, signal_lon,
+                            alert_lat, alert_lon
+                        )
+                        
+                        if distance <= distance_km:
+                            return True
+    
+    return False
+
 def run_detection_pipeline():
 
     db = SessionLocal()
@@ -90,20 +142,36 @@ def run_detection_pipeline():
     except Exception as e:
         print(f"[Detection] Failed to ingest signals: {e}")
         return {"alerts": [], "spikes": []}
-    finally:
-        pass 
 
     alerts = []
     log_alerts = []
 
+    recent_log = _load_alerts_log()
+    recent_alerts = recent_log.get('alerts', [])[-100:] 
+
     for signal in signals:
         try:
+            if _is_duplicate_signal(signal, recent_alerts):
+                print(f"[Detection] Skipping duplicate signal: {signal.get('text', '')[:50]}")
+                
+                if signal.get('id') and signal.get('source') != 'manual':
+                    mark_signal_processed(
+                        db, 
+                        signal['id'],
+                        detection_result={'duplicate': True}
+                    )
+                continue
+            
             event_type = classify_event(signal)
             if not event_type:
                 continue
 
             severity = estimate_severity(signal, event_type)
             confidence = estimate_confidence(signal, event_type)
+            
+            if signal.get('source') in ['twitter', 'reddit'] and signal.get('engagement_score', 0) > 50:
+                confidence = min(confidence + 0.15, 1.0)
+                print(f"[Detection] Boosted confidence for high-engagement signal: {confidence}")
 
             alerts.append({
                 "event_type": event_type,
@@ -138,7 +206,6 @@ def run_detection_pipeline():
                             'confidence': confidence
                         }
                     )
-                    print(f"[Detection] Marked signal {signal['id']} as processed")
                 except Exception as e:
                     print(f"[Detection] Failed to mark signal as processed: {e}")
 
@@ -152,13 +219,6 @@ def run_detection_pipeline():
             log_data["total_count"] = len(log_data["alerts"])
             log_data["last_updated"] = datetime.utcnow().isoformat() + "Z"
             _save_alerts_log(log_data)
-            try:
-                size = os.path.getsize(_get_alerts_log_path())
-                with open(_get_alerts_log_path(), 'r', encoding='utf-8') as fh:
-                    sample = fh.read(1024)
-                print(f"[Detection] alerts_log.json size={size} sample_start={sample[:200]!r}")
-            except Exception as e:
-                print(f"[Detection] Could not read back alerts_log.json: {e}")
         except Exception as e:
             print(f"[Detection] Error saving to alerts_log.json: {e}")
 
