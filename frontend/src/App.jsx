@@ -24,6 +24,11 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import ResourceDashboard from "./pages/resource_dashboard";
 import SignupAuthority from "./pages/SignupAuthority";
+//Learning Agent pages
+import LearningDashboard from './pages/LearningDashboard';
+
+//Trust Agent pages
+import TrustDashboard from './pages/TrustDashboard';
 export default function App() {
   return (
     <BrowserRouter>
@@ -48,6 +53,10 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/resource" element={<ResourceDashboard />} />
+         {/*Learning Agent Dashboard */}
+        <Route path="/learning" element={<LearningDashboard />} />
+        {/*Trust Agent Dashboard */}
+        <Route path="/trust" element={<TrustDashboard />} />
       </Routes>
     </BrowserRouter>
   );
