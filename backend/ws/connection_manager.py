@@ -79,3 +79,4 @@ class ConnectionManager:
             role: len(connections)
             for role, connections in self.active_connections.items()
         }
+manager = ConnectionManager()
