@@ -11,17 +11,16 @@ from .detection.event_classifier import classify_event
 from .detection.severity_estimator import estimate_severity
 from .detection.confidence_estimator import estimate_confidence
 from .detection.spike_detector import detect_spikes
+from backend.ws.connection_manager import ConnectionManager
 from backend.agents.trust_agent import TrustAgent
 trust_agent = TrustAgent()
+ws_manager = ConnectionManager()
 
 def _get_alerts_log_path():
     base_dir = os.path.dirname(os.path.dirname(__file__))  
     data_dir = os.path.join(base_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
     return os.path.join(data_dir, "alerts_log.json")
-
-
-
 
 def _load_alerts_log():
     path = _get_alerts_log_path()
@@ -50,7 +49,11 @@ def _save_alerts_log(data):
     except Exception as e:
         print(f"[Detection] Failed to save alerts: {e}")
 
-
+async def broadcast_new_alert(alert):
+    try:
+        await ws_manager.broadcast_alert(alert)
+    except Exception as e:
+        print(f"[Detection] WebSocket broadcast failed: {e}")
 
 def _format_alert_for_log(signal, event_type, severity, confidence):
     return {
@@ -132,7 +135,7 @@ def _is_duplicate_signal(signal, existing_alerts, time_window_minutes=30, distan
     
     return False
 
-def run_detection_pipeline():
+def run_detection_pipeline(broadcast=True):
 
     db = SessionLocal()
     
@@ -211,6 +214,18 @@ def run_detection_pipeline():
 
         except Exception as e:
             print(f"[Detection] Error processing signal {signal.get('id')}: {e}")
+
+    if broadcast and log_alerts:
+        import asyncio
+        
+        for alert in log_alerts:
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(broadcast_new_alert(alert))
+                loop.close()
+            except Exception as e:
+                print(f"[Detection] Broadcast error: {e}")
 
     if log_alerts:
         try:
