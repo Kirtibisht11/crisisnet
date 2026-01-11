@@ -1,7 +1,3 @@
-"""
-Simple auth endpoints for demo login
-"""
-
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 import os
@@ -11,7 +7,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from ..core.auth import create_token, decode_token
+from core.auth import create_token, decode_token
+
 from backend.db.database import get_db
 from backend.db.models import User
 from backend.db import crud
