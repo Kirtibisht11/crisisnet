@@ -30,6 +30,9 @@ def load_users():
     with open(USERS_FILE, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# Secret token for authority registration
+AUTHORITY_SECRET = os.getenv("AUTHORITY_SECRET", "CRISIS_NET_ADMIN_2025")
+
 
 class LoginRequest(BaseModel):
     username: str | None = None
@@ -79,6 +82,7 @@ class SignupRequest(BaseModel):
     longitude: float = 0.0
     organization_name: Optional[str] = None
     designation: Optional[str] = None
+    authority_token: Optional[str] = None
 
 
 def get_users_list():
@@ -137,6 +141,9 @@ def signup(req: SignupRequest):
     if req.role == 'authority':
         if not req.organization_name or not req.designation:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Organization name and designation are required for authority users")
+        
+        if req.authority_token != AUTHORITY_SECRET:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Invalid authority access token")
 
     user_id = generate_user_id()
     password_hash = hash_password(req.password)
