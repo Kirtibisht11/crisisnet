@@ -1,22 +1,33 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-from .db.database import ensure_db_initialized
-from .api.users import router as users_router
-from .api.crisis import router as crisis_router
-from .api.trust_routes import router as trust_router
-from .api.alert_routes import router as alert_router
-from .api.auth import router as auth_router
-from .api.geo import router as geo_router
-from .api.volunteer import router as volunteer_router
-from .api.assignments import router as assignments_router
-from .api.notify import router as notify_router
-from .api.system import router as system_router
-from .api.simulate import router as simulate_router
-from .api.orchestrator import router as orchestrator_router
-from .api.resource_routes import router as resource_api_router
-from .api.ngo_routes import router as ngo_router
-from .api.analytics_routes import router as analytics_router
+import sys
+from pathlib import Path
+
+# Add backend to path for imports
+backend_path = Path(__file__).parent
+sys.path.insert(0, str(backend_path))
+
+try:
+    from db.database import ensure_db_initialized
+    from api.users import router as users_router
+    from api.crisis import router as crisis_router
+    from api.trust_routes import router as trust_router
+    from api.alert_routes import router as alert_router
+    from api.auth import router as auth_router
+    from api.geo import router as geo_router
+    from api.volunteer import router as volunteer_router
+    from api.assignments import router as assignments_router
+    from api.notify import router as notify_router
+    from api.system import router as system_router
+    from api.simulate import router as simulate_router
+    from api.orchestrator import router as orchestrator_router
+    from api.resource_routes import router as resource_api_router
+    from api.ngo_routes import router as ngo_router
+    from api.analytics_routes import router as analytics_router
+except ImportError as e:
+    logging.error(f"Import error: {e}")
+    raise
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +40,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -8,7 +8,7 @@ class User(Base):
     """User model - supports all roles (Citizen, Volunteer, NGO, Authority)"""
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True)
     phone = Column(String(15), unique=True, index=True, nullable=False)
     password = Column(String(255), nullable=False)  # Hashed password
     role = Column(String(20), nullable=False)  # citizen, volunteer, ngo, authority
@@ -42,7 +42,7 @@ class Crisis(Base):
     """Crisis/Emergency event"""
     __tablename__ = "crises"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     description = Column(Text)
     crisis_type = Column(String(50), nullable=False)  # fire, flood, accident, medical, etc.
@@ -64,8 +64,8 @@ class Crisis(Base):
     verification_sources = Column(JSON)  # List of sources
     
     # Ownership
-    creator_id = Column(Integer, ForeignKey("users.id"))
-    accepted_by_ngo_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    creator_id = Column(String(50), ForeignKey("users.id"))
+    accepted_by_ngo_id = Column(String(50), ForeignKey("users.id"), nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -83,9 +83,9 @@ class Task(Base):
     """Task assigned to volunteers"""
     __tablename__ = "tasks"
     
-    id = Column(Integer, primary_key=True, index=True)
-    crisis_id = Column(Integer, ForeignKey("crises.id"), nullable=False)
-    volunteer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    id = Column(String(50), primary_key=True, index=True)
+    crisis_id = Column(String(50), ForeignKey("crises.id"), nullable=False)
+    volunteer_id = Column(String(50), ForeignKey("users.id"), nullable=True)
     
     title = Column(String(200), nullable=False)
     description = Column(Text)
@@ -125,15 +125,15 @@ class PerformanceMetric(Base):
     
     # What
     entity_type = Column(String(20), nullable=False)  # volunteer, ngo, crisis, task
-    entity_id = Column(Integer, nullable=False)
+    entity_id = Column(String(50), nullable=False)
     
     # Metrics
     metric_type = Column(String(50), nullable=False)  # response_time, success_rate, reliability
     metric_value = Column(Float, nullable=False)
     
     # Context
-    crisis_id = Column(Integer, ForeignKey("crises.id"), nullable=True)
-    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    crisis_id = Column(String(50), ForeignKey("crises.id"), nullable=True)
+    task_id = Column(String(50), ForeignKey("tasks.id"), nullable=True)
     
     # Additional context
     context_data = Column(JSON)  # Additional context
@@ -145,6 +145,51 @@ class PerformanceMetric(Base):
     __table_args__ = (
         {'extend_existing': True}
     )
+
+class Resource(Base):
+    __tablename__ = "resources"
+    id = Column(String(50), primary_key=True, index=True)
+    type = Column(String(50))
+    capacity = Column(Integer)
+    location = Column(JSON)
+    available = Column(Boolean, default=True)
+    allocated_to = Column(String(50), nullable=True)
+    allocated_at = Column(DateTime, nullable=True)
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+    id = Column(String(50), primary_key=True)
+    resource_id = Column(String(50), ForeignKey("resources.id"))
+    volunteers = Column(JSON)
+    crisis_id = Column(String(50))
+    notes = Column(Text)
+    assigned_by = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class VolunteerRequest(Base):
+    __tablename__ = "volunteer_requests"
+    id = Column(String(50), primary_key=True)
+    crisis_id = Column(String(50), nullable=True)
+    crisis_type = Column(String(50))
+    trust_score = Column(Float)
+    location = Column(String(200))
+    lat = Column(Float)
+    lon = Column(Float)
+    message = Column(Text)
+    skills_required = Column(JSON)
+    volunteers_needed = Column(Integer, default=1)
+    fulfilled_count = Column(Integer, default=0)
+    status = Column(String(20), default="OPEN")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(50))
+    accepted_volunteers = Column(JSON)
+
+class PipelineRun(Base):
+    __tablename__ = "pipeline_runs"
+    run_id = Column(String(50), primary_key=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    summary = Column(JSON)
+    details = Column(JSON)
 
 class SocialSignal(Base):
     """Social Media Signal - Raw data from Twitter/Reddit/Telegram"""

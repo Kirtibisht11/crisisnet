@@ -1,44 +1,24 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 import json
-import os
 from datetime import datetime
+from sqlalchemy.orm import Session
 
 from backend.agents.detection_agent import run_detection_pipeline
 from backend.agents.trust_agent import TrustAgent
+from backend.db.database import get_db
+from backend.db.models import Crisis, PipelineRun, VolunteerRequest, User
 # from backend.agents.resource_agent import ResourceAgent
 
 # Mock ResourceAgent to bypass SyntaxError in the actual file
 class ResourceAgent:
     def __init__(self, db=None): pass
-    def allocate_resources(self, alert): return {"status": "mock_allocation", "alert_id": alert.get("alert_id")}
+    def allocate_resources(self, alert): return {"status": "mock_allocation", "alert_id": alert.get("alert_id") if isinstance(alert, dict) else alert.id}
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
 
-def _data_path(filename: str):
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    return os.path.join(base, "data", filename)
-
-
-def _read_json(path):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-
-def _write_json(path, data):
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as fh:
-        json.dump(data, fh, indent=2)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, path)
-
-
 @router.post("/run")
-def run_pipeline():
+def run_pipeline(db: Session = Depends(get_db)):
     """
     Execute crisis detection → trust evaluation → resource allocation → communication
     Returns summary of pipeline execution with user IDs ready for Telegram notifications
@@ -64,6 +44,24 @@ def run_pipeline():
                 'data': detection_result
             }
             print(f"[Pipeline {run_id}] Detection: {results['detection']['alerts_detected']} alerts detected")
+            
+            # Persist detected alerts to DB as Crises
+            if isinstance(detection_result, dict) and 'alerts' in detection_result:
+                for a_data in detection_result['alerts']:
+                    existing = db.query(Crisis).filter(Crisis.id == a_data.get('alert_id')).first()
+                    if not existing:
+                        crisis = Crisis(
+                            id=a_data.get('alert_id'),
+                            crisis_type=a_data.get('crisis_type'),
+                            severity=a_data.get('severity'),
+                            latitude=a_data.get('lat'),
+                            longitude=a_data.get('lon'),
+                            title=a_data.get('message') or "Detected Crisis",
+                            description=a_data.get('message')
+                        )
+                        db.add(crisis)
+                db.commit()
+
         except Exception as e:
             print(f"[Pipeline {run_id}] Detection error: {e}")
             results['detection'] = {'status': 'error', 'error': str(e)}
@@ -73,15 +71,22 @@ def run_pipeline():
         try:
             trust_agent = TrustAgent()
             # Load alerts from alerts_log and verify them
-            alerts_path = _data_path('alerts_log.json')
-            alerts_data = _read_json(alerts_path)
+            alerts = db.query(Crisis).order_by(Crisis.created_at.desc()).limit(5).all()
             verified_alerts = []
             
-            if isinstance(alerts_data, dict) and 'alerts' in alerts_data:
-                for alert in alerts_data['alerts'][-5:]:  # Process last 5 alerts
-                    verified = trust_agent.verify_alert(alert)
-                    if verified.get('verified'):
-                        verified_alerts.append(verified)
+            for alert in alerts:
+                # Convert to dict for agent compatibility
+                alert_dict = {
+                    "alert_id": alert.id,
+                    "crisis_type": alert.crisis_type,
+                    "location": alert.location,
+                    "lat": alert.latitude,
+                    "lon": alert.longitude,
+                    "message": alert.description
+                }
+                verified = trust_agent.verify_alert(alert_dict)
+                if verified.get('verified'):
+                    verified_alerts.append(verified)
             
             results['trust'] = {
                 'status': 'completed',
@@ -121,20 +126,15 @@ def run_pipeline():
         print(f"[Pipeline {run_id}] Starting Communication Agent...")
         try:
             # Read volunteer_requests to get user IDs
-            vr_path = _data_path('volunteer_requests.json')
-            vr_data = _read_json(vr_path)
+            latest_request = db.query(VolunteerRequest).order_by(VolunteerRequest.created_at.desc()).first()
             
             # Collect unique user IDs from recent requests
             user_ids = []
-            if isinstance(vr_data, list) and len(vr_data) > 0:
-                # Get most recent request
-                latest_request = vr_data[0]
+            if latest_request:
                 # In real scenario, parse involved user IDs from request
                 # For now, collect all user IDs from users.json that are volunteers
-                users_path = _data_path('users.json')
-                users_data = _read_json(users_path)
-                if isinstance(users_data, dict) and 'users' in users_data:
-                    user_ids = [u.get('user_id') for u in users_data['users'] if u.get('role') in ['volunteer', 'authority']]
+                volunteers = db.query(User).filter(User.role.in_(['volunteer', 'authority'])).all()
+                user_ids = [u.id for u in volunteers]
             
             results['communication'] = {
                 'status': 'completed',
@@ -147,12 +147,14 @@ def run_pipeline():
             results['communication'] = {'status': 'error', 'error': str(e), 'user_ids_ready': []}
 
         # Persist pipeline run
-        runs_path = _data_path('pipeline_runs.json')
-        runs_data = _read_json(runs_path)
-        if not isinstance(runs_data, list):
-            runs_data = []
-        runs_data.insert(0, results)
-        _write_json(runs_path, runs_data)
+        run_record = PipelineRun(
+            run_id=run_id,
+            timestamp=datetime.utcnow(),
+            summary=results,
+            details=results
+        )
+        db.add(run_record)
+        db.commit()
 
     except Exception as e:
         print(f"[Pipeline {run_id}] Fatal error: {e}")
@@ -173,19 +175,17 @@ def run_pipeline():
 
 
 @router.get("/runs")
-def get_pipeline_runs(page: int = 1, per_page: int = 20):
+def get_pipeline_runs(page: int = 1, per_page: int = 20, db: Session = Depends(get_db)):
     """Retrieve pipeline run history"""
-    runs_path = _data_path('pipeline_runs.json')
-    runs_data = _read_json(runs_path)
-    if not isinstance(runs_data, list):
-        runs_data = []
+    total = db.query(PipelineRun).count()
+    runs = db.query(PipelineRun).order_by(PipelineRun.timestamp.desc()).offset((page - 1) * per_page).limit(per_page).all()
     
-    total = len(runs_data)
-    start = (page - 1) * per_page
-    end = start + per_page
+    data = []
+    for r in runs:
+        data.append({c.name: getattr(r, c.name) for c in r.__table__.columns})
     
     return {
-        'items': runs_data[start:end],
+        'items': data,
         'page': page,
         'per_page': per_page,
         'total': total
