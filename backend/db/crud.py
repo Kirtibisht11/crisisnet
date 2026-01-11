@@ -3,6 +3,7 @@ from sqlalchemy import and_, or_, func
 from datetime import datetime, timedelta
 import bcrypt
 from typing import List, Optional
+import uuid
 from .models import User, Crisis, Task, PerformanceMetric, SocialSignal
 
 
@@ -28,6 +29,7 @@ def create_user(
         password = hashed.decode('utf-8')
     
     user = User(
+        id=f"u_{uuid.uuid4().hex[:8]}",
         phone=phone,
         password=password,
         role=role,
