@@ -1,0 +1,151 @@
+{
+  "alerts": [
+    {
+      "alert_id": "DET_3965a320",
+      "user_id": "twitter",
+      "crisis_type": "medical",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Bad accident on Rajpur road near diversion. Traffic completely blocked. Ambulance needed.",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.4)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-11T17:32:25.112461",
+      "verified_at": "2026-01-11T18:25:48.368497Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.4)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "medical",
+        "response_time_ms": 894.68
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_fd1a6ec6",
+      "user_id": "news_api",
+      "crisis_type": "flood",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Flash floods in Maldevta washing away shops. Red alert issued for river banks.",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.30000000000000004)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-11T17:32:25.112446",
+      "verified_at": "2026-01-11T18:25:49.284674Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.30000000000000004)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "flood",
+        "response_time_ms": 11067.28
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_bcb64aa3",
+      "user_id": "twitter",
+      "crisis_type": "fire",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Massive explosion at chemical factory in Selaqui! Fire spreading rapidly. Workers trapped!",
+      "has_image": false,
+      "trust_score": 0.482,
+      "decision": "REVIEW",
+      "status": "Needs human review (threshold: 0.44999999999999996)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.02,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-11T17:32:25.112396",
+      "verified_at": "2026-01-11T18:26:11.472091Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.48 \u2192 REVIEW\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n  Bonus Signals:      +0.02\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Needs human review (threshold: 0.44999999999999996)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": true
+        },
+        "crisis_type": "fire",
+        "response_time_ms": 16569.15
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    }
+  ],
+  "total_count": 3,
+  "statistics": {},
+  "last_updated": "2026-01-11T18:26:39.150528Z"
+}
