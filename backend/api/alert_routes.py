@@ -88,6 +88,14 @@ async def get_all_alerts(
         
         alerts = []
         for c in crises:
+            # Determine decision based on verified status and rejection
+            if c.verified:
+                decision = "VERIFIED"
+            elif c.status == "rejected":
+                decision = "REJECTED"
+            else:
+                decision = "REVIEW"
+
             alerts.append({
                 "alert_id": c.id,
                 "crisis_type": c.crisis_type,
@@ -100,7 +108,7 @@ async def get_all_alerts(
                 "status": c.status,
                 "verified": c.verified,
                 "timestamp": c.created_at.isoformat() if c.created_at else None,
-                "decision": "VERIFIED" if c.verified else "REVIEW",
+                "decision": decision,
                 "sources": int((c.trust_score or 0.5) * 20) + random.randint(1, 5)  # Simulated source count for demo
             })
 
@@ -121,6 +129,14 @@ async def get_alert_by_id(alert_id: str, db: Session = Depends(get_db)):
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
 
+    # Determine decision based on verified status and rejection
+    if alert.verified:
+        decision = "VERIFIED"
+    elif alert.status == "rejected":
+        decision = "REJECTED"
+    else:
+        decision = "REVIEW"
+
     alert_data = {
         "alert_id": alert.id,
         "crisis_type": alert.crisis_type,
@@ -133,7 +149,7 @@ async def get_alert_by_id(alert_id: str, db: Session = Depends(get_db)):
         "status": alert.status,
         "verified": alert.verified,
         "timestamp": alert.created_at.isoformat() if alert.created_at else None,
-        "decision": "VERIFIED" if alert.verified else "REVIEW"
+        "decision": decision
     }
     return {"success": True, "alert": alert_data}
 
@@ -143,19 +159,33 @@ async def update_alert_decision(alert_id: str, payload: dict, db: Session = Depe
     alert = db.query(Crisis).filter(Crisis.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
+    response_data = {
+        "alert_id": alert.id,
+        "status": alert.status,
+        "verified": alert.verified
+    }
+
     if "decision" in payload:
         decision = payload["decision"].upper()
         if decision == "VERIFIED":
             alert.verified = True
             alert.status = "accepted"
+            if "approved_by" in payload:
+                response_data["approved_by"] = payload["approved_by"]
+            if "approved_at" in payload:
+                response_data["approved_at"] = payload["approved_at"]
         elif decision == "REJECTED":
             alert.verified = False
             alert.status = "rejected"
-            
+            if "rejected_by" in payload:
+                response_data["rejected_by"] = payload["rejected_by"]
+            if "rejected_at" in payload:
+                response_data["rejected_at"] = payload["rejected_at"]
+
     db.commit()
     db.refresh(alert)
-    return {"success": True, "alert": {"alert_id": alert.id, "status": alert.status, "verified": alert.verified}}
+    return {"success": True, "alert": response_data}
 
 
 @router.get("/alerts/stats")
