@@ -2,9 +2,21 @@
 fastapi>=0.104.0
 uvicorn>=0.24.0
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 # Database
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.9
+=======
+# Database & Scheduling
+sqlalchemy>=2.0.0
+schedule>=1.2.0
+>>>>>>> d5de354543184151941a00ee20445fccfdc8c52d
+=======
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
 
 # Data validation
 pydantic>=2.0.0

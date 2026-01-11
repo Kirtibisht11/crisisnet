@@ -69,6 +69,20 @@ const AlertCard = ({ alert }) => {
 const CitizenProfileCard = ({ user }) => {
   const [locationDisplay, setLocationDisplay] = useState("Detecting...");
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [resources, setResources] = useState([]);
+  const [location, setLocation] = useState(user?.location || null);
+
+  const isVolunteer = user?.volunteer || user?.volunteer_id || localStorage.getItem('volunteerId');
+
+  /* ---------- REAL-TIME SOCKET ---------- */
+>>>>>>> d5de354543184151941a00ee20445fccfdc8c52d
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
   useEffect(() => {
     if (!user) return;
     const loc = user.location;
@@ -95,6 +109,10 @@ const CitizenProfileCard = ({ user }) => {
   }, [user]);
 
   return (
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-5 hover:border-blue-500/50 transition-all">
       <div className="flex items-center gap-2 mb-4 text-blue-400">
         <User className="w-5 h-5" />
@@ -104,6 +122,57 @@ const CitizenProfileCard = ({ user }) => {
         <div>
           <label className="text-xs text-slate-400 uppercase font-semibold">Name</label>
           <p className="text-white font-medium">{user?.name || user?.username || "Guest Citizen"}</p>
+<<<<<<< HEAD
+=======
+    <div className="min-h-screen bg-slate-100">
+      <header className="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <span className="font-bold text-xl tracking-tight">CrisisNet</span>
+        <div className="flex items-center gap-4">
+          {isVolunteer ? (
+            <button
+              onClick={() => navigate('/volunteer')}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+            >
+              Volunteer Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/signup-volunteer')}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+            >
+              <UserPlus size={16} />
+              Sign Up as Volunteer
+            </button>
+          )}
+          <button 
+            onClick={logout}
+            className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition"
+          >
+            Sign Out
+          </button>
+        </div>
+      </header>
+
+      <div className="w-[96%] mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-4">Citizen Dashboard</h1>
+
+        {loading ? <p>Loading…</p> :
+          alerts.length ? alerts.map(a => <AlertCard key={a.alert_id} alert={a} />) :
+            <div className="bg-green-50 p-6 text-center rounded">
+              <CheckCircle className="mx-auto mb-2 text-green-600" />
+              No active threats
+            </div>
+        }
+
+        <div className="bg-white rounded-xl h-[400px] mt-6">
+          <MapView
+            crises={alerts.map(a => ({ id: a.alert_id, type: a.crisis_type, location: { lat: a.lat, lon: a.lon } }))}
+            resources={resources}
+            userLocation={location ? [location.lat, location.lon] : null}
+          />
+>>>>>>> d5de354543184151941a00ee20445fccfdc8c52d
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
         </div>
         {user?.phone && (
           <div>
