@@ -1,31 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useCrisisStore } from "../state/crisisStore";
 
 const Analytics = () => {
-  const { crises } = useCrisisStore();
+  const [crises, setCrises] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    setLastUpdated(new Date().toLocaleString());
-  }, [crises]);
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/alerts');
+        const data = await res.json();
+        setCrises(data.alerts || []);
+        setLastUpdated(new Date().toLocaleString());
+      } catch (err) {
+        console.error("Failed to load analytics data", err);
+      }
+    };
+
+    fetchAnalytics();
+    const interval = setInterval(fetchAnalytics, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const stats = useMemo(() => {
     const total = crises.length;
 
     const byType = {};
-    let avgPriority = 0;
+    let totalTrust = 0;
 
     crises.forEach(c => {
-      const type = c.type || "unknown";
+      const type = (c.crisis_type || c.type || "unknown").toLowerCase();
       byType[type] = (byType[type] || 0) + 1;
-      avgPriority += c.priority_score || 0;
+      totalTrust += Number(c.trust_score) || 0;
     });
 
     return {
       total,
       byType,
-      avgPriority: total ? (avgPriority / total).toFixed(2) : 0,
+      avgTrust: total ? (totalTrust / total * 100).toFixed(1) + "%" : "0%",
     };
   }, [crises]);
 
@@ -33,8 +45,8 @@ const Analytics = () => {
     <div className="min-h-screen bg-slate-100">
       <header className="bg-slate-900 text-white px-6 py-4 flex justify-between">
         <h1 className="text-xl font-bold">Crisis Analytics</h1>
-        <Link to="/" className="text-sm text-slate-300 hover:text-white">
-          Back
+        <Link to="/authority" className="text-sm text-slate-300 hover:text-white">
+          Back to Dashboard
         </Link>
       </header>
 
@@ -54,9 +66,9 @@ const Analytics = () => {
             </div>
 
             <div className="p-4 bg-purple-50 rounded-lg">
-              <div className="text-xs text-purple-700">Avg Priority</div>
+              <div className="text-xs text-purple-700">Avg Trust Score</div>
               <div className="text-3xl font-bold text-purple-900">
-                {stats.avgPriority}
+                {stats.avgTrust}
               </div>
             </div>
 
