@@ -58,35 +58,35 @@ const CitizenProfileCard = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <div className="flex items-center gap-2 mb-6 text-slate-700">
+    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
+      <div className="flex items-center gap-2 mb-6 text-blue-400">
         <User className="w-5 h-5" />
-        <h3 className="font-bold">Citizen Profile</h3>
+        <h3 className="font-bold text-white">Citizen Profile</h3>
       </div>
       <div className="space-y-4">
         <div>
-          <label className="text-xs text-slate-500 uppercase font-semibold">Name</label>
-          <p className="text-slate-900 font-medium">{user?.name || user?.username || "Guest Citizen"}</p>
+          <label className="text-xs text-slate-400 uppercase font-semibold">Name</label>
+          <p className="text-white font-medium">{user?.name || user?.username || "Guest Citizen"}</p>
         </div>
         {user?.phone && (
           <div>
-            <label className="text-xs text-slate-500 uppercase font-semibold">Phone</label>
-            <p className="text-slate-900 font-medium flex items-center gap-1">
-              <Phone className="w-3 h-3" /> {user.phone}
+            <label className="text-xs text-slate-400 uppercase font-semibold">Phone</label>
+            <p className="text-white font-medium flex items-center gap-1">
+              <Phone className="w-3 h-3 text-slate-400" /> {user.phone}
             </p>
           </div>
         )}
         <div>
-          <label className="text-xs text-slate-500 uppercase font-semibold">Location</label>
-          <p className="text-slate-900 font-medium flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {locationDisplay}
+          <label className="text-xs text-slate-400 uppercase font-semibold">Location</label>
+          <p className="text-white font-medium flex items-center gap-1">
+            <MapPin className="w-3 h-3 text-slate-400" /> {locationDisplay}
           </p>
         </div>
         <div>
-          <label className="text-xs text-slate-500 uppercase font-semibold">Status</label>
+          <label className="text-xs text-slate-400 uppercase font-semibold">Status</label>
           <div className="flex items-center gap-2 mt-1">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span className="text-sm text-slate-700">Safe</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span className="text-sm text-green-400">Safe</span>
           </div>
         </div>
       </div>
