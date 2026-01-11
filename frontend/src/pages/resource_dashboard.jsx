@@ -22,7 +22,9 @@ import {
   Plus,
   Eye,
   Clock,
-  Truck
+  Truck,
+  Trash2,
+  Edit
 } from 'lucide-react'
 
 const CRISIS_LABELS = {
@@ -125,6 +127,9 @@ export default function ResourceDashboard() {
   const [viewAssignments, setViewAssignments] = useState(null)
   const [viewResourceDetail, setViewResourceDetail] = useState(null)
   const [assignments, setAssignments] = useState([])
+  const [showAddResource, setShowAddResource] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [newResource, setNewResource] = useState({ type: '', capacity: '', provider: '', location: '' })
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState('alerts')
   const [volCount, setVolCount] = useState(5)
@@ -243,6 +248,83 @@ export default function ResourceDashboard() {
     }
     setSelectedCrisis(null);
     loadAll();
+  };
+
+  const handleSaveResource = async () => {
+    if (!newResource.type || !newResource.capacity || !newResource.provider || !newResource.location) {
+      alert('Please fill all fields');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token') || localStorage.getItem('crisisnet_token');
+      
+      if (editingId) {
+        await api.put(`/api/resource/resources/${editingId}`, {
+          type: newResource.type,
+          capacity: parseInt(newResource.capacity),
+          location: `${newResource.location} (Provider: ${newResource.provider})`
+        }, { headers: { 'token': token }});
+        alert('Resource updated successfully');
+      } else {
+        await api.post('/api/resource/resources', {
+          type: newResource.type,
+          capacity: parseInt(newResource.capacity),
+          provider: newResource.provider,
+          location: newResource.location
+        }, { headers: { 'token': token }});
+        alert('Resource added successfully');
+      }
+      
+      setShowAddResource(false);
+      setNewResource({ type: '', capacity: '', provider: '', location: '' });
+      setEditingId(null);
+      loadAll();
+    } catch (e) {
+      console.error(e);
+      if (e.code === "ERR_NETWORK") {
+        alert("Network Error: Please check if the backend is running and CORS is configured.");
+      } else {
+        alert(`Failed to save resource: ${e.response?.data?.detail || e.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditClick = (resource) => {
+    let loc = resource.location || '';
+    let prov = '';
+    if (loc.includes('(Provider:')) {
+      const parts = loc.split('(Provider:');
+      loc = parts[0].trim();
+      prov = parts[1].replace(')', '').trim();
+    }
+
+    setNewResource({
+      type: resource.type,
+      capacity: resource.capacity,
+      provider: prov,
+      location: loc
+    });
+    setEditingId(resource.id);
+    setShowAddResource(true);
+  };
+
+  const handleDeleteResource = async (id) => {
+    if(!window.confirm("Are you sure you want to delete this resource?")) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token') || localStorage.getItem('crisisnet_token');
+      await api.delete(`/api/resource/resources/${id}`, { headers: { 'token': token }});
+      loadAll();
+    } catch(e) {
+      console.error(e);
+      alert("Failed to delete resource");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const assignResource = (crisis, resource) => {
@@ -623,9 +705,22 @@ export default function ResourceDashboard() {
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Resource Inventory</h3>
-                  <span className="text-sm text-slate-400">
-                    {availableResources} available of {totalResources} total
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-slate-400">
+                      {availableResources} available of {totalResources} total
+                    </span>
+                    <button
+                      onClick={() => {
+                        setEditingId(null);
+                        setNewResource({ type: '', capacity: '', provider: '', location: '' });
+                        setShowAddResource(true);
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Resource
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -642,20 +737,29 @@ export default function ResourceDashboard() {
                             </div>
                             <div>
                               <h4 className="font-semibold text-white">{r.type}</h4>
-                              <p className="text-xs text-slate-400">ID: {r.id}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span>ID: {r.id.substring(0, 8)}...</span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${r.available ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                               {r.available ? 'Available' : 'Allocated'}
                             </span>
-                            <button
-                              onClick={() => setViewResourceDetail(r)}
-                              className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition flex items-center gap-1"
-                            >
-                              <Eye className="w-3 h-3" />
-                              Details
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => handleEditClick(r)}
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded border border-slate-700 transition"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteResource(r.id)}
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-red-400 rounded border border-slate-700 transition"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -680,7 +784,7 @@ export default function ResourceDashboard() {
                         {/* Location */}
                         <div className="flex items-center gap-2 text-sm text-slate-400">
                           <MapPin className="w-3 h-3" />
-                          <LocationDisplay alert={{ lat: r.location?.lat, lon: r.location?.lon, location: '' }} />
+                          <LocationDisplay alert={{ location: r.location }} />
                         </div>
                       </div>
                     );
@@ -1038,6 +1142,77 @@ export default function ResourceDashboard() {
                   </div>
                 );
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Resource Modal */}
+      {showAddResource && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-2xl font-bold text-white">{editingId ? 'Edit Resource' : 'Add New Resource'}</h2>
+              <button
+                onClick={() => setShowAddResource(false)}
+                className="p-2 hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-white"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Resource Name / Type</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Generator, Water Packs, Blankets"
+                  value={newResource.type}
+                  onChange={(e) => setNewResource({...newResource, type: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Capacity / Quantity</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 100"
+                  value={newResource.capacity}
+                  onChange={(e) => setNewResource({...newResource, capacity: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Provider (Org or Person)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Red Cross, John Doe"
+                  value={newResource.provider}
+                  onChange={(e) => setNewResource({...newResource, provider: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Location</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Central Warehouse, Sector 4"
+                  value={newResource.location}
+                  onChange={(e) => setNewResource({...newResource, location: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveResource}
+                className="w-full py-3 mt-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                {editingId ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {editingId ? 'Update Resource' : 'Add Resource'}
+              </button>
             </div>
           </div>
         </div>
