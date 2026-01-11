@@ -70,6 +70,7 @@ const CitizenProfileCard = ({ user }) => {
   const [locationDisplay, setLocationDisplay] = useState("Detecting...");
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,8 @@ const CitizenProfileCard = ({ user }) => {
 
   /* ---------- REAL-TIME SOCKET ---------- */
 >>>>>>> d5de354543184151941a00ee20445fccfdc8c52d
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
   useEffect(() => {
     if (!user) return;
     const loc = user.location;
@@ -107,6 +110,9 @@ const CitizenProfileCard = ({ user }) => {
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-5 hover:border-blue-500/50 transition-all">
       <div className="flex items-center gap-2 mb-4 text-blue-400">
         <User className="w-5 h-5" />
@@ -116,6 +122,7 @@ const CitizenProfileCard = ({ user }) => {
         <div>
           <label className="text-xs text-slate-400 uppercase font-semibold">Name</label>
           <p className="text-white font-medium">{user?.name || user?.username || "Guest Citizen"}</p>
+<<<<<<< HEAD
 =======
     <div className="min-h-screen bg-slate-100">
       <header className="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -164,6 +171,8 @@ const CitizenProfileCard = ({ user }) => {
             userLocation={location ? [location.lat, location.lon] : null}
           />
 >>>>>>> d5de354543184151941a00ee20445fccfdc8c52d
+=======
+>>>>>>> 081013c4b297c7d47595fa443d899e4c2dde6ea1
         </div>
         {user?.phone && (
           <div>
