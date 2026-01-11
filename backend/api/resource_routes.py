@@ -32,6 +32,68 @@ def list_resources(page: int = 1, per_page: int = 20, type: Optional[str] = None
     return { 'items': data, 'page': page, 'per_page': per_page, 'total': total }
 
 
+@router.post("/resources")
+def create_resource(payload: dict, token: str = Header(None), db: Session = Depends(get_db)):
+    try:
+        user = require_role(token, ["authority", "admin"])
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    # Append provider to location since Resource model lacks provider column
+    loc = payload.get('location', 'Headquarters')
+    prov = payload.get('provider')
+    final_location = f"{loc} (Provider: {prov})" if prov else loc
+
+    new_resource = Resource(
+        id=f"res_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+        type=payload.get('type'),
+        capacity=int(payload.get('capacity', 0)),
+        location=final_location,
+        available=True
+    )
+    
+    db.add(new_resource)
+    db.commit()
+    db.refresh(new_resource)
+    return {'status': 'ok', 'resource': {c.name: getattr(new_resource, c.name) for c in new_resource.__table__.columns}}
+
+
+@router.delete("/resources/{resource_id}")
+def delete_resource(resource_id: str, token: str = Header(None), db: Session = Depends(get_db)):
+    try:
+        require_role(token, ["authority", "admin"])
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    db.delete(resource)
+    db.commit()
+    return {"status": "ok", "message": "Resource deleted"}
+
+
+@router.put("/resources/{resource_id}")
+def update_resource(resource_id: str, payload: dict, token: str = Header(None), db: Session = Depends(get_db)):
+    try:
+        require_role(token, ["authority", "admin"])
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    if 'type' in payload: resource.type = payload['type']
+    if 'capacity' in payload: resource.capacity = int(payload['capacity'])
+    if 'location' in payload: resource.location = payload['location']
+
+    db.commit()
+    db.refresh(resource)
+    return {'status': 'ok', 'resource': {c.name: getattr(resource, c.name) for c in resource.__table__.columns}}
+
+
 @router.put("/resources/{resource_id}/availability")
 def set_resource_availability(resource_id: str, payload: dict, token: str = Header(None), db: Session = Depends(get_db)):
     # only authority or admin can change resource availability

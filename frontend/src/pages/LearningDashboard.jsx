@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
+  ArrowLeft,
   Brain,
   TrendingUp,
   Users,
@@ -39,30 +41,54 @@ const LearningDashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Mock data for demonstration (replace with actual API calls)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const [alertsRes, volsRes, reqsRes] = await Promise.all([
+        fetch('http://localhost:8000/api/alerts'),
+        fetch('http://localhost:8000/api/resource/volunteers'),
+        fetch('http://localhost:8000/api/resource/volunteer_requests')
+      ]);
+
+      const alertsData = await alertsRes.json();
+      const volsData = await volsRes.json();
+      const reqsData = await reqsRes.json();
+
+      const alerts = alertsData.alerts || [];
+      const volunteers = volsData.items || [];
+      const requests = reqsData.items || [];
+
+      const verifiedCount = alerts.filter(a => a.decision === 'VERIFIED').length;
+      const rejectedCount = alerts.filter(a => a.decision === 'REJECTED').length;
+      const decidedCount = verifiedCount + rejectedCount;
       
-      const mockSystemPerformance = {
-        health_status: 'healthy',
-        performance_grade: 'A - Excellent',
-        overall_success_rate: 94.2,
-        accuracy: 92.5,
-        false_positives: 2.1,
+      // Calculate metrics based on actual decisions
+      const accuracy = decidedCount > 0 ? (verifiedCount / decidedCount) * 100 : 0;
+      const falsePositives = decidedCount > 0 ? (rejectedCount / decidedCount) * 100 : 0;
+      const successRate = alerts.length > 0 ? (verifiedCount / alerts.length) * 100 : 0;
+      
+      const activeVolunteers = volunteers.filter(v => v.available).length;
+      const completedTasks = requests.filter(r => ['COMPLETED', 'RESOLVED'].includes(r.status)).length;
+      const pendingTasks = requests.filter(r => r.status === 'OPEN').length;
+
+      const realSystemPerformance = {
+        health_status: accuracy > 80 ? 'healthy' : (accuracy > 50 ? 'warning' : 'critical'),
+        performance_grade: accuracy > 90 ? 'A - Excellent' : (accuracy > 75 ? 'B - Good' : 'C - Needs Improvement'),
+        overall_success_rate: successRate,
+        accuracy: accuracy,
+        false_positives: falsePositives,
         avg_response_time: 1.2,
         model_version: 'v2.1.4',
         last_trained: new Date().toISOString()
       };
 
-      const mockStatistics = {
-        active_volunteers: 24,
-        total_volunteers: 42,
-        total_tasks: 156,
-        total_crises: 89,
+      const realStatistics = {
+        active_volunteers: activeVolunteers,
+        total_volunteers: volunteers.length,
+        total_tasks: requests.length,
+        total_crises: alerts.length,
         avg_volunteer_reliability: 4.8,
         avg_response_time: 15, // minutes
-        overall_success_rate: 94.2,
-        tasks_completed: 142,
-        tasks_pending: 14,
+        overall_success_rate: successRate,
+        tasks_completed: completedTasks,
+        tasks_pending: pendingTasks,
         model_accuracy_improvement: 12.4
       };
 
@@ -70,10 +96,10 @@ const LearningDashboard = () => {
         generated_at: new Date().toISOString(),
         time_range: timeRange,
         key_insights: [
-          'Model accuracy improved by 12.4% over last 30 days',
-          'False positive rate decreased by 3.2%',
-          'Volunteer response time improved by 18%',
-          'New patterns detected in flood response coordination'
+          `Processed ${alerts.length} total alerts in the selected period`,
+          `${verifiedCount} alerts verified as genuine crises`,
+          `${volunteers.length} volunteers currently registered in the system`,
+          `Response coordination active for ${pendingTasks} open tasks`
         ],
         recommendations: [
           'Consider training on recent earthquake data',
@@ -88,8 +114,8 @@ const LearningDashboard = () => {
         }
       };
 
-      setSystemPerformance(mockSystemPerformance);
-      setStatistics(mockStatistics);
+      setSystemPerformance(realSystemPerformance);
+      setStatistics(realStatistics);
       setLearningReport(mockLearningReport);
       setLoading(false);
     } catch (error) {
@@ -133,6 +159,10 @@ const LearningDashboard = () => {
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6">
       {/* Header */}
       <div className="mb-8">
+        <Link to="/authority" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Authority Dashboard
+        </Link>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-3">
