@@ -10,6 +10,10 @@ load_dotenv()
 # Database URL from environment or use SQLite as fallback
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./crisisnet.db")
 
+# Vercel Postgres uses postgres:// but SQLAlchemy 2.0 requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Create engine
 # For SQLite: connect_args needed for thread safety
 # For PostgreSQL: pool settings for production
@@ -23,7 +27,8 @@ else:
         DATABASE_URL,
         pool_size=10,
         max_overflow=20,
-        pool_pre_ping=True
+        pool_pre_ping=True,
+        pool_recycle=3600  # Recycle connections after 1 hour
     )
 
 # Session factory
@@ -36,7 +41,7 @@ Base = declarative_base()
 def init_db():
     """
     Initialize database - create all tables
-    Call this on app startup
+    Call this on app startup or lazily on first request
     """
     from .models import User, Crisis, Task, PerformanceMetric, SocialSignal  
     Base.metadata.create_all(bind=engine)
@@ -67,3 +72,17 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Lazy initialization for serverless environments (Vercel)
+_db_initialized = False
+
+def ensure_db_initialized():
+    """
+    Ensures database is initialized on first request
+    Call this in endpoints that need the database
+    """
+    global _db_initialized
+    if not _db_initialized:
+        init_db()
+        _db_initialized = True

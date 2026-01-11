@@ -4,6 +4,7 @@ uvicorn>=0.24.0
 
 # Database & Scheduling
 sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
 schedule>=1.2.0
 
 # Data validation
