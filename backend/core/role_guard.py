@@ -1,33 +1,21 @@
-"""
-Role Guard Utility
-Checks whether a user has permission to access a resource.
-"""
+from fastapi import HTTPException
+from typing import List
+from .auth import decode_token
 
-from backend.core.auth import decode_token
-
-
-def require_role(token: str, allowed_roles: list):
-    """
-    Validates token and checks if user role is allowed.
-
-    Args:
-        token (str): JWT token
-        allowed_roles (list): list of allowed roles
-
-    Returns:
-        dict: decoded token payload if allowed
-
-    Raises:
-        PermissionError if unauthorized
-    """
-
+def require_role(token: str, allowed_roles: List[str]) -> dict:
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token required")
+    
+    if token.startswith("Bearer "):
+        token = token.split(" ")[1]
+        
     try:
         payload = decode_token(token)
+        user_role = payload.get("role")
+        
+        if user_role not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+            
+        return payload
     except ValueError as e:
-        raise PermissionError(str(e))
-
-    role = payload.get("role")
-    if role not in allowed_roles:
-        raise PermissionError("Access denied for this role")
-
-    return payload
+        raise HTTPException(status_code=401, detail=str(e))
