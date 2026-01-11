@@ -4,6 +4,9 @@ import logging
 import sys
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BASE_DIR))
+
 # Add backend to path for imports
 backend_path = Path(__file__).parent
 sys.path.insert(0, str(backend_path))
@@ -16,6 +19,7 @@ try:
     from api.trust_routes import router as trust_router
     from api.alert_routes import router as alert_router
     from api.auth import router as auth_router
+
     from api.geo import router as geo_router
     from api.volunteer import router as volunteer_router
     from api.assignments import router as assignments_router
