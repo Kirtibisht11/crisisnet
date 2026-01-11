@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../state/userStore';
 import { connectTelegram } from "../services/telegramUtils";
 import { subscribe } from "../services/socket";
+
 import {
   MapPin, Clock, Bell, CheckCircle, UserPlus
 } from 'lucide-react';
@@ -12,7 +13,7 @@ import CitizenProfileCard from '../components/CitizenProfileCard';
 import MapView from '../components/MapView';
 import CrisisCompanion from '../components/crisisCompanion';
 
-/* ------------------ Crisis Styling ------------------ */
+
 const getCrisisStyle = (type) => {
   const styles = {
     flood: { label: 'Flood Alert', color: 'border-blue-400' },
@@ -24,7 +25,7 @@ const getCrisisStyle = (type) => {
   return styles[type?.toLowerCase()] || { label: 'Alert', color: 'border-slate-300' };
 };
 
-/* ------------------ Location Renderer ------------------ */
+
 const LocationRenderer = ({ alert }) => {
   const [displayLocation, setDisplayLocation] = useState(alert.location || "Location not available");
 
@@ -37,7 +38,7 @@ const LocationRenderer = ({ alert }) => {
   return <span>{displayLocation}</span>;
 };
 
-/* ------------------ Alert Card ------------------ */
+
 const AlertCard = ({ alert }) => {
   const style = getCrisisStyle(alert.crisis_type);
   const confidence = Math.round(alert.trust_score * 100);
