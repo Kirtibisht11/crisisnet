@@ -250,9 +250,6 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div>
               <Link to="/" className="flex items-center space-x-2 mb-4">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-700 to-blue-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">CN</span>
-                </div>
                 <span className="font-semibold text-slate-900">CrisisNet</span>
               </Link>
               <p className="text-sm text-slate-600">

@@ -14,6 +14,7 @@ const SignupAuthority = () => {
     confirmPassword: '',
     organizationName: '',
     designation: '',
+    authorityToken: '',
     address: '', // human-readable display only
     latitude: null,
     longitude: null
@@ -92,6 +93,10 @@ const SignupAuthority = () => {
       setError('Designation is required');
       return false;
     }
+    if (!formData.authorityToken.trim()) {
+      setError('Authority Access Token is required');
+      return false;
+    }
     return true;
   };
 
@@ -119,7 +124,8 @@ const SignupAuthority = () => {
           latitude: formData.latitude || 0.0,
           longitude: formData.longitude || 0.0,
           organization_name: formData.organizationName.trim(),
-          designation: formData.designation.trim()
+          designation: formData.designation.trim(),
+          authority_token: formData.authorityToken.trim()
         }),
       });
 
@@ -223,9 +229,6 @@ const SignupAuthority = () => {
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
                   required
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  Format: +91 followed by 10 digits
-                </p>
               </div>
             </div>
 
@@ -234,6 +237,23 @@ const SignupAuthority = () => {
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 Organization Details
               </h3>
+
+              {/* Authority Token */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Authority Access Token *
+                </label>
+                <input
+                  type="password"
+                  name="authorityToken"
+                  value={formData.authorityToken}
+                  onChange={handleChange}
+                  placeholder="Enter secure access token"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-slate-500 focus:outline-none transition-colors"
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">Required for verification. Contact administrator if missing.</p>
+              </div>
 
               {/* Organization Name */}
               <div>
@@ -301,7 +321,7 @@ const SignupAuthority = () => {
                   disabled={locationLoading}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:bg-slate-300 disabled:text-slate-500"
                 >
-                  {locationLoading ? '🔄 Detecting address...' : 'Detect Address'}
+                  {locationLoading ? 'Detecting address...' : 'Detect Address'}
                 </button>
 
                 <button
@@ -425,12 +445,6 @@ const SignupAuthority = () => {
           </div>
 
           {/* Info Notice */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded-lg">
-            <p className="text-sm text-blue-900">
-              <span className="font-semibold">Note:</span> Authority accounts require verification. 
-              Your credentials will be reviewed by the system administrator before activation.
-            </p>
-          </div>
           </div>
         </div>
       </div>
