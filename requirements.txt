@@ -2,6 +2,10 @@
 fastapi>=0.104.0
 uvicorn>=0.24.0
 
+# Database & Scheduling
+sqlalchemy>=2.0.0
+schedule>=1.2.0
+
 # Data validation
 pydantic>=2.0.0
 

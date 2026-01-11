@@ -299,7 +299,7 @@ const AuthorityDashboard = () => {
     setActionLoading(true);
     try {
       // Attempt to call backend pipeline endpoint
-      const response = await fetch('http://localhost:8000/api/run-pipeline', { method: 'POST' });
+      const response = await fetch('http://localhost:8000/pipeline/run', { method: 'POST' });
       
       if (response.ok) {
         alert('Pipeline execution started successfully.');
