@@ -1,9 +1,21 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 TRUST_DIR = BASE_DIR / "agents" / "trust"
+
+# Environment-based settings
+class Settings:
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///./crisisnet.db"
+    )
+
+settings = Settings()  # ✅ REQUIRED
 
 # Trust Agent Configuration
 TRUST_CONFIG = {
@@ -25,13 +37,11 @@ TRUST_CONFIG = {
     }
 }
 
-
 DATABASE_CONFIG = {
-    "mode": "json",  # or "sqlite" 
+    "mode": "json",
     "mock_alerts_path": str(TRUST_DIR / "mock_alerts.json"),
     "trust_thresholds_path": str(TRUST_DIR / "trust_thresholds.json")
 }
-
 
 API_CONFIG = {
     "host": "0.0.0.0",
