@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from backend.api import learning
 from .db.database import init_db, close_db
 from .api.users import router as users_router
 from .api.crisis import router as crisis_router
@@ -30,7 +31,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,6 +78,7 @@ app.include_router(orchestrator_router)
 app.include_router(resource_api_router)
 app.include_router(ngo_router)
 app.include_router(analytics_router)
+app.include_router(learning.router)
 logger.info("✅ NGO and Analytics routes registered")
 
 
@@ -141,8 +148,8 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("🚀 CrisisNet Round 2 backend starting...")
-    logger.info("📊 Database: SQLite/PostgreSQL")
-    logger.info("🔌 WebSocket: Enabled")
-    logger.info("🤖 Learning Agent: Active")
+    logger.info(" CrisisNet Round 2 backend starting...")
+    logger.info("Database: SQLite/PostgreSQL")
+    logger.info("WebSocket: Enabled")
+    logger.info(" Learning Agent: Active")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

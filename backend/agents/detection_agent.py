@@ -1,11 +1,12 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from .detection.signal_ingestion import ingest_signals  
 from backend.db.database import SessionLocal
+from backend.db.models import Crisis
 from backend.db.crud import mark_signal_processed
 from .detection.event_classifier import classify_event
 from .detection.severity_estimator import estimate_severity
@@ -196,6 +197,29 @@ def run_detection_pipeline(broadcast=True):
                 log_alert["verified"] = False
 
             log_alerts.append(log_alert)
+
+            # --- Save to SQL Database for Dashboard Visibility ---
+            try:
+                if log_alert.get('lat') is not None and log_alert.get('lon') is not None:
+                    new_crisis = Crisis(
+                        title=f"{str(log_alert.get('crisis_type', 'Alert')).title()} at {log_alert.get('location', 'Unknown')}",
+                        description=log_alert.get('message', ''),
+                        crisis_type=log_alert.get('crisis_type', 'other'),
+                        severity=log_alert.get('severity', 'medium'),
+                        latitude=log_alert.get('lat'),
+                        longitude=log_alert.get('lon'),
+                        location=log_alert.get('location', 'Unknown'),
+                        status=log_alert.get('status', 'Detected'),
+                        trust_score=log_alert.get('trust_score', 0.5),
+                        verified=log_alert.get('decision') == 'VERIFIED',
+                        created_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(timezone.utc)
+                    )
+                    db.add(new_crisis)
+                    db.commit()
+            except Exception as e:
+                print(f"[Detection] Failed to save to DB: {e}")
+                db.rollback()
             
             if signal.get('id') and signal.get('source') != 'manual':
                 try:

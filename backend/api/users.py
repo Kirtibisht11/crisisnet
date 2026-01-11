@@ -1,48 +1,18 @@
 """
-User Registration API (JSON-based)
+User Registration API (DB-based)
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-import json
-import uuid
-import os
-import bcrypt
-import time
-import logging
+from sqlalchemy.orm import Session
+
+from backend.db.database import get_db
+from backend.db.models import User
+from backend.db import crud
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-# Use the data/users.json path to match other modules
-USERS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'users.json')
-
-logger = logging.getLogger(__name__)
-
-
-# ---------- Utility Functions ----------
-
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {"users": []}
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_users(data):
-    # atomic write to reduce partial writes
-    dir_path = os.path.dirname(USERS_FILE)
-    if dir_path:
-        os.makedirs(dir_path, exist_ok=True)
-
-    tmp = USERS_FILE + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-        # Ensure data is written to disk before replacing
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, USERS_FILE)
 
 
 # ---------- Models ----------
@@ -57,7 +27,7 @@ class UserCreate(BaseModel):
 
 
 class UserResponse(BaseModel):
-    user_id: str
+    id: str
     name: str
     phone: str
     role: str
@@ -70,7 +40,7 @@ class UserResponse(BaseModel):
 # ---------- Routes ----------
 
 @router.post("/register", response_model=UserResponse)
-def register_user(user_data: UserCreate):
+def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     valid_roles = ["citizen", "volunteer", "authority"]
     if user_data.role not in valid_roles:
         raise HTTPException(400, "Invalid role")
@@ -79,66 +49,47 @@ def register_user(user_data: UserCreate):
     if not phone.startswith("+"):
         phone = "+" + phone
 
-    users_data = load_users()
-
     # Check if user already exists
-    existing = next((u for u in users_data["users"] if u.get("phone") == phone), None)
+    existing = crud.get_user_by_phone(db, phone)
     if existing:
         raise HTTPException(400, "User with this phone already exists")
 
-    try:
-        # Measure hashing time to detect slowness
-        t0 = time.time()
-        # use 10 rounds to be faster on demo systems; increase in production
-        password_hash = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt(rounds=10)).decode('utf-8')
-        t_hash = time.time() - t0
-        logger.info(f"Password hashing took {t_hash:.3f}s for phone={phone}")
-    except Exception as ex:
-        logger.exception("Error hashing password")
-        raise HTTPException(500, "Internal error processing password")
+    new_user = crud.create_user(
+        db=db,
+        phone=phone,
+        password=user_data.password,
+        role=user_data.role,
+        name=user_data.name,
+        latitude=user_data.latitude,
+        longitude=user_data.longitude
+    )
 
-    new_user = {
-        "user_id": f"u_{uuid.uuid4().hex[:8]}",
-        "name": user_data.name,
-        "phone": phone,
-        "password_hash": password_hash,
-        "role": user_data.role,
-        "latitude": user_data.latitude,
-        "longitude": user_data.longitude,
-        "is_active": True,
-        "created_at": datetime.utcnow().isoformat() + "Z"
+    # Map DB model to response
+    return {
+        "id": new_user.id,
+        "name": new_user.name,
+        "phone": new_user.phone,
+        "role": new_user.role,
+        "latitude": new_user.latitude,
+        "longitude": new_user.longitude,
+        "is_active": True, # Default in model is True
+        "created_at": new_user.created_at.isoformat() if new_user.created_at else ""
     }
 
-    users_data["users"].append(new_user)
-    try:
-        t0 = time.time()
-        save_users(users_data)
-        t_save = time.time() - t0
-        logger.info(f"Saving users.json took {t_save:.3f}s for phone={phone}")
-    except Exception as ex:
-        logger.exception("Failed to save users.json")
-        raise HTTPException(500, "Failed to save user data")
 
-    return new_user
-
-
-@router.get("/", response_model=List[UserResponse])
-def list_users(role: Optional[str] = None):
-    users = load_users()["users"]
+@router.get("/")
+def list_users(role: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(User)
     if role:
-        return [u for u in users if u["role"] == role]
-    return users
+        query = query.filter(User.role == role)
+    return query.all()
 
 
 @router.get("/stats")
-def user_stats():
-    users = load_users()["users"]
-
+def user_stats(db: Session = Depends(get_db)):
     return {
-        "total_users": len(users),
-        "citizens": sum(1 for u in users if u["role"] == "citizen"),
-        "volunteers": sum(1 for u in users if u["role"] == "volunteer"),
-        "authorities": sum(1 for u in users if u["role"] == "authority"),
-        "active_users": sum(1 for u in users if u["is_active"]),
-        "inactive_users": sum(1 for u in users if not u["is_active"])
+        "total_users": db.query(User).count(),
+        "citizens": db.query(User).filter(User.role == "citizen").count(),
+        "volunteers": db.query(User).filter(User.role == "volunteer").count(),
+        "authorities": db.query(User).filter(User.role == "authority").count()
     }

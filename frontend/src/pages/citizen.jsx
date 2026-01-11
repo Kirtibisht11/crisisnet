@@ -81,6 +81,8 @@ export default function Citizen() {
   const [resources, setResources] = useState([]);
   const [location, setLocation] = useState(user?.location || null);
 
+  const isVolunteer = user?.volunteer || user?.volunteer_id || localStorage.getItem('volunteerId');
+
   /* ---------- REAL-TIME SOCKET ---------- */
   useEffect(() => {
     const unsubscribe = subscribe((event) => {
@@ -138,9 +140,32 @@ export default function Citizen() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <header className="bg-slate-900 text-white p-4 flex justify-between">
-        <span className="font-bold">CrisisNet</span>
-        <button onClick={logout}>Sign Out</button>
+      <header className="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <span className="font-bold text-xl tracking-tight">CrisisNet</span>
+        <div className="flex items-center gap-4">
+          {isVolunteer ? (
+            <button
+              onClick={() => navigate('/volunteer')}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+            >
+              Volunteer Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/signup-volunteer')}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition"
+            >
+              <UserPlus size={16} />
+              Sign Up as Volunteer
+            </button>
+          )}
+          <button 
+            onClick={logout}
+            className="text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-800 transition"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <div className="w-[96%] mx-auto py-8">

@@ -1,0 +1,57 @@
+{
+  "users": [
+    {
+      "user_id": "u_78f3849d",
+      "name": "disha ",
+      "phone": "+8077865284",
+      "password_hash": "$2b$10$HMwZYY9viYYxC0Ahafo4luotg6RoUK6H8XZG.6pRbwqqBG5QKbjfe",
+      "role": "citizen",
+      "latitude": 30.267423708613315,
+      "longitude": 77.989029,
+      "is_active": true,
+      "created_at": "2026-01-10T19:42:23.643675Z"
+    },
+    {
+      "user_id": "u_3ecd3e3c",
+      "name": "isha",
+      "phone": "+918077865281",
+      "password_hash": "$2b$12$GFIcehmfMm0mb1oV7441qOwZanG1SvZfrexMWvEM5mcXtgpgW3Wq2",
+      "role": "authority",
+      "latitude": 30.267420895170734,
+      "longitude": 77.98902739686865,
+      "is_active": true,
+      "created_at": "2026-01-10T19:44:21.822076Z",
+      "organization_name": "Dehradun police",
+      "designation": "inspector"
+    },
+    {
+      "user_id": "u_3fb1c8c9",
+      "name": "kirti",
+      "phone": "+9814341087",
+      "password_hash": "$2b$10$DCW/RBbG6jAQzPPoWEVgWeoSkuI52jEO2RJXsCpgFN.NEDYE8S40O",
+      "role": "citizen",
+      "latitude": 30.287798721849335,
+      "longitude": 78.02280860103328,
+      "is_active": true,
+      "created_at": "2026-01-11T08:39:11.357877Z",
+      "volunteer": {
+        "name": "kirti",
+        "email": "kirtibisht2908@gmail.com",
+        "phone": "+9814341087",
+        "location": "Almora, Uttarakhand India",
+        "address": "",
+        "skills": [
+          "driver"
+        ],
+        "experience": "beginner",
+        "availability": "weekends",
+        "emergency_contact": "",
+        "available": true,
+        "user_id": "u_3fb1c8c9",
+        "id": "vol_20260111152037_1",
+        "registered_at": "2026-01-11T15:20:37.344825"
+      },
+      "is_volunteer": true
+    }
+  ]
+}
