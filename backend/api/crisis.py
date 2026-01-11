@@ -10,7 +10,7 @@ import json
 import os
 import uuid
 
-from ..services.location_service import location_service
+from backend.services.location_service import location_service
 # from ..agents.communication_agent import communication_agent
 
 
