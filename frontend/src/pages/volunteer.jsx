@@ -152,12 +152,21 @@ const VolunteerOpportunities = ({ volunteerId }) => {
   };
 
   const handleAccept = async (reqId) => {
+    if (!reqId) {
+      alert('Invalid request ID. Please try again.');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`http://localhost:8000/api/resource/volunteer_requests/${reqId}/accept`, {
+      const res = await fetch(`http://localhost:8000/api/resource/volunteer_requests/${reqId}/accept?volunteer_id=${volunteerId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'token': token },
-        body: JSON.stringify({})
+        headers: { 
+          'Content-Type': 'application/json', 
+          'token': token,
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ volunteer_id: volunteerId })
       });
       if (res.ok) {
         alert('Request accepted! Check "My Tasks" for details.');
@@ -212,13 +221,13 @@ const VolunteerOpportunities = ({ volunteerId }) => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {requests.map(req => {
+          {requests.map((req, idx) => {
             const priorityInfo = formatPriority(req.trust_score, req.crisis_type);
             const priorityKey = priorityInfo.level.toLowerCase();
             const style = PRIORITY_STYLES[priorityKey] || PRIORITY_STYLES.default;
 
             return (
-              <div key={req.request_id} className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-blue-500/50 transition-all group hover:scale-[1.02]">
+              <div key={req.request_id || req.id || idx} className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-blue-500/50 transition-all group hover:scale-[1.02]">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <div className={`p-3 ${style.bg} rounded-lg border ${style.border}`}>
@@ -263,11 +272,16 @@ const VolunteerOpportunities = ({ volunteerId }) => {
                     Fulfilled: <span className="text-white font-semibold">{req.fulfilled_count}</span>
                   </div>
                   <button
-                    onClick={() => handleAccept(req.request_id)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all text-sm font-semibold shadow-lg shadow-blue-600/20 flex items-center gap-2 group hover:shadow-blue-600/40"
+                    onClick={() => handleAccept(req.request_id || req.id)}
+                    disabled={!volunteerId}
+                    className={`px-5 py-2.5 text-sm font-semibold shadow-lg flex items-center gap-2 group transition-all ${
+                      volunteerId
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-blue-600/20 hover:shadow-blue-600/40'
+                        : 'bg-slate-600 text-slate-400 cursor-not-allowed shadow-slate-600/20'
+                    } rounded-lg`}
                   >
                     Accept Request
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className={`w-4 h-4 ${volunteerId ? 'group-hover:translate-x-1' : ''} transition-transform`} />
                   </button>
                 </div>
               </div>
@@ -367,12 +381,6 @@ const VolunteerTasks = ({ volunteerId }) => {
             className="px-5 py-2.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition border border-slate-600"
           >
             Refresh Tasks
-          </button>
-          <button
-            onClick={() => window.location.href = '/opportunities'}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            Browse Opportunities
           </button>
         </div>
       </div>
@@ -528,11 +536,11 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
 
   const handleSaveProfile = async () => {
     try {
-      const dataToSave = { ...editForm, id: volunteerId };
+      const dataToSave = { ...editForm };
       console.log('💾 Saving profile with data:', dataToSave);
-      
+
       const response = await fetch(
-        `http://localhost:8000/api/volunteer/update`,
+        `http://localhost:8000/api/volunteer/update?volunteer_id=${volunteerId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -855,7 +863,7 @@ const VolunteerProfile = ({ volunteerId, volunteerData, onUpdate }) => {
                   </select>
                 ) : (
                   <div className="w-full px-4 py-3 rounded-lg bg-slate-900/30 border border-slate-700 text-white">
-                    {volunteerData?.availability ? volunteerData.availability.replace('_', ' ').charAt(0).toUpperCase() + volunteerData.availability.replace('_', ' ').slice(1) : '—'}
+                    {volunteerData?.availability && typeof volunteerData.availability === 'string' ? volunteerData.availability.replace('_', ' ').charAt(0).toUpperCase() + volunteerData.availability.replace('_', ' ').slice(1) : '—'}
                   </div>
                 )}
               </div>
@@ -900,7 +908,27 @@ const VolunteerPage = () => {
     if (loc?.state?.openTab) return loc.state.openTab;
     return 'dashboard';
   });
-  const [volunteerId, setVolunteerId] = useState(() => localStorage.getItem('volunteerId'));
+  const [volunteerId, setVolunteerId] = useState(() => {
+    const storedId = localStorage.getItem('volunteerId');
+    if (storedId && storedId !== 'undefined') return storedId;
+
+    // If it's 'undefined', remove it from localStorage
+    if (storedId === 'undefined') {
+      localStorage.removeItem('volunteerId');
+    }
+
+    // Fallback: try to get from user object
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (currentUser && currentUser.id) {
+        localStorage.setItem('volunteerId', currentUser.id);
+        return currentUser.id;
+      }
+    } catch (e) {
+      console.warn('Failed to get volunteerId from user', e);
+    }
+    return null;
+  });
   const [volunteerData, setVolunteerData] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -927,12 +955,16 @@ const VolunteerPage = () => {
     };
 
     const fetchRemote = async () => {
+      if (!volunteerId || volunteerId === 'undefined') {
+        console.log('Skipping remote fetch: volunteerId is undefined or invalid');
+        return null;
+      }
       try {
         const API_BASE = 'http://localhost:8000';
-        const res = await fetch(`${API_BASE}/api/resource/volunteers/${volunteerId}`);
+        const res = await fetch(`${API_BASE}/api/volunteer/${volunteerId}`);
         if (!res.ok) return null;
         const data = await res.json();
-        return data || null;
+        return data.volunteer || null;
       } catch (e) {
         console.error('Failed to fetch remote volunteer data:', e);
         return null;
@@ -961,8 +993,10 @@ const VolunteerPage = () => {
         return;
       }
 
-      const remote = await fetchRemote();
-      if (remote) setVolunteerData(remote);
+      if (volunteerId) {
+        const remote = await fetchRemote();
+        if (remote) setVolunteerData(remote);
+      }
     })();
   }, [volunteerId]);
 

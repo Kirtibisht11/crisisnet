@@ -56,13 +56,16 @@ async def broadcast_new_alert(alert):
         print(f"[Detection] WebSocket broadcast failed: {e}")
 
 def _format_alert_for_log(signal, event_type, severity, confidence):
+    lat = signal.get("lat") if signal.get("lat") is not None else signal.get("latitude")
+    lon = signal.get("lon") if signal.get("lon") is not None else signal.get("longitude")
+
     return {
         "alert_id": f"DET_{uuid.uuid4().hex[:8]}",
         "user_id": signal.get("source", "detection_system"),
         "crisis_type": event_type or "other",
         "location": signal.get("location", "Unknown"),
-        "lat": signal.get("lat"),
-        "lon": signal.get("lon"),
+        "lat": lat,
+        "lon": lon,
         "message": signal.get("text", ""),
         "has_image": signal.get("has_image", False),
         "trust_score": confidence,
@@ -89,8 +92,8 @@ def _is_duplicate_signal(signal, existing_alerts, time_window_minutes=30, distan
     
     signal_text = signal.get('text', '').lower()
     signal_time = signal.get('timestamp')
-    signal_lat = signal.get('lat')
-    signal_lon = signal.get('lon')
+    signal_lat = signal.get('lat') or signal.get('latitude')
+    signal_lon = signal.get('lon') or signal.get('longitude')
     
     if not signal_time:
         return False
@@ -100,8 +103,10 @@ def _is_duplicate_signal(signal, existing_alerts, time_window_minutes=30, distan
             signal_time = datetime.fromisoformat(signal_time.replace('Z', '+00:00'))
         except:
             return False
+    elif isinstance(signal_time, datetime) and signal_time.tzinfo is None:
+        signal_time = signal_time.replace(tzinfo=timezone.utc)
     
-    cutoff_time = datetime.utcnow() - timedelta(minutes=time_window_minutes)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=time_window_minutes)
     
     for alert in existing_alerts:
         alert_time = alert.get('timestamp')
@@ -202,6 +207,7 @@ def run_detection_pipeline(broadcast=True):
             try:
                 if log_alert.get('lat') is not None and log_alert.get('lon') is not None:
                     new_crisis = Crisis(
+                        id=log_alert.get('alert_id'),
                         title=f"{str(log_alert.get('crisis_type', 'Alert')).title()} at {log_alert.get('location', 'Unknown')}",
                         description=log_alert.get('message', ''),
                         crisis_type=log_alert.get('crisis_type', 'other'),

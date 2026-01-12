@@ -53,4 +53,9 @@ export const createAssignment = async (payload) => {
   return res.data;
 };
 
+export const getUserLocation = async () => {
+  const res = await api.get('/api/geo/location');
+  return res.data;
+};
+
 export default api;

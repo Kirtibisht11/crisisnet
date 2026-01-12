@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, HTTPException
 import json
 from backend.core.geo import haversine_distance
@@ -27,3 +28,28 @@ def nearest_shelter(lat: float, lng: float):
 
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="resources.json not found")
+
+
+@router.get("/location")
+async def get_user_location():
+    """
+    Proxy endpoint to fetch user location from IP.
+    Helps avoid CORS issues and provides fallback.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            # Attempt 1: ipapi.co
+            resp = await client.get("https://ipapi.co/json/", timeout=3.0)
+            if resp.status_code == 200:
+                return resp.json()
+            
+            # Attempt 2: ip-api.com (Fallback)
+            resp = await client.get("http://ip-api.com/json/", timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return {"latitude": data.get("lat"), "longitude": data.get("lon")}
+                
+    except Exception:
+        pass
+    
+    return {"latitude": None, "longitude": None}

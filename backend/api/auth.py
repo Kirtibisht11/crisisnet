@@ -1,3 +1,7 @@
+"""
+Simple auth endpoints for demo login
+"""
+
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 import os
@@ -7,8 +11,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from core.auth import create_token, decode_token
-
+from backend.core.auth import create_token, decode_token
 from backend.db.database import get_db
 from backend.db.models import User
 from backend.db import crud
@@ -63,8 +66,8 @@ class SignupRequest(BaseModel):
     phone: str = Field(..., pattern=r"^\+\d{10,15}$")
     password: str = Field(..., min_length=6)
     role: str = Field(..., pattern="^(citizen|volunteer|authority)$")
-    latitude: float = 0.0
-    longitude: float = 0.0
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     organization_name: Optional[str] = None
     designation: Optional[str] = None
     authority_token: Optional[str] = None
@@ -98,7 +101,7 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
         latitude=req.latitude,
         longitude=req.longitude,
         organization_name=req.organization_name if req.role == 'authority' else None,
-        # designation not in standard create_user but can be added if needed, 
+        # designation not in standard create_user but can be added if needed,
         # or we assume organization_name covers it for now
     )
 

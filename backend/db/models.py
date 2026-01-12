@@ -7,27 +7,30 @@ from .database import Base
 class User(Base):
     """User model - supports all roles (Citizen, Volunteer, NGO, Authority)"""
     __tablename__ = "users"
-    
+
     id = Column(String(50), primary_key=True, index=True)
     phone = Column(String(15), unique=True, index=True, nullable=False)
     password = Column(String(255), nullable=False)  # Hashed password
     role = Column(String(20), nullable=False)  # citizen, volunteer, ngo, authority
     name = Column(String(100))
-    
+    email = Column(String(100), nullable=True)
+
     # Location
     latitude = Column(Float)
     longitude = Column(Float)
     location = Column(String(200))
-    
+
     # Volunteer-specific fields
     skills = Column(JSON)  # List of skills: ["first_aid", "rescue"]
-    availability = Column(Boolean, default=True)
+    availability = Column(String(50), nullable=True)  # Changed to string: 'anytime', 'weekdays', 'weekends', 'evenings'
+    experience = Column(String(50), nullable=True)  # 'beginner', 'intermediate', 'advanced', 'expert'
+    emergency_contact = Column(String(100), nullable=True)
     reliability_score = Column(Float, default=1.0)  # 0.0 to 1.0
-    
+
     # NGO-specific fields
     organization_name = Column(String(200))
     capacity = Column(Integer)  # How many crises can handle simultaneously
-    
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,3 +1,5 @@
+import { getUserLocation } from '../services/api';
+
 export const getCurrentLocation = () =>
   new Promise((resolve) => {
     if (!navigator.geolocation) {
@@ -38,12 +40,10 @@ export async function reverseGeocode(lat, lon) {
   }
 }
 
-// IP-based geolocation fallback (best-effort) using ipapi.co
+// IP-based geolocation fallback (best-effort) using backend proxy
 export async function ipGeolocation() {
   try {
-    const res = await fetch('https://ipapi.co/json/');
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await getUserLocation();
     return {
       lat: data.latitude || null,
       lon: data.longitude || null,

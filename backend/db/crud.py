@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 from datetime import datetime, timedelta
 import bcrypt
+
 from typing import List, Optional
 import uuid
 from .models import User, Crisis, Task, PerformanceMetric, SocialSignal
@@ -343,27 +344,27 @@ def get_system_metrics(
         start_date = datetime.utcnow() - timedelta(days=30)
     if not end_date:
         end_date = datetime.utcnow()
-    
+
     # Total crises
     total_crises = db.query(func.count(Crisis.id)).filter(
         Crisis.created_at >= start_date,
         Crisis.created_at <= end_date
     ).scalar()
-    
+
     # Resolved crises
     resolved_crises = db.query(func.count(Crisis.id)).filter(
         Crisis.status == "resolved",
         Crisis.created_at >= start_date,
         Crisis.created_at <= end_date
     ).scalar()
-    
+
     # Average response time
     avg_response = db.query(func.avg(Task.actual_duration)).filter(
         Task.status == "completed",
         Task.created_at >= start_date,
         Task.created_at <= end_date
     ).scalar()
-    
+
     return {
         "total_crises": total_crises or 0,
         "resolved_crises": resolved_crises or 0,
@@ -372,6 +373,105 @@ def get_system_metrics(
         "period_start": start_date.isoformat(),
         "period_end": end_date.isoformat()
     }
+
+
+# ============= VOLUNTEER OPERATIONS =============
+
+def create_volunteer_profile(
+    db: Session,
+    phone: str,
+    password: str,
+    name: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    skills: Optional[List[str]] = None,
+    availability: bool = True
+) -> User:
+    """Create a new volunteer profile"""
+    return create_user(
+        db=db,
+        phone=phone,
+        password=password,
+        role="volunteer",
+        name=name,
+        latitude=latitude,
+        longitude=longitude,
+        skills=skills,
+        availability=availability
+    )
+
+
+def get_volunteer_by_id(db: Session, volunteer_id: str) -> Optional[User]:
+    """Get volunteer by ID"""
+    return db.query(User).filter(
+        User.id == volunteer_id,
+        User.role == "volunteer"
+    ).first()
+
+
+def update_volunteer_profile(
+    db: Session,
+    volunteer_id: str,
+    name: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    skills: Optional[List[str]] = None,
+    availability: Optional[bool] = None,
+    reliability_score: Optional[float] = None
+) -> Optional[User]:
+    """Update volunteer profile"""
+    volunteer = get_volunteer_by_id(db, volunteer_id)
+    if not volunteer:
+        return None
+
+    if name is not None:
+        volunteer.name = name
+    if latitude is not None:
+        volunteer.latitude = latitude
+    if longitude is not None:
+        volunteer.longitude = longitude
+    if skills is not None:
+        volunteer.skills = skills
+    if availability is not None:
+        volunteer.availability = availability
+    if reliability_score is not None:
+        volunteer.reliability_score = reliability_score
+
+    db.commit()
+    db.refresh(volunteer)
+    return volunteer
+
+
+def attach_volunteer_to_user(
+    db: Session,
+    user_id: str,
+    skills: Optional[List[str]] = None,
+    availability: Optional[str] = None,
+    experience: Optional[str] = None,
+    emergency_contact: Optional[str] = None,
+    location: Optional[str] = None
+) -> Optional[User]:
+    """Attach volunteer profile to an existing user"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+
+    user.role = "volunteer"
+    user.skills = skills or []
+    user.availability = availability
+    user.experience = experience
+    user.emergency_contact = emergency_contact
+    user.location = location
+    user.reliability_score = 1.0
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def get_all_volunteers(db: Session) -> List[User]:
+    """Get all volunteers"""
+    return db.query(User).filter(User.role == "volunteer").all()
 
 # ============= SOCIAL SIGNAL OPERATIONS =============
 

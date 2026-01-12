@@ -10,6 +10,7 @@ export default function Signup() {
 
   const loc = useLocation();
   const [role, setRole] = useState(() => "citizen");
+  const [message, setMessage] = useState(loc.state?.message || "");
   const [manualLocation, setManualLocation] = useState("");
   const [location, setLocation] = useState({ lat: null, lon: null, source: null });
   const [detectingLocation, setDetectingLocation] = useState(false);
@@ -184,6 +185,11 @@ export default function Signup() {
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
               <p className="text-slate-400">Join CrisisNet to coordinate emergency response</p>
+              {message && (
+                <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-400">{message}</p>
+                </div>
+              )}
             </div>
 
             {/* Form */}

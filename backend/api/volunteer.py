@@ -1,153 +1,214 @@
-from fastapi import APIRouter, HTTPException
-import json
-import os
-from datetime import datetime
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from db.database import get_db
+from db.crud import (
+    create_volunteer_profile,
+    get_volunteer_by_id,
+    update_volunteer_profile,
+    attach_volunteer_to_user,
+    get_all_volunteers,
+    get_user_by_id
+)
+from typing import Optional, List
 
 router = APIRouter(prefix="/api/volunteer", tags=["volunteer"])
 
 
-def _data_path(filename: str):
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    return os.path.join(base, "data", filename)
-
-def _save_json_atomically(path: str, data: any):
-    """Atomically writes JSON data to a file, creating the directory if needed."""
-    dir_path = os.path.dirname(path)
-    if dir_path:
-        os.makedirs(dir_path, exist_ok=True)
-    
-    tmp_path = path + '.tmp'
-    with open(tmp_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp_path, path)
-
-
 @router.post("/profile")
-def create_profile(profile: dict):
-    path = _data_path('volunteers.json')
+def create_profile(
+    phone: str,
+    password: str,
+    name: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    skills: Optional[List[str]] = None,
+    availability: bool = True,
+    db: Session = Depends(get_db)
+):
+    """Create a new volunteer profile"""
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        data = []
-
-    # generate an id if not provided
-    volunteer_id = profile.get('id') or f"vol_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{len(data)+1}"
-    profile['id'] = volunteer_id
-    profile.setdefault('registered_at', datetime.utcnow().isoformat())
-
-    data.append(profile)
-    try:
-        _save_json_atomically(path, data)
+        volunteer = create_volunteer_profile(
+            db=db,
+            phone=phone,
+            password=password,
+            name=name,
+            latitude=latitude,
+            longitude=longitude,
+            skills=skills,
+            availability=availability
+        )
+        return {
+            "success": True,
+            "volunteer_id": volunteer.id,
+            "volunteer": {
+                "id": volunteer.id,
+                "phone": volunteer.phone,
+                "name": volunteer.name,
+                "latitude": volunteer.latitude,
+                "longitude": volunteer.longitude,
+                "skills": volunteer.skills,
+                "availability": volunteer.availability,
+                "reliability_score": volunteer.reliability_score,
+                "created_at": volunteer.created_at.isoformat() if volunteer.created_at else None
+            }
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return {"success": True, "volunteer_id": volunteer_id, "volunteer": profile}
 
+from pydantic import BaseModel
+from typing import Optional, List
 
+class AttachVolunteerRequest(BaseModel):
+    user_id: str
+    skills: Optional[List[str]] = None
+    availability: Optional[str] = None
+    experience: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    location: Optional[str] = None
 @router.post("/attach-to-user")
-def attach_volunteer_to_user(profile: dict):
-    """Attach volunteer profile to an existing user in data/users.json.
-
-    Expected keys in profile: user_id or phone. This will add a `volunteer` field
-    inside the matching user object and also append the profile to volunteers.json
-    for compatibility with other parts of the app.
-    """
-    users_path = _data_path('users.json')
-    volunteers_path = _data_path('volunteers.json')
-
-    # load users
+def attach_to_user(
+    req: AttachVolunteerRequest,
+    db: Session = Depends(get_db)
+):
+    """Attach volunteer profile to an existing user"""
     try:
-        with open(users_path, 'r', encoding='utf-8') as f:
-            users_data = json.load(f)
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail='users.json not found')
+        user = attach_volunteer_to_user(
+            db=db,
+            user_id=req.user_id,
+            skills=req.skills,
+            availability=req.availability,
+            experience=req.experience,
+            emergency_contact=req.emergency_contact,
+            location=req.location
+        )
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
 
-    # find user by user_id or phone
-    user = None
-    if profile.get('user_id'):
-        user = next((u for u in users_data.get('users', []) if u.get('user_id') == profile['user_id']), None)
-    if not user and profile.get('phone'):
-        ph = profile['phone']
-        if not ph.startswith('+'):
-            ph = '+' + ph
-        user = next((u for u in users_data.get('users', []) if u.get('phone') == ph), None)
-
-    if not user:
-        raise HTTPException(status_code=404, detail='User not found')
-
-    # ensure volunteer id and timestamp
-    try:
-        volunteers = []
-        try:
-            with open(volunteers_path, 'r', encoding='utf-8') as vf:
-                volunteers = json.load(vf)
-        except FileNotFoundError:
-            volunteers = []
-
-        volunteer_id = profile.get('id') or f"vol_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{len(volunteers)+1}"
-        profile['id'] = volunteer_id
-        profile.setdefault('registered_at', datetime.utcnow().isoformat())
-
-        # attach to user object
-        user['volunteer'] = profile
-        # optionally mark user as volunteer as well
-        user['role'] = user.get('role', 'citizen')
-        user['is_volunteer'] = True
-
-        # save users.json atomically
-        _save_json_atomically(users_path, users_data)
-
-        # append to volunteers.json for compatibility
-        volunteers.append(profile)
-        _save_json_atomically(volunteers_path, volunteers)
+        return {
+            "success": True,
+            "user": {
+                "id": user.id,
+                "phone": user.phone,
+                "name": user.name,
+                "role": user.role,
+                "latitude": user.latitude,
+                "longitude": user.longitude,
+                "skills": user.skills,
+                "availability": user.availability,
+                "reliability_score": user.reliability_score
+            }
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    return {"success": True, "user": user, "volunteer": profile}
 
 
 @router.post("/update")
-def update_volunteer_profile(profile: dict):
-    """Update an existing volunteer profile by ID.
-    
-    Expected keys: id (or volunteer_id), and fields to update.
-    Updates both volunteers.json and user.volunteer if nested.
-    """
-    users_path = _data_path('users.json')
-    volunteers_path = _data_path('volunteers.json')
-    
-    volunteer_id = profile.get('id') or profile.get('volunteer_id')
-    if not volunteer_id:
-        raise HTTPException(status_code=400, detail='Volunteer ID required')
-    
+def update_volunteer_profile(
+    volunteer_id: str,
+    name: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    skills: Optional[List[str]] = None,
+    availability: Optional[str] = None,
+    experience: Optional[str] = None,
+    emergency_contact: Optional[str] = None,
+    location: Optional[str] = None,
+    reliability_score: Optional[float] = None,
+    db: Session = Depends(get_db)
+):
+    """Update an existing volunteer profile by ID"""
     try:
-        # Update volunteers.json
-        try:
-            with open(volunteers_path, 'r', encoding='utf-8') as f:
-                volunteers = json.load(f)
-        except FileNotFoundError:
-            volunteers = []
-        
-        vol_idx = next((i for i, v in enumerate(volunteers) if v.get('id') == volunteer_id or v.get('volunteer_id') == volunteer_id), -1)
-        if vol_idx >= 0:
-            volunteers[vol_idx].update(profile)
-            _save_json_atomically(volunteers_path, volunteers)
-        
-        # Update users.json if nested
-        try:
-            with open(users_path, 'r', encoding='utf-8') as f:
-                users_data = json.load(f)
-        except FileNotFoundError:
-            users_data = {'users': []}
-        
-        user_idx = next((i for i, u in enumerate(users_data.get('users', [])) if u.get('volunteer', {}).get('id') == volunteer_id), -1)
-        if user_idx >= 0:
-            users_data['users'][user_idx]['volunteer'].update(profile)
-            _save_json_atomically(users_path, users_data)
-        
-        return {"success": True, "volunteer": profile}
+        volunteer = update_volunteer_profile(
+            db=db,
+            volunteer_id=volunteer_id,
+            name=name,
+            latitude=latitude,
+            longitude=longitude,
+            skills=skills,
+            availability=availability,
+            experience=experience,
+            emergency_contact=emergency_contact,
+            location=location,
+            reliability_score=reliability_score
+        )
+        if not volunteer:
+            raise HTTPException(status_code=404, detail='Volunteer not found')
+
+        return {
+            "success": True,
+            "volunteer": {
+                "id": volunteer.id,
+                "phone": volunteer.phone,
+                "name": volunteer.name,
+                "latitude": volunteer.latitude,
+                "longitude": volunteer.longitude,
+                "skills": volunteer.skills,
+                "availability": volunteer.availability,
+                "experience": volunteer.experience,
+                "emergency_contact": volunteer.emergency_contact,
+                "location": volunteer.location,
+                "reliability_score": volunteer.reliability_score,
+                "updated_at": volunteer.updated_at.isoformat() if volunteer.updated_at else None
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/list")
+def get_volunteers(db: Session = Depends(get_db)):
+    """Get all volunteers"""
+    try:
+        volunteers = get_all_volunteers(db)
+        return {
+            "volunteers": [
+                {
+                    "id": v.id,
+                    "phone": v.phone,
+                    "name": v.name,
+                    "email": v.email,
+                    "latitude": v.latitude,
+                    "longitude": v.longitude,
+                    "location": v.location,
+                    "skills": v.skills,
+                    "availability": v.availability,
+                    "experience": v.experience,
+                    "emergency_contact": v.emergency_contact,
+                    "reliability_score": v.reliability_score,
+                    "created_at": v.created_at.isoformat() if v.created_at else None
+                } for v in volunteers
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{volunteer_id}")
+def get_volunteer(volunteer_id: str, db: Session = Depends(get_db)):
+    """Get a specific volunteer by ID"""
+    try:
+        volunteer = get_volunteer_by_id(db, volunteer_id)
+        if not volunteer:
+            raise HTTPException(status_code=404, detail='Volunteer not found')
+
+        return {
+            "volunteer": {
+                "id": volunteer.id,
+                "phone": volunteer.phone,
+                "name": volunteer.name,
+                "email": volunteer.email,
+                "latitude": volunteer.latitude,
+                "longitude": volunteer.longitude,
+                "location": volunteer.location,
+                "skills": volunteer.skills,
+                "availability": volunteer.availability,
+                "experience": volunteer.experience,
+                "emergency_contact": volunteer.emergency_contact,
+                "reliability_score": volunteer.reliability_score,
+                "created_at": volunteer.created_at.isoformat() if volunteer.created_at else None,
+                "updated_at": volunteer.updated_at.isoformat() if volunteer.updated_at else None
+            }
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
