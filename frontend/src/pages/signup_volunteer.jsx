@@ -141,10 +141,17 @@ const SignupVolunteer = () => {
       const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
       console.log('Current user:', currentUser);
 
-      if (currentUser && currentUser.user_id) {
+      if (currentUser && currentUser.id) {
         // Attach to existing user
-        console.log('Attaching volunteer to existing user:', currentUser.user_id);
-        const attachPayload = { ...volunteerPayload, user_id: currentUser.user_id };
+        console.log('Attaching volunteer to existing user:', currentUser.id);
+        const attachPayload = {
+          user_id: currentUser.id,
+          skills: volunteerPayload.skills,
+          availability: formData.availability,
+          experience: formData.experience,
+          emergency_contact: formData.emergencyContact,
+          location: formData.location
+        };
 
         const attachResponse = await fetch(
           'http://localhost:8000/api/volunteer/attach-to-user',
@@ -159,7 +166,12 @@ const SignupVolunteer = () => {
         console.log('Attach response:', attachData);
 
         if (attachResponse.ok) {
-          const volunteerId = attachData.volunteer?.id || attachData.volunteer_id;
+          const volunteerId = attachData.user?.id;
+          if (!volunteerId) {
+            setErrors({ submit: 'Failed to get volunteer ID from response' });
+            console.error('Attach response missing user ID:', attachData);
+            return;
+          }
           localStorage.setItem('volunteerId', volunteerId);
           // Update user in localStorage with volunteer data
           if (attachData.user) {
@@ -174,32 +186,20 @@ const SignupVolunteer = () => {
           console.error('Attach failed:', attachData);
         }
       } else {
-        // No user signed in, create standalone volunteer
-        console.log('No user signed in, creating standalone volunteer profile');
-        const response = await fetch(
-          'http://localhost:8000/api/volunteer/profile',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(volunteerPayload)
-          }
-        );
+        // No user signed in - redirect to citizen signup first
+        console.log('No user signed in, redirecting to citizen signup');
+        setErrors({
+          submit: 'Please sign up as a citizen first, then you can register as a volunteer. Redirecting...'
+        });
 
-        let data = {};
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error('Invalid server response');
-        }
-
-        if (response.ok) {
-          localStorage.setItem('volunteerId', data.volunteer_id || data.id);
-          setTimeout(() => {
-            navigate('/volunteer', { state: { openTab: 'dashboard' } });
-          }, 800);
-        } else {
-          setErrors({ submit: data.detail || 'Registration failed' });
-        }
+        setTimeout(() => {
+          navigate('/signup', {
+            state: {
+              message: 'Please complete citizen registration first, then you can become a volunteer.',
+              returnTo: '/signup-volunteer'
+            }
+          });
+        }, 2000);
       }
     } catch (error) {
       console.error('Registration error:', error);

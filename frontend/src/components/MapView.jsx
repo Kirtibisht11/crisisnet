@@ -59,6 +59,8 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
 
       const p = event.payload;
 
+      if (!p.lat || !p.lon) return;
+
       const liveCrisis = {
         id: `ws-${Date.now()}`,
         type: p.type,
@@ -100,7 +102,7 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
 
   /* ---------- USER LOCATION ---------- */
   useEffect(() => {
-    if (propUserLocation) {
+    if (propUserLocation && propUserLocation[0] != null && propUserLocation[1] != null) {
       setUserLocation(propUserLocation);
       setMapCenter(propUserLocation);
       return;
@@ -117,14 +119,14 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
         console.warn('Location permission denied');
       },
       { enableHighAccuracy: true, timeout: 5000 }
-    ); 
+    );
   }, [propUserLocation]);
 
   /* ---------- AUTO CENTER ON CRISIS IF EXISTS ---------- */
   useEffect(() => {
     if (!userLocation && !propUserLocation && crises.length > 0) {
       const latest = crises[crises.length - 1];
-      if (latest.location && latest.location.lat) {
+      if (latest.location && latest.location.lat != null && latest.location.lon != null) {
         setMapCenter([latest.location.lat, latest.location.lon]);
         setSelectedCrisis(latest.id);
       }
@@ -174,7 +176,7 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
 
         {/* ---------- CRISES ---------- */}
         {crises.map(crisis => {
-          if (!crisis.location || !crisis.location.lat) return null;
+          if (!crisis.location || crisis.location.lat == null || crisis.location.lon == null) return null;
           const allocation = allocationMap[crisis.id];
           const priority = crisis.priority_score || 5;
 
@@ -209,7 +211,7 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
               {/* ---------- ALLOCATED RESOURCES ---------- */}
               {allocation?.resources.map(r => {
                 const full = resources.find(x => x.id === r.id);
-                if (!full) return null;
+                if (!full || !full.location || full.location.lat == null || full.location.lon == null) return null;
 
                 return (
                   <React.Fragment key={r.id}>
@@ -239,7 +241,7 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
               {/* ---------- ALLOCATED VOLUNTEERS ---------- */}
               {allocation?.volunteers.map(v => {
                 const full = volunteers.find(x => x.id === v.id);
-                if (!full) return null;
+                if (!full || !full.location || full.location.lat == null || full.location.lon == null) return null;
 
                 return (
                   <React.Fragment key={v.id}>
@@ -269,22 +271,25 @@ const MapView = ({ crises: propCrises, resources: propResources, userLocation: p
         })}
 
         {/* ---------- AVAILABLE RESOURCES ---------- */}
-        {resources.map(r => (
-          <Marker
-            key={r.id}
-            position={[r.location.lat, r.location.lon]}
-            icon={getResourceIcon(r.type)}
-            opacity={0.5}
-          >
-            <Popup>
-              <strong className="capitalize">{r.type}</strong>
-              <p className={r.available ? "text-green-600" : "text-red-600"}>
-                {r.available ? 'Available' : 'Busy'}
-              </p>
-              {r.capacity && <p className="text-xs">Capacity: {r.capacity}</p>}
-            </Popup>
-          </Marker>
-        ))}
+        {resources.map(r => {
+          if (!r.location || r.location.lat == null || r.location.lon == null) return null;
+          return (
+            <Marker
+              key={r.id}
+              position={[r.location.lat, r.location.lon]}
+              icon={getResourceIcon(r.type)}
+              opacity={0.5}
+            >
+              <Popup>
+                <strong className="capitalize">{r.type}</strong>
+                <p className={r.available ? "text-green-600" : "text-red-600"}>
+                  {r.available ? 'Available' : 'Busy'}
+                </p>
+                {r.capacity && <p className="text-xs">Capacity: {r.capacity}</p>}
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

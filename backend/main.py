@@ -30,6 +30,8 @@ try:
     from api.resource_routes import router as resource_api_router
     from api.ngo_routes import router as ngo_router
     from api.analytics_routes import router as analytics_router
+    from api.learning import router as learning_router
+    from ws.manager import manager
 except ImportError as e:
     logging.error(f"Import error: {e}")
     raise
@@ -61,21 +63,12 @@ app.add_middleware(
 async def startup_event():
     """Initialize database on application startup"""
     try:
-        init_db()
+        ensure_db_initialized()
         logger.info("✅ Database initialized successfully")
         logger.info("📊 Tables created: users, crises, tasks, volunteer_performance, system_metrics")
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {e}")
         raise
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Close database connections on shutdown"""
-    try:
-        close_db()
-        logger.info("✅ Database connections closed")
-    except Exception as e:
-        logger.error(f"❌ Database shutdown error: {e}")
 
 # Register API Routers
 app.include_router(users_router)
@@ -93,7 +86,7 @@ app.include_router(orchestrator_router)
 app.include_router(resource_api_router)
 app.include_router(ngo_router)
 app.include_router(analytics_router)
-app.include_router(learning.router)
+app.include_router(learning_router)
 logger.info("✅ NGO and Analytics routes registered")
 
 

@@ -22,8 +22,8 @@ class UserCreate(BaseModel):
     phone: str
     password: str
     role: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class UserResponse(BaseModel):
@@ -31,8 +31,8 @@ class UserResponse(BaseModel):
     name: str
     phone: str
     role: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     is_active: bool
     created_at: str
 
@@ -82,7 +82,17 @@ def list_users(role: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(User)
     if role:
         query = query.filter(User.role == role)
-    return query.all()
+    
+    users = query.all()
+    result = []
+    for u in users:
+        u_dict = {c.name: getattr(u, c.name) for c in u.__table__.columns}
+        # Ensure lat/lon exist for frontend maps
+        u_dict['lat'] = u.latitude
+        u_dict['lon'] = u.longitude
+        if 'password' in u_dict: del u_dict['password']
+        result.append(u_dict)
+    return result
 
 
 @router.get("/stats")

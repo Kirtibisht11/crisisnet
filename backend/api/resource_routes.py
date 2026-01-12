@@ -292,7 +292,7 @@ def create_volunteer_request(payload: dict, token: str = Header(None), db: Sessi
 @router.post('/volunteer_requests/{request_id}/accept')
 def accept_volunteer_request(request_id: str, payload: dict, token: str = Header(None), db: Session = Depends(get_db)):
     try:
-        user = require_role(token, ["volunteer", "citizen"])
+        user = require_role(token, ["volunteer", "citizen"], db)
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
 

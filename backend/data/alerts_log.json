@@ -1,7 +1,343 @@
 {
   "alerts": [
     {
-      "alert_id": "DET_3965a320",
+      "alert_id": "DET_66330a9a",
+      "user_id": "telegram",
+      "crisis_type": "medical",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Suspected food poisoning at wedding in GMS Road. 50+ guests vomiting. Ambulances required.",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.4)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497430",
+      "verified_at": "2026-01-12T00:41:35.330503Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.4)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "medical",
+        "response_time_ms": 10946.71
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_a984cdb2",
+      "user_id": "twitter",
+      "crisis_type": "collapse",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Old building collapsed in Paltan Bazaar. People feared trapped under debris. Police needed.",
+      "has_image": false,
+      "trust_score": 0.482,
+      "decision": "REJECTED",
+      "status": "Rejected - Trust score too low (threshold: 0.5)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.02,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497415",
+      "verified_at": "2026-01-12T00:41:57.336138Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.48 \u2192 REJECTED\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n  Bonus Signals:      +0.02\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Rejected - Trust score too low (threshold: 0.5)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": true
+        },
+        "crisis_type": "collapse",
+        "response_time_ms": 11224.68
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_643469cb",
+      "user_id": "twitter",
+      "crisis_type": "fire",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "House on fire in Dalanwala lane 4. Cylinder blast suspected. Fire engines on way.",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "REVIEW",
+      "status": "Needs human review (threshold: 0.44999999999999996)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497370",
+      "verified_at": "2026-01-12T00:42:19.519608Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 REVIEW\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Needs human review (threshold: 0.44999999999999996)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "fire",
+        "response_time_ms": 16265.26
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_3b686d03",
+      "user_id": "twitter",
+      "crisis_type": "flood",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Severe waterlogging at Prince Chowk. Cars are submerged. Traffic is stuck for hours.",
+      "has_image": false,
+      "trust_score": 0.482,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.30000000000000004)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.02,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497209",
+      "verified_at": "2026-01-12T00:42:46.671122Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.48 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n  Bonus Signals:      +0.02\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.30000000000000004)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": true
+        },
+        "crisis_type": "flood",
+        "response_time_ms": 16289.43
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_f6ea60d6",
+      "user_id": "instagram",
+      "crisis_type": "fire",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Forest fire visible near FRI campus back gate. Dry leaves burning fast.",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "REVIEW",
+      "status": "Needs human review (threshold: 0.44999999999999996)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497199",
+      "verified_at": "2026-01-12T00:43:13.802042Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 REVIEW\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Needs human review (threshold: 0.44999999999999996)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "fire",
+        "response_time_ms": 15531.21
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_b06cbc53",
+      "user_id": "twitter",
+      "crisis_type": "medical",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Medical emergency at ISBT Dehradun. Bus collision, many injured. Need doctors asap.",
+      "has_image": false,
+      "trust_score": 0.482,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.4)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.02,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497188",
+      "verified_at": "2026-01-12T00:43:40.244881Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.48 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n  Bonus Signals:      +0.02\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.4)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": true
+        },
+        "crisis_type": "medical",
+        "response_time_ms": 16148.04
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_955cc571",
+      "user_id": "facebook",
+      "crisis_type": "landslide",
+      "location": null,
+      "lat": null,
+      "lon": null,
+      "message": "Landslide reported on Mussoorie Road near Kuthal Gate. Big rocks blocking the way. Avoid this route!",
+      "has_image": false,
+      "trust_score": 0.462,
+      "decision": "UNCERTAIN",
+      "status": "Low confidence (threshold: 0.30000000000000004)",
+      "reputation": 0.5,
+      "cross_verification": {
+        "score": 0.5,
+        "sources": 0,
+        "details": "First report - no cross-verification available"
+      },
+      "components": {
+        "cross_verification": 0.2,
+        "source_reputation": 0.262,
+        "duplicate_adjustment": 0.0,
+        "rate_limit_penalty": -0.0,
+        "bonus_signals": 0.0,
+        "historical_boost": 0.0
+      },
+      "timestamp": "2026-01-12T00:41:30.497175",
+      "verified_at": "2026-01-12T00:43:58.815267Z",
+      "severity": "low",
+      "verified": false,
+      "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.30000000000000004)",
+      "metadata": {
+        "rate_penalty": 0.0,
+        "duplicate_penalty": 0.0,
+        "additional_signals": {
+          "has_image": false,
+          "has_location": false,
+          "sentiment_urgent": false
+        },
+        "crisis_type": "landslide",
+        "response_time_ms": 10908.86
+      },
+      "historical_performance": {
+        "boost": 0.0,
+        "reason": "Insufficient history (0 samples)",
+        "samples": 0
+      }
+    },
+    {
+      "alert_id": "DET_4bd2fc76",
       "user_id": "twitter",
       "crisis_type": "medical",
       "location": null,
@@ -26,8 +362,8 @@
         "bonus_signals": 0.0,
         "historical_boost": 0.0
       },
-      "timestamp": "2026-01-11T17:32:25.112461",
-      "verified_at": "2026-01-11T18:25:48.368497Z",
+      "timestamp": "2026-01-12T00:41:30.497157",
+      "verified_at": "2026-01-12T00:44:20.590057Z",
       "severity": "low",
       "verified": false,
       "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.4)",
@@ -40,7 +376,7 @@
           "sentiment_urgent": false
         },
         "crisis_type": "medical",
-        "response_time_ms": 894.68
+        "response_time_ms": 16263.08
       },
       "historical_performance": {
         "boost": 0.0,
@@ -49,7 +385,7 @@
       }
     },
     {
-      "alert_id": "DET_fd1a6ec6",
+      "alert_id": "DET_62eb0b51",
       "user_id": "news_api",
       "crisis_type": "flood",
       "location": null,
@@ -57,47 +393,29 @@
       "lon": null,
       "message": "Flash floods in Maldevta washing away shops. Red alert issued for river banks.",
       "has_image": false,
-      "trust_score": 0.462,
-      "decision": "UNCERTAIN",
-      "status": "Low confidence (threshold: 0.30000000000000004)",
+      "trust_score": 0.8,
+      "decision": "ERROR",
+      "status": "Auto-detected by Detection Agent",
       "reputation": 0.5,
       "cross_verification": {
         "score": 0.5,
         "sources": 0,
-        "details": "First report - no cross-verification available"
+        "details": "Awaiting cross-verification"
       },
       "components": {
         "cross_verification": 0.2,
-        "source_reputation": 0.262,
+        "source_reputation": 0.25,
         "duplicate_adjustment": 0.0,
-        "rate_limit_penalty": -0.0,
-        "bonus_signals": 0.0,
-        "historical_boost": 0.0
+        "rate_limit_penalty": 0.0,
+        "bonus_signals": 0.05
       },
-      "timestamp": "2026-01-11T17:32:25.112446",
-      "verified_at": "2026-01-11T18:25:49.284674Z",
+      "timestamp": "2026-01-12T00:41:30.497128",
+      "verified_at": "2026-01-12T00:44:47.726265Z",
       "severity": "low",
-      "verified": false,
-      "explanation": "Trust Score: 0.46 \u2192 UNCERTAIN\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Low confidence (threshold: 0.30000000000000004)",
-      "metadata": {
-        "rate_penalty": 0.0,
-        "duplicate_penalty": 0.0,
-        "additional_signals": {
-          "has_image": false,
-          "has_location": false,
-          "sentiment_urgent": false
-        },
-        "crisis_type": "flood",
-        "response_time_ms": 11067.28
-      },
-      "historical_performance": {
-        "boost": 0.0,
-        "reason": "Insufficient history (0 samples)",
-        "samples": 0
-      }
+      "verified": false
     },
     {
-      "alert_id": "DET_bcb64aa3",
+      "alert_id": "DET_eaec0290",
       "user_id": "twitter",
       "crisis_type": "fire",
       "location": null,
@@ -122,8 +440,8 @@
         "bonus_signals": 0.02,
         "historical_boost": 0.0
       },
-      "timestamp": "2026-01-11T17:32:25.112396",
-      "verified_at": "2026-01-11T18:26:11.472091Z",
+      "timestamp": "2026-01-12T00:41:30.497078",
+      "verified_at": "2026-01-12T00:44:53.171324Z",
       "severity": "low",
       "verified": false,
       "explanation": "Trust Score: 0.48 \u2192 REVIEW\n\nScore Breakdown:\n  Cross-Verification: +0.20\n  Source Reputation:  +0.26\n  Bonus Signals:      +0.02\n\nHistorical Data: Insufficient history (0 samples)\n\nFinal Decision: Needs human review (threshold: 0.44999999999999996)",
@@ -136,7 +454,7 @@
           "sentiment_urgent": true
         },
         "crisis_type": "fire",
-        "response_time_ms": 16569.15
+        "response_time_ms": 16118.85
       },
       "historical_performance": {
         "boost": 0.0,
@@ -145,7 +463,7 @@
       }
     }
   ],
-  "total_count": 3,
+  "total_count": 10,
   "statistics": {},
-  "last_updated": "2026-01-11T18:26:39.150528Z"
+  "last_updated": "2026-01-12T00:45:20.272168Z"
 }
